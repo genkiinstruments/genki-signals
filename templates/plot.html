@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  .line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 1.5px;
+  }
+</style>
+<svg width="1920" height="1080"></svg>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  const REFRESH_INTERVAL = 10;
+  const socket = io("ws://" + window.location.host + "/data");
+  const num_keep = 100,
+  data = [];
+
+  var svg = d3.select("svg"),
+    margin = { top: 20, right: 20, bottom: 20, left: 40 },
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scaleLinear()
+    .domain([0, 2160])
+    .range([0, width]);
+  g.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 1440])
+    .range([0, height]);
+  g.append("g")
+    .call(d3.axisLeft(y));
+
+  var line = d3.line()
+    .x(d => x(d[0]))
+    .y(d => y(d[1]));
+
+
+  g.append("g")
+    .attr("clip-path", "url(#clip)")
+    .append("path")
+    .datum(data)
+    .attr("class", "line")
+    .transition()
+    .duration(REFRESH_INTERVAL)
+    .ease(d3.easeLinear);
+
+  socket.on("response", (response) => {
+    response = response["mouse_pos"];
+    data.push.apply(data, response);
+    data.splice(0, data.length - num_keep);
+    g.select(".line")
+      .attr("d", line)
+      .attr("transform", null)
+      .transition()
+      .duration(REFRESH_INTERVAL)
+      .ease(d3.easeLinear)
+
+    setTimeout( () => {
+        socket.emit("request", "");
+      }, REFRESH_INTERVAL);
+    }
+  );
+
+  socket.on("connect", () => {
+    console.log('Connected!');
+    socket.emit("add_signal", "mouse_pos");
+    socket.emit("request", "");
+    // setTimeout( () => {
+    //   socket.emit("request", "read");
+    // }, 10);
+  });
+</script>
