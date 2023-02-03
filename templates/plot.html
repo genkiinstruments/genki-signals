@@ -62,7 +62,7 @@
       .ease(d3.easeLinear)
 
     setTimeout( () => {
-        socket.emit("request", "");
+        socket.emit("request");
       }, REFRESH_INTERVAL);
     }
   );
@@ -70,7 +70,7 @@
   socket.on("connect", () => {
     console.log('Connected!');
     socket.emit("add_signal", "mouse_pos");
-    socket.emit("request", "");
+    socket.emit("request");
     // setTimeout( () => {
     //   socket.emit("request", "read");
     // }, 10);

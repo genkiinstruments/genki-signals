@@ -27,7 +27,7 @@ def handle_remove_signal(sig_name):
         SIG_NAMES.remove(sig_name)
 
 @socket.on("request", namespace="/data")
-def handle_request(bla):
+def handle_request(): # arg to control read/view?, ...
     data = system.read(as_dataframe=False)
     data = {k: v.tolist() for k, v in data.items() if k in SIG_NAMES}
 
