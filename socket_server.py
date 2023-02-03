@@ -8,7 +8,7 @@ via websocket to browser. The sampling rate of the system and the rate at
 which data is streamed can be set independently using the constants SAMPLING_RATE
 and GUI_UPDATE_RATE.
 """
-from flask import Flask
+from flask import Flask, render_template
 from flask_socketio import SocketIO
 
 from threading import Lock
@@ -48,7 +48,7 @@ def generate_data():
 
 @app.route("/")
 def index():
-    return open(Path(__file__).parent / "index.html", "r").read()
+    return render_template("index.html")
 
 
 @socketio.on("connect")
