@@ -25,6 +25,9 @@ import signal_processing.signals as s  # noqa: E402
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+thread_lock = Lock()
+data_thread = None
+
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 100
 
@@ -41,10 +44,6 @@ def generate_data():
                 data[key] = val.tolist()
             socketio.emit("data", data, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
-
-
-thread_lock = Lock()
-data_thread = None
 
 
 @app.route("/")
