@@ -12,7 +12,7 @@ socket = SocketIO(app)
 
 @app.route("/")
 def plot():
-    return render_template("plot.html")
+    return render_template("d3_dashboard.html")
 
 SIG_NAMES = []
 

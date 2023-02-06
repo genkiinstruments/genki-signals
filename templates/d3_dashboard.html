@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  .line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 1.5px;
+  }
+</style>
+<body></body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="static/graphs/line.js"></script>
+<script>
+  console.log("connected!!!!!!!")
+  const num_keep = 1000;
+  const REFRESH_RATE = 5;
+  const socket = io("ws://" + window.location.host + "/data");
+
+  data = {"mouse_pos": []}
+
+  margin = { top: 20, right: 20, bottom: 20, left: 40 }
+  svg = d3.select("body")
+    .append("svg")
+      .attr("width", 2000)
+      .attr("height", 500)
+
+  console.log(svg)
+    
+
+  x_range = [0,num_keep]
+  y_range = [0,0]
+
+  chart = make_chart(svg, {"mouse_pos": [0,1]}, x_range=x_range, y_range=y_range)
+
+  console.log(chart)
+
+  socket.on("response", (response) => {
+    for(key in response){
+      new_data = response[key]
+      data[key].push.apply(data[key], new_data);
+      data[key].splice(0, data[key].length - num_keep);
+
+      // console.log("updating")
+    }
+
+    chart.update(data)
+    // else {console.log(response)}
+    setTimeout( () => {
+        socket.emit("request");
+      }, REFRESH_RATE);
+    }
+  );
+
+
+
+
+
+  socket.on("connect", () => {
+    console.log('Connected!');
+    socket.emit("add_signal", "mouse_pos");
+    socket.emit("request");
+    // setTimeout( () => {
+    //   socket.emit("request", "read");
+    // }, 10);
+  });
+
+</script>
