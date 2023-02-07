@@ -7,6 +7,7 @@
     crossorigin="anonymous"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="static/graphs/trace.js"></script>
+  <script src="static/graphs/histogram.js"></script>
 </head>
 <style>
   .line {
@@ -36,18 +37,22 @@
     const width = 720;
     const height = 480;
 
-    const plots = [];
-    for (let i = 0; i < num_plots; i++) {
-      plots.push(
-        create_trace(
-          data,
-          ".plots",
-          "#trace" + i,
-          width,
-          height
-        )
-      );
-    }
+    const plots = [
+      create_trace(data, ".plots", "#trace0", width, height),
+      create_trace(data, ".plots", "#trace1", width, height),
+      create_histogram(data, ".plots", "#hist0", width, height, ["mouse_pos_x", "mouse_pos_y"]),
+    ];
+    // for (let i = 0; i < num_plots; i++) {
+    //   plots.push(
+    //     create_trace(
+    //       data,
+    //       ".plots",
+    //       "#trace" + i,
+    //       width,
+    //       height
+    //     )
+    //   );
+    // }
 
     socket.on("response", (response) => {
       data.push.apply(data, response);
