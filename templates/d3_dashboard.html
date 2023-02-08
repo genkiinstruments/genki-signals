@@ -6,45 +6,84 @@
     stroke: #000;
     stroke-width: 1.5px;
   }
+
+  .plots {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
 </style>
-<body></body>
+<body>
+  <div class= "plots"></div>
+</body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="static/graphs/line.js"></script>
 <script>
   console.log("connected!!!!!!!")
-  const num_keep = 1000;
-  const REFRESH_RATE = 5;
+  const BUFFER_SIZE = 1000;
+  const REFRESH_RATE = 1000;
   const socket = io("ws://" + window.location.host + "/data");
+  const row_based = true
 
-  data = {"mouse_pos": []}
+
+  data = {"timestamp_us": [], "mouse_pos": []}
+  if(row_based){data = {"timestamp_us": [[]],"mouse_pos": [new Array(BUFFER_SIZE).fill(0), new Array(BUFFER_SIZE).fill(0)]}}
 
   margin = { top: 20, right: 20, bottom: 20, left: 40 }
-  svg = d3.select("body")
-    .append("svg")
-      .attr("width", 2000)
-      .attr("height", 500)
 
-  console.log(svg)
-    
+  n = 32;
+  charts = new Array(n)
 
-  x_range = [0,num_keep]
-  y_range = [0,0]
+  for(let i = 0; i < n; i++){
+    svg = d3.select("body .plots")
+      .append("svg")
+        .attr("id", "plot"+i)
+        .attr("width", 300)
+        .attr("height", 300)
 
-  chart = make_chart(svg, {"mouse_pos": [0,1]}, x_range=x_range, y_range=y_range)
+    x_range = [0,BUFFER_SIZE-1]
+    y_range = [0,2380]
 
-  console.log(chart)
+    charts[i] = make_chart(svg, ["timestamp_us", 0], {"mouse_pos": [0,1]}, x_range=x_range, y_range=y_range, row_based)
+  }
+
 
   socket.on("response", (response) => {
+
     for(key in response){
       new_data = response[key]
-      data[key].push.apply(data[key], new_data);
-      data[key].splice(0, data[key].length - num_keep);
 
+      new_data_T = new_data[0].map((_, colIndex) => new_data.map(row => row[colIndex]));
+      
+      if(row_based){
+        // (nxk) format
+        data[key].forEach((item, index) => item.push.apply(item, new_data_T[index]))
+      }
+      else{
+        // // (nxk) format
+        data[key].push.apply(data[key], new_data);
+      }
       // console.log("updating")
     }
 
-    chart.update(data)
+    for(chart of charts){chart.update(data)}
+
+
+    for(key in response){
+      if(row_based){
+        // (nxk) format
+        data[key].forEach((item, index) => item.splice(0, item.length - BUFFER_SIZE))
+      }
+      else{
+        // // (nxk) format
+        data[key].splice(0, data[key].length - BUFFER_SIZE);
+      }
+      // console.log("updating")
+    }
+
+
     // else {console.log(response)}
     setTimeout( () => {
         socket.emit("request");
@@ -59,6 +98,7 @@
   socket.on("connect", () => {
     console.log('Connected!');
     socket.emit("add_signal", "mouse_pos");
+    socket.emit("add_signal", "timestamp_us");
     socket.emit("request");
     // setTimeout( () => {
     //   socket.emit("request", "read");
