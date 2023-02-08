@@ -8,19 +8,16 @@ via websocket to browser. The sampling rate of the system and the rate at
 which data is streamed can be set independently using the constants SAMPLING_RATE
 and GUI_UPDATE_RATE.
 """
-import datetime
-import sys
-from pathlib import Path
-from threading import Lock
+import argparse
 
 import eventlet
-import numpy as np
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 
 import signal_processing.signals as s  # noqa: E402
 from signal_processing.data_sources import (  # noqa: E402
     ManualTimerDataSource,
+    MouseDataSource,
     RandomDataSource,
 )
 from signal_processing.system import SignalSystem  # noqa: E402
@@ -29,20 +26,15 @@ eventlet.monkey_patch()
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-thread_lock = Lock()
-data_thread = None
-
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 
 
 def generate_data():
     source = ManualTimerDataSource(
-        SAMPLING_RATE, secondary_sources=[RandomDataSource()]
+        SAMPLING_RATE, secondary_sources=[RandomDataSource(), MouseDataSource()]
     )
-    # source = MicDataSource()
-    system = SignalSystem(source, derived=[])
-    print("called generate_data")
+    system = SignalSystem(source, derived=[s.SamplingRate()])
     with system:
         while True:
             data = system.read(as_dataframe=True)
@@ -57,5 +49,10 @@ def index():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=5000)
+    args = parser.parse_args()
+
     socketio.start_background_task(generate_data)
-    socketio.run(app, debug=True)
+    socketio.run(app, host=args.host, port=args.port, debug=True)
