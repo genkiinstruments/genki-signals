@@ -1,18 +1,14 @@
+<!DOCTYPE html>
 <header>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </header>
 
 <body>
 
-    <div>Sampling rate: <span id="sr" </span></div>
-    <div id="data"></div>
+    <svg></svg>
 
-    <script type="text/javascript" charset="utf-8">
-        var socket = io();
-        socket.on('data', function(d) {
-            document.getElementById("sr").innerHTML = d["sampling_rate"];
-            document.getElementById('data').innerHTML = JSON.stringify(d.random)
-        });
+    <script src="static/line_chart.js" charset="utf-8">
     </script>
 
 </body>
