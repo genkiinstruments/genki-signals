@@ -21,6 +21,7 @@ from signal_processing.data_sources import (
     ManualTimerDataSource,
     RandomDataSource,
     MouseDataSource,
+    WaveDataSource,
 )  # noqa: E402
 from signal_processing.system import SignalSystem  # noqa: E402
 import signal_processing.signals as s  # noqa: E402
@@ -32,22 +33,28 @@ thread_lock = Lock()
 data_thread = None
 
 SAMPLING_RATE = 100
-GUI_UPDATE_RATE = 50
+GUI_UPDATE_RATE = 60
+BLE_ADDRESS = "905EC87A-AD3A-3CE7-21AE-9C97B8CA54E1"
 
 
 def generate_data():
-    source = ManualTimerDataSource(
-        SAMPLING_RATE, secondary_sources=[RandomDataSource(), MouseDataSource()]
+    # source = ManualTimerDataSource(
+    #     SAMPLING_RATE, secondary_sources=[RandomDataSource(), MouseDataSource()]
+    # )
+    print("background ---------------")
+    source = WaveDataSource(
+        ble_address=BLE_ADDRESS, secondary_sources=[RandomDataSource(), MouseDataSource()]
     )
     system = SignalSystem(source, derived=[s.SamplingRate()])
     with system:
         while True:
             data = system.read(as_dataframe=False)
-            data = [
-                { k: v[i].tolist() for k, v in data.items() }
-                for i in range(len(data["timestamp_us"])) # NOTE: Error prone since if data is empty this will fail
-            ] # dict of lists to list of dicts
-            socketio.emit("response", data, broadcast=True, namespace="/data")
+            if("timestamp_us" in data):
+                data = [
+                    { k: v[i].tolist() for k, v in data.items() }
+                    for i in range(len(data["timestamp_us"])) # NOTE: Error prone since if data is empty this will fail
+                ] # dict of lists to list of dicts
+                socketio.emit("response", data, broadcast=True, namespace="/data")
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
@@ -59,16 +66,16 @@ def index():
 @socketio.on("connect", namespace="/data")
 def handle_connect():
     print("client connected")
-    global data_thread
-    with thread_lock:
-        if data_thread is None:
-            data_thread = socketio.start_background_task(generate_data)
 
+def main(host, port, debug):
+    data_thread = socketio.start_background_task(generate_data)
+    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--port", type=int, default=3000)
     parser.add_argument("--debug", action="store_true", default=False)
     args = parser.parse_args()
-    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
+    
+    main(host=args.host, port=args.port, debug=args.debug)
