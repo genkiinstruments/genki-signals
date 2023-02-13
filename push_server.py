@@ -44,7 +44,7 @@ def generate_data():
         while True:
             data = system.read(as_dataframe=False)
             data = [
-                { k: v[i].tolist() for k, v in data.items() }
+                { k: v[i].T.tolist() for k, v in data.items() }
                 for i in range(len(data["timestamp_us"])) # NOTE: Error prone since if data is empty this will fail
             ] # dict of lists to list of dicts
             socketio.emit("response", data, broadcast=True, namespace="/data")

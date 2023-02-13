@@ -12,7 +12,7 @@ function create_histogram(data, divname, id, width, height, col_names) {
         .padding(padding);
 
     var yScale = d3.scaleLinear()
-        .domain([0, 1])
+        .domain([0, 3000])
         .range([0, height]);
 
     // Create the SVG element.
@@ -21,7 +21,7 @@ function create_histogram(data, divname, id, width, height, col_names) {
         .attr("id", id)
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
-    
+
     var g = svg
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -38,36 +38,22 @@ function create_histogram(data, divname, id, width, height, col_names) {
     svg.append("g")
         .call(d3.axisLeft(yScale));
 
-
-    var hist = g.append("g")
-        .append("path")
-        .datum(data)
-        .attr("class", "histogram");
-
-    //     // Add the bars.
-    // var bars = [];
-    // for (var j = 0; j < col_names.length; j++) {
-    //     svg.append("rect")
-    //         .data(data)
-    //         .enter()
-    //         .attr("x",  xScale(col_names[j]))
-    //         .attr("y", 0)
-    //         .attr("width", xScale.bandwidth())
-    //         .attr("height", (d) => height - yScale(d))
-    //         .attr("fill", "#69b3a2")
-    //         .x((d, i) => xScale(d[i]))
-    //         .y((d) => yScale(d));
-    // }
-
-    // var bars = d3.selectAll("rect");
-
-
-
     return Object.assign(svg.node(), {
         update() {
-            console.log("Updating histogram...")
-            // Update the bars.
-            // hist = hist.attr("d", bars);
+            const bars = svg.selectAll("rect")
+                .data(data)
+
+            bars
+                .enter()
+                .append("rect")
+                .merge(bars)
+                .attr("x", (d) => { xScale(d.Country); })
+                .attr("y", (d) => { yScale(d.Value); })
+                .attr("width", xScale.bandwidth())
+                .attr("height", (d) => { height - yScale(d.Value); })
+                .attr("fill", "#69b3a2")
+
+            bars.exit().remove()
         }
     }
     );

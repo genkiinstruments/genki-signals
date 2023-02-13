@@ -10,7 +10,7 @@
   <script src="static/graphs/histogram.js"></script>
 </head>
 <style>
-  .line {
+  .trace {
     fill: none;
     stroke: #000;
     stroke-width: 1.5px;
@@ -37,10 +37,16 @@
     const width = 720;
     const height = 480;
 
+    var dummydata = [
+      { "Country": "USA", "Value": 18 },
+      { "Country": "Canada", "Value": 213 },
+    ];
+
+
     const plots = [
       create_trace(data, ".plots", "#trace0", width, height),
       create_trace(data, ".plots", "#trace1", width, height),
-      create_histogram(data, ".plots", "#hist0", width, height, ["mouse_pos_x", "mouse_pos_y"]),
+      create_histogram(dummydata, ".plots", "#hist0", width, height, ["USA", "Canada"]),
     ];
     // for (let i = 0; i < num_plots; i++) {
     //   plots.push(
@@ -58,9 +64,17 @@
       data.push.apply(data, response);
       data.splice(0, data.length - num_keep);
       for (const plot of plots) {
-        plot.update(data);
+        plot.update();
       }
     }
     );
+
+    // on mouse click change dummydata
+    addEventListener("click", function () {
+      console.log("click");
+      const america = dummydata[0].Value;
+      dummydata.drop(0);
+      dummydata.push.appl({ "Country": "USA", "Value": america + 1 });
+    });
   </script>
 </body>

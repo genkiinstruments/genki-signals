@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+    <div id="chart">
+    </div>
+    <script>
+        // Step 1: Define scales and create initial histogram
+        const margin = { top: 10, right: 30, bottom: 30, left: 30 };
+        const width = 460 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3.scaleLinear()
+            .range([0, width])
+            .domain([0, 10]);
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x));
+
+        const histogram = d3.histogram()
+            .value(d => d)
+            .domain(x.domain())
+            .thresholds(x.ticks(20));
+
+        // Step 2: Set up event listener
+        const data = [];
+
+        setInterval(() => {
+            const newData = Math.random() * 10;
+            data.push(newData);
+
+            // Step 3: Update histogram
+            const bins = histogram(data);
+
+            const y = d3.scaleLinear()
+                .range([height, 0])
+                .domain([0, d3.max(bins, d => d.length)]);
+
+            svg.select(".y-axis")
+                .transition()
+                .duration(100)
+                .call(d3.axisLeft(y));
+
+            const u = svg.selectAll("rect")
+                .data(bins);
+
+            u.enter()
+                .append("rect")
+                .merge(u)
+                .transition()
+                .duration(100)
+                .attr("x", 1)
+                .attr("transform", d => `translate(${x(d.x0)}, ${y(d.length)})`)
+                .attr("width", d => x(d.x1) - x(d.x0) - 1)
+                .attr("height", d => height - y(d.length))
+                .attr("fill", "#69b3a2");
+
+            u.exit().remove();
+        }, 1000);
+    </script>
+</body>

@@ -17,11 +17,13 @@ function create_trace(data, divname, id, width, height) {
         .domain([0, 1440])
         .range([0, height]);
 
-    var svg = d3.select(divname).append("svg").attr("id", id)
-
-    var g = svg
+    var svg = d3.select(divname)
+        .append("svg")
+        .attr("id", id)
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
+
+    var g = svg
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -38,7 +40,7 @@ function create_trace(data, divname, id, width, height) {
     var trace = g.append("g")
         .append("path")
         .datum(data) // Bind data to the line.
-        .attr("class", "line")
+        .attr("class", "trace")
     
     var line = d3.line()
         .x(d => xScale(d.mouse_pos[0]))
@@ -46,7 +48,7 @@ function create_trace(data, divname, id, width, height) {
 
     return Object.assign(svg.node(), {
         update() {
-            trace = trace.attr("d", line);
+            trace = trace.attr("d", line); 
         }
     })
 };
