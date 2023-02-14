@@ -4,13 +4,14 @@ import * as d3 from 'd3';
 /**
 * @param {HTMLDivElement} el - The div to append the SVG element to.
 * @param {Object[]} data - The data to bind to the trace.
-* @param {string} data_key - The key to use to access the data.
+* @param {string} x_key - The key to access x from data.
+* @param {string} y_key - The key to access y from data.
 * @param {string} id - The id of the SVG element.
 * @param {number} width - The width of the SVG element.
 * @param {number} height - The height of the SVG element.
 * @returns The d3 object for the trace with an update function.
 */
-export function create_trace(el, data, data_key, id, width, height) {
+export function create_trace(el, data, x_key, y_key, id, width, height) {
     var xScale = d3.scaleLinear()
         .domain([0, 2560]) // Have a config for variables like domain and range?
         .range([0, width]);
@@ -45,8 +46,8 @@ export function create_trace(el, data, data_key, id, width, height) {
         .attr("class", "trace")
     
     var line = d3.line()
-        .x(d => xScale(d[data_key][0]))
-        .y(d => yScale(d[data_key][1]));
+        .x(d => xScale(d[x_key]))
+        .y(d => yScale(d[y_key]));
 
     return Object.assign(svg.node(), {
         update() {

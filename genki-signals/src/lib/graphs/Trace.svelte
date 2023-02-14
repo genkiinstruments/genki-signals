@@ -5,7 +5,9 @@
 	import { create_trace } from './trace.js';
 
     /** @type {string} */
-    export let data_key;
+    export let x_key;
+    /** @type {string} */
+    export let y_key;
     /** @type {string} */
 	export let id;
     /** @type {number} */
@@ -17,7 +19,7 @@
 	let el;
 
     onMount(() => {
-        var trace_svg = create_trace(el, data_buffer.view(), data_key, id, width, height);
+        var trace_svg = create_trace(el, data_buffer.view(), x_key, y_key, id, width, height);
 
         data_buffer.subscribe((/** @type {Object[]} */ data) => {
             trace_svg.update(data);

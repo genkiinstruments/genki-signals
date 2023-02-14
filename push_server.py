@@ -13,6 +13,7 @@ import argparse
 import eventlet
 from flask import Flask, render_template
 from flask_socketio import SocketIO
+from flask_cors import CORS
 
 import signal_processing.signals as s  # noqa: E402
 from signal_processing.data_sources import (  # noqa: E402
@@ -24,10 +25,11 @@ from signal_processing.system import SignalSystem  # noqa: E402
 
 eventlet.monkey_patch()
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app, origins='http://localhost:5173/*')
+socketio = SocketIO(app, cors_allowed_origins="*") #, cors_allowed_origins=["http://localhost:5173/"]) # TODO: remove cors_allowed_origins
 
-SAMPLING_RATE = 100
-GUI_UPDATE_RATE = 50
+SAMPLING_RATE = 1000
+GUI_UPDATE_RATE = 500
 
 
 def generate_data():
@@ -43,9 +45,9 @@ def generate_data():
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+# @app.route("/")
+# def index():
+#     return render_template("index.html")
 
 
 if __name__ == "__main__":
