@@ -22,14 +22,12 @@ function create_buffer(max_size) {
                 subscribers.splice(index, 1);
             }
         },
-        push: (/** @type {Array<Object>} */ value) => {
+        push: (/** @type {Object[]} */ value) => {
             buffer.push(... value);
             if (buffer.length >= max_size) {
                 buffer.splice(0, buffer.length - max_size);
             }
-            const last = buffer[buffer.length-1];
-            subscribers.forEach((callback) => callback(value.length == 0 ? last : value));
-            // return buffer;
+            subscribers.forEach((callback) => callback(value.length == 0 ? [buffer[buffer.length-1]] : value));
         },
         view: () => buffer,
         clear: () => { buffer.splice(0, buffer.length)}
