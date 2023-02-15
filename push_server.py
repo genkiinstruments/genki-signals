@@ -32,21 +32,20 @@ SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 60
 BLE_ADDRESS = "905EC87A-AD3A-3CE7-21AE-9C97B8CA54E1"
 
-
 def generate_data():
     # source = ManualTimerDataSource(
     #     SAMPLING_RATE, secondary_sources=[RandomDataSource(), MouseDataSource()]
     # )
-    print("background ---------------")
-    source = WaveDataSource(
-        ble_address=BLE_ADDRESS, secondary_sources=[RandomDataSource(), MouseDataSource()]
-    )
-    system = SignalSystem(source, derived=[s.SamplingRate()])
+    # source = WaveDataSource(
+    #     ble_address=BLE_ADDRESS, secondary_sources=[RandomDataSource(), MouseDataSource()]
+    # )
+    # system = SignalSystem(source, derived=[s.SamplingRate()])
+    global system
     with system:
         while True:
-            data = system.read(as_dataframe=True)
-            data_points = [dict(row) for _, row in data.iterrows()]
-            socketio.emit("data", data_points, broadcast=True)
+            data = system.read(as_dataframe=False)
+            data_points = [dict(zip(data, [list(j) for j in i])) for i in zip(*data.values())]
+            socketio.emit("data", data_points, broadcast=True, namespace='/data')
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
@@ -59,10 +58,6 @@ def index():
 def handle_connect():
     print("client connected")
 
-def main(host, port, debug):
-    data_thread = socketio.start_background_task(generate_data)
-    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="127.0.0.1")
@@ -70,5 +65,11 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", default=False)
     args = parser.parse_args()
 
+    source = WaveDataSource(
+        ble_address=BLE_ADDRESS, secondary_sources=[RandomDataSource(), MouseDataSource()]
+    )
+    global system
+    system = SignalSystem(source, derived=[s.SamplingRate()])
+
     socketio.start_background_task(generate_data)
-    socketio.run(app, host=args.host, port=args.port, debug=True)
+    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
