@@ -4,20 +4,23 @@
 	import Trace from '$lib/graphs/Trace.svelte';
 
 	const socket = io('ws://localhost:5000');
-	const trace_configs = [
-		// {
-		// 	data_key: 'mouse_pos',
-		// 	id: 'trace0',
-		// 	width: 200,
-		// 	height: 200
-		// },
-		{
 
+	const width = 720;
+	const height = 480;
+	const trace_configs = [
+		{
 			x_key: 'mouse_pos_x',
 			y_key: 'mouse_pos_y',
-			id: 'trace1',
-			width: 1920,
-			height: 1080
+			id: 'mouse_trace',
+			width,
+			height
+		},
+		{
+			x_key: 'mouse_pos_x',
+			y_key: 'random',
+			id: 'random_trace',
+			width,
+			height
 		}
 	];
 
@@ -31,3 +34,10 @@
 		<Trace {...config} />
 	{/each}
 </div>
+
+<style>
+	.plots {
+		display: flex;
+		flex-direction: row;
+	}
+</style>
