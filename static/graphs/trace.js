@@ -33,6 +33,15 @@ export function create_trace(data, divname, id, x, y, width, height) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    const clip_id = id + "clip"
+
+    g.append("defs")
+        .append("clipPath")
+              .attr("id", clip_id)
+        .append("rect")
+              .attr("width", width)
+              .attr("height", height);
+
     // Add x-axis.
     g.append("g")
         .attr("transform", "translate(0," + height + ")")
@@ -48,6 +57,7 @@ export function create_trace(data, divname, id, x, y, width, height) {
 
         
     var trace = g.append("g")
+        .attr("clip-path","url(#"+clip_id+")")
         .append("path")
         .datum(data)
         .attr("class","line")
