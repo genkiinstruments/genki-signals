@@ -155,7 +155,7 @@ export function create_cube(data, divname, id, width, height){
 
     return Object.assign(canvas, {
         // expects a single quaternion
-        update(data){
+        update(){
             let rotation = data[data.length-1]["current_pose"]
             quaternion_to_mat4(mo_matrix, rotation)
             gl.enable(gl.DEPTH_TEST);
