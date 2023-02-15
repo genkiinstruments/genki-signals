@@ -1,14 +1,22 @@
-const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-
-/*
+/**
 * @param {Array} data - The data to bind to the plot.
 * @param {string} divname - The name of the div to append the SVG element to.
 * @param {string} id - The id of the SVG element.
+* @param {string} x - The attribute name of the x axis 
+* @param {string} y - The attribute name of the y axis 
 * @param {number} width - The width of the SVG element.
 * @param {number} height - The height of the SVG element.
 * @returns The d3 object for the trace with an update function.
 */
-function create_trace(data, divname, id, width, height) {
+
+export function create_trace(data, divname, id, x, y, width, height) {
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    width -= margin.left + margin.right;
+    height -= margin.top + margin.bottom;
+    
+    if(typeof x === "string" || x instanceof String){x = [x,0]}
+    if(typeof y === "string" || y instanceof String){y = [y,0]}
+
     var xScale = d3.scaleLinear()
         .domain([0, 2560]) // Have a config for variables like domain and range?
         .range([0, width]);
@@ -34,19 +42,19 @@ function create_trace(data, divname, id, width, height) {
     g.append("g")
         .call(d3.axisLeft(yScale));
 
+    var line = d3.line()
+        .x(d => xScale(d[x[0]][x[1]]))
+        .y(d => yScale(d[y[0]][y[1]]));
+
         
     var trace = g.append("g")
         .append("path")
-        .datum(data) // Bind data to the line.
-        .attr("class", "line")
-    
-    var line = d3.line()
-        .x(d => xScale(d.mouse_pos[0]))
-        .y(d => yScale(d.mouse_pos[1]));
+        .datum(data)
+        .attr("class","line")
 
     return Object.assign(svg.node(), {
         update() {
-            trace = trace.attr("d", line);
+            trace.attr("d",line)
         }
     })
-};
+}
