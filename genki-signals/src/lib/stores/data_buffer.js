@@ -10,7 +10,7 @@ function create_buffer(max_size) {
     /**
      * @type {Function[]}
      */
-    const subscribers = []; // Assumes that all callbacks want a single argument i.e. the buffer.
+    const subscribers = []; // Assumes that all callbacks want a single argument i.e. newly added data.
 
     return {
         subscribe: (/** @type {Function} */ callback) => {
@@ -27,7 +27,8 @@ function create_buffer(max_size) {
             if (buffer.length >= max_size) {
                 buffer.splice(0, buffer.length - max_size);
             }
-            subscribers.forEach((callback) => callback(buffer));
+            const last = buffer[buffer.length-1];
+            subscribers.forEach((callback) => callback(value.length == 0 ? last : value));
             // return buffer;
         },
         view: () => buffer,

@@ -39,9 +39,9 @@ def generate_data():
     system = SignalSystem(source, derived=[s.SamplingRate()])
     with system:
         while True:
-            data = system.read(as_dataframe=True)
-            data_points = [dict(row) for _, row in data.iterrows()]
-            # data_points = [dict(zip(data, [list(j) for j in i])) for i in zip(*data.values())]
+            data = system.read(as_dataframe=False)
+            # data_points = [dict(row) for _, row in data.iterrows()]
+            data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
             socketio.emit("data", data_points, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
