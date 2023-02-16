@@ -23,7 +23,6 @@
 	let el;
 
     onMount(() => {
-        console.log('onMount');
         var trace = create_trace(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
         data_buffer.subscribe(
             id,
@@ -31,7 +30,6 @@
         );
     });
     onDestroy(() => {
-        console.log('onDestroy');
         data_buffer.unsubscribe(id);
     });
 </script>

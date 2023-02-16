@@ -20,6 +20,7 @@ from signal_processing.data_sources import (  # noqa: E402
     ManualTimerDataSource,
     MouseDataSource,
     RandomDataSource,
+    WaveDataSource
 )
 from signal_processing.system import SignalSystem  # noqa: E402
 
@@ -32,10 +33,13 @@ SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 
 
-def generate_data():
-    source = ManualTimerDataSource(
-        SAMPLING_RATE, secondary_sources=[RandomDataSource(), MouseDataSource()]
-    )
+def generate_data(ble_address=None):
+    ds = [RandomDataSource(), MouseDataSource()]
+    if ble_address is not None:
+        source = WaveDataSource(ble_address, secondary_sources=ds)
+    else:
+        source = ManualTimerDataSource(SAMPLING_RATE, secondary_sources=ds)
+        
     system = SignalSystem(source, derived=[s.SamplingRate()])
     with system:
         while True:
@@ -48,9 +52,11 @@ def generate_data():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--host", type=str, default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--ble-address", type=str, default=None)
     args = parser.parse_args()
 
-    socketio.start_background_task(generate_data)
-    socketio.run(app, host=args.host, port=args.port, debug=True)
+    socketio.start_background_task(generate_data, args.ble_address)
+    socketio.run(app, host=args.host, port=args.port, debug=args.debug)

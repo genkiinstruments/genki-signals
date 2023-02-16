@@ -124,9 +124,9 @@ class WaveDataSource(DataSource):
     def start(self):
         from genki_wave.threading_runner import WaveListener
 
-        from godot import GodotListener
 
         if self.godot:
+            from godot import GodotListener
             self.wave = GodotListener(callbacks=[self.process_data])
         else:
             self.wave = WaveListener(self.addr, callbacks=[self.process_data])
