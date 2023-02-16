@@ -28,8 +28,8 @@ app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 socketio = SocketIO(app, cors_allowed_origins="*") #, cors_allowed_origins=["http://localhost:5173/"]) # TODO: remove cors_allowed_origins
 
-SAMPLING_RATE = 1000
-GUI_UPDATE_RATE = 500
+SAMPLING_RATE = 100
+GUI_UPDATE_RATE = 50
 
 
 def generate_data():

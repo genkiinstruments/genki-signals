@@ -74,11 +74,5 @@ export function create_trace(
         .datum(data_buffer.view())
         .attr("class","line")
 
-    // Subscribe to the data buffer with the update method for the trace.
-    data_buffer.subscribe((/** @type {Array<Object>} */ buffer) => {
-        console.log(data_buffer.view())
-        trace = trace.attr("d", line);
-    });
-
-    return svg.node();
+    return Object.assign(svg.node(), { update: (data) => trace.attr("d", line) });
 }
