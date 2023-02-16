@@ -9,8 +9,6 @@ import * as d3 from 'd3';
 * @param {string} id - The id of the SVG element.
 * @param {SignalID} sig_x - The attribute name of the x axis 
 * @param {SignalID} sig_y - The attribute name of the y axis 
-* @param {RangeConfig} x_range - The range of the x axis
-* @param {RangeConfig} y_range - The range of the y axis
 * @param {DomainConfig} x_domain - The domain of the x axis
 * @param {DomainConfig} y_domain - The domain of the y axis
 * @param {number} svg_width - The width of the SVG element.
@@ -22,10 +20,8 @@ export function create_trace(
     id,
     sig_x,
     sig_y,
-    x_range={ min: 0, max: 1, auto: false },
-    y_range={ min: 0, max: 1, auto: false },
-    x_domain={ min: 0, max: 1 },
-    y_domain={ min: 0, max: 1 },
+    x_domain={ min: 0, max: 1, auto: false },
+    y_domain={ min: 0, max: 1, auto: false },
     svg_width=720,
     svg_height=480
 ) {
@@ -35,22 +31,33 @@ export function create_trace(
         .attr("height", svg_height)
         .append("g")
         .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
     
+    const plot_width = svg_width - padding.left - padding.right;
     const plot_height = svg_height - padding.top - padding.bottom;
 
     var xScale = d3.scaleLinear()
         .domain([x_domain.min, x_domain.max])
-        .range([x_range.min, x_range.max]);
+        .range([0, plot_width]);
 
     var yScale = d3.scaleLinear()
         .domain([y_domain.min, y_domain.max])
-        .range([y_range.min, y_range.max]);
+        .range([0, plot_height]);
 
     // TODO: Add automatic range scaling.
 
+    // add clip path
+    const clip_id = id + "clip"
+    g.append("defs")
+          .append("clipPath")
+                .attr("id", clip_id)
+          .append("rect")
+                .attr("width", plot_width)
+                .attr("height", plot_height);
+
     // Add x-axis.
     g.append("g")
-        .attr("transform", "translate(0," + plot_height + ")")
+        .attr("transform", "translate(0," + yScale(0) + ")")
         .call(d3.axisBottom(xScale));
 
     // Add y-axis.
@@ -58,17 +65,18 @@ export function create_trace(
         .call(d3.axisLeft(yScale));
 
     var line = d3.line()
-        .x(d => xScale(d[sig_x.key][sig_x.index]))
-        .y(d => yScale(d[sig_y.key][sig_y.index]));
+        .x(/** @param {Object.<String,number[]>} d */ d => xScale(d[sig_x.key][sig_x.index]))
+        .y(/** @param {Object.<String,number[]>} d */ d => yScale(d[sig_y.key][sig_y.index]));
 
         
-    var trace = g.append("g")
+    var trace = g.append("g").attr("clip-path","url(#"+clip_id+")")
         .append("path")
         .datum(data_buffer.view())
         .attr("class","line")
 
     // Subscribe to the data buffer with the update method for the trace.
     data_buffer.subscribe((/** @type {Array<Object>} */ buffer) => {
+        console.log(data_buffer.view())
         trace = trace.attr("d", line);
     });
 

@@ -9,10 +9,6 @@
     export let sig_x;
     /** @type {SignalID} */
     export let sig_y;
-    /** @type {RangeConfig}*/
-    export let x_range;
-    /** @type {RangeConfig}*/
-    export let y_range;
     /** @type {DomainConfig}*/
     export let x_domain;
     /** @type {DomainConfig}*/
@@ -26,7 +22,7 @@
 	let el;
 
     onMount(() => {
-        create_trace(el, id, sig_x, sig_y, x_range, y_range, x_domain, y_domain, svg_width, svg_height);
+        create_trace(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
     });
 
 

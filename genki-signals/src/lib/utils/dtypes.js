@@ -7,20 +7,12 @@
  */
 
 /**
- * A RangeConfig defines which range of values are plotted on the graph and whether the range should be automatically adjusted.
- * @typedef RangeConfig
- * @type {Object}
- * @property {number} min - The minimum value of the range.
- * @property {number} max - The maximum value of the range.
- * @property {boolean} auto - Whether the range should be automatically adjusted.
- */
-
-/**
  * s
  * @typedef DomainConfig
  * @type {Object}
  * @property {number} min - The minimum value of the domain.
  * @property {number} max - The maximum value of the domain.
+ * @property {boolean} auto - Whether the domain should be automatically adjusted.
  */ 
 
 
