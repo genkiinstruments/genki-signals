@@ -1,19 +1,13 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-	import { create_trace } from './trace.js';
+	import { create_cube } from './cube.js';
     import { data_buffer } from '$lib/stores/data_buffer.js';
     import '$lib/utils/dtypes.js'
 
     /** @type {string} */
 	export let id;
     /** @type {SignalID} */
-    export let sig_x;
-    /** @type {SignalID} */
-    export let sig_y;
-    /** @type {DomainConfig}*/
-    export let x_domain;
-    /** @type {DomainConfig}*/
-    export let y_domain;
+    export let sig_rot;
     /** @type {number} */
 	export let svg_width;
     /** @type {number} */
@@ -23,10 +17,10 @@
 	let el;
 
     onMount(() => {
-        var trace = create_trace(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
+        var cube = create_cube(el, id, sig_rot, svg_width, svg_height);
         data_buffer.subscribe(
             id,
-            (/** @type {Object[]} */ data) => { trace.update(data); }
+            (/** @type {Object[]} */ data) => { cube.update(data); }
         );
     });
     onDestroy(() => {
@@ -35,11 +29,11 @@
 </script>
 
 
-<div bind:this={el} class="trace"/>
+<div bind:this={el} class="line"/>
 
 
 <style>
-    .trace {
+    .line {
       fill: none;
       stroke: #000;
       stroke-width: 1.5px;

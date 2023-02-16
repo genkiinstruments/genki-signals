@@ -1,59 +1,78 @@
-import { margin } from '$lib/utils/constants.js';
+import { padding } from '$lib/utils/constants.js';
 import { data_buffer } from '$lib/stores/data_buffer.js';
+import '$lib/utils/dtypes.js';
 
 import * as d3 from 'd3';
 
 /**
 * @param {HTMLDivElement} el - The div to append the SVG element to.
-* @param {string} x_key - The key to access x from data.
-* @param {string} y_key - The key to access y from data.
 * @param {string} id - The id of the SVG element.
-* @param {number} width - The width of the SVG element.
-* @param {number} height - The height of the SVG element.
+* @param {SignalID} sig_x - The attribute name of the x axis 
+* @param {SignalID} sig_y - The attribute name of the y axis 
+* @param {DomainConfig} x_domain - The domain of the x axis
+* @param {DomainConfig} y_domain - The domain of the y axis
+* @param {number} svg_width - The width of the SVG element.
+* @param {number} svg_height - The height of the SVG element.
 * @returns The d3 object for the trace with an update function.
 */
-export function create_trace(el, x_key, y_key, id, width, height) {
+export function create_trace(
+    el,
+    id,
+    sig_x,
+    sig_y,
+    x_domain={ min: 0, max: 1, auto: false },
+    y_domain={ min: 0, max: 1, auto: false },
+    svg_width=720,
+    svg_height=480
+) {
+    var svg = d3.select(el).append("svg").attr("id", id)
+    var g = svg
+        .attr("width", svg_width)
+        .attr("height", svg_height)
+        .append("g")
+        .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
+    
+    const plot_width = svg_width - padding.left - padding.right;
+    const plot_height = svg_height - padding.top - padding.bottom;
+
     var xScale = d3.scaleLinear()
-        .domain([0, 2560]) // Have a config for variables like domain and range?
-        .range([0, width]);
+        .domain([x_domain.min, x_domain.max])
+        .range([0, plot_width]);
 
     var yScale = d3.scaleLinear()
-        .domain([0, 1440])
-        .range([0, height]);
+        .domain([y_domain.min, y_domain.max])
+        .range([0, plot_height]);
 
-    var svg = d3.select(el)
-        .append("svg")
-        .attr("id", id)
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+    // TODO: Add automatic range scaling.
 
-    var g = svg
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    // add clip path
+    const clip_id = id + "clip"
+    g.append("defs")
+          .append("clipPath")
+                .attr("id", clip_id)
+          .append("rect")
+                .attr("width", plot_width)
+                .attr("height", plot_height);
 
     // Add x-axis.
     g.append("g")
-        .attr("transform", "translate(0," + height + ")")
+        .attr("transform", "translate(0," + yScale(0) + ")")
         .call(d3.axisBottom(xScale));
 
     // Add y-axis.
     g.append("g")
         .call(d3.axisLeft(yScale));
 
-
-    var trace = g.append("g")
-        .append("path")
-        .datum(data_buffer.view()) // Bind trace to the data buffer.
-        .attr("class", "trace")
-
     var line = d3.line()
-        .x(d => xScale(d[x_key]))
-        .y(d => yScale(d[y_key]));
+        .x(/** @param {Object.<String,number[]>} d */ d => xScale(d[sig_x.key][sig_x.index]))
+        .y(/** @param {Object.<String,number[]>} d */ d => yScale(d[sig_y.key][sig_y.index]));
 
-    // Subscribe to the data buffer with the update method for the trace.
-    data_buffer.subscribe((/** @type {Array<Object>} */ buffer) => {
-        trace = trace.attr("d", line);
-    });
+        
+    var trace = g.append("g").attr("clip-path","url(#"+clip_id+")")
+        .append("path")
+        .datum(data_buffer.view())
+        .attr("class","line")
 
-    return svg.node();
-};
+    return Object.assign(svg.node(), { update: (data) => trace.attr("d", line) });
+}

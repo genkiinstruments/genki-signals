@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-	import { create_trace } from './trace.js';
+	import { create_line } from './line.js';
     import { data_buffer } from '$lib/stores/data_buffer.js';
     import '$lib/utils/dtypes.js'
 
@@ -8,7 +8,7 @@
 	export let id;
     /** @type {SignalID} */
     export let sig_x;
-    /** @type {SignalID} */
+    /** @type {SignalID[]} */
     export let sig_y;
     /** @type {DomainConfig}*/
     export let x_domain;
@@ -23,10 +23,10 @@
 	let el;
 
     onMount(() => {
-        var trace = create_trace(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
+        var line = create_line(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
         data_buffer.subscribe(
             id,
-            (/** @type {Object[]} */ data) => { trace.update(data); }
+            (/** @type {Object[]} */ data) => { line.update(data); }
         );
     });
     onDestroy(() => {
@@ -35,11 +35,11 @@
 </script>
 
 
-<div bind:this={el} class="trace"/>
+<div bind:this={el} class="line"/>
 
 
 <style>
-    .trace {
+    .line {
       fill: none;
       stroke: #000;
       stroke-width: 1.5px;
