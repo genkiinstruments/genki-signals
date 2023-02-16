@@ -17,7 +17,7 @@
 	 */
 	const trace_configs = [];
 
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 1; i++) {
 		trace_configs.push({
 			id: `mouse_trace_${i}`,
 			sig_x: /** @type {SignalID} */ { key: 'mouse_pos', index: 0 },
@@ -96,7 +96,7 @@
 </script>
 
 <div class="plots">
-	<Text/>
+	<Text id='text_graph'/>
 	{#each cube_configs as config}
 		<Cube {...config} />
 	{/each}
