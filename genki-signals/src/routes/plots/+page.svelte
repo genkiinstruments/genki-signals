@@ -80,6 +80,20 @@
 		}
 	];
 
+	/**
+	 * @type {Object}
+	*/
+	const text_configs = [
+		{
+			id: 'text_graph',
+			sigs: /** @type {SignalID[]} */ [
+				{ key: 'mouse_pos', index: 0 },
+				{ key: 'mouse_pos', index: 1 }
+			],
+			round_to: 1,
+		}
+	];
+
 	const socket = io('http://localhost:5000');
 
 	onMount(() => {
@@ -96,16 +110,18 @@
 </script>
 
 <div class="plots">
-	<Text id='text_graph'/>
-	{#each cube_configs as config}
-		<Cube {...config} />
+	{#each text_configs as config}
+		<Text {...config} />
 	{/each}
+	<!-- {#each cube_configs as config}
+		<Cube {...config} />
+	{/each} -->
 	{#each trace_configs as config}
 		<Trace {...config} />
 	{/each}
-	{#each line_configs as config}
+	<!-- {#each line_configs as config}
 		<Line {...config} />
-	{/each}
+	{/each} -->
 </div>
 
 <style>

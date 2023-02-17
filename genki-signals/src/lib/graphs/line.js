@@ -98,7 +98,7 @@ export function create_line(
                   }
 
                   xAxis.attr('transform', 'translate(0,' + yScale(0) + ')')
-                        .call(d3.axisBottom(xScale).tickFormat("").ticks(10));
+                        .call(d3.axisBottom(xScale).tickFormat("").tickSize(0));
 
                   for (let path of paths) { path.update() }
             }

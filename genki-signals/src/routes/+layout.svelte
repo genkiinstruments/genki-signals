@@ -1,6 +1,6 @@
 <nav>
     <a href="/">Home</a>
-    <a href="/trace">Trace</a>
+    <a href="/plots">Plots</a>
     <a href="/hist">Histogram</a>
   </nav>
   

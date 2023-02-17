@@ -42,7 +42,7 @@ function create_buffer(max_size) {
 
             return {
                 min: buffer[0]['timestamp_us'],
-                // @ts-ignore - we can assume that timestamp_us is in the last element of the buffer.
+                // @ts-ignore - we can assume that timestamp_us is also in the last element of the buffer.
                 max: buffer[buffer.length-1]['timestamp_us']
             }
         }
