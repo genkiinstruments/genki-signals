@@ -30,9 +30,6 @@ function create_buffer(max_size) {
             }
             const data = value.length == 0 ? [buffer[buffer.length-1]] : value;
             Object.values(subscribers).forEach((callback) => callback(data));
-            if (buffer.length != max_size) {
-                console.log(`Buffer size exceeds max size: ${buffer.length} > ${max_size}`);
-            }
         },
         view: () => buffer,
         clear: () => { buffer.splice(0, buffer.length) },
