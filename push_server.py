@@ -32,6 +32,15 @@ socketio = SocketIO(app, cors_allowed_origins="*") #, cors_allowed_origins=["htt
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 
+KEYS = []
+
+
+@socketio.on("get_keys")
+def get_keys():
+    while KEYS == []:
+        socketio.sleep(0.1)
+    socketio.emit("keys", KEYS)
+
 
 def generate_data(ble_address=None):
     ds = [RandomDataSource(), MouseDataSource()]
@@ -44,6 +53,7 @@ def generate_data(ble_address=None):
     with system:
         while True:
             data = system.read(as_dataframe=False)
+            KEYS = data.keys() or KEYS
             # data_points = [dict(row) for _, row in data.iterrows()]
             data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
             socketio.emit("data", data_points, broadcast=True)

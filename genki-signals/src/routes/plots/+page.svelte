@@ -6,6 +6,7 @@
 	import Line from '$lib/graphs/Line.svelte';
 	import Cube from '$lib/graphs/Cube.svelte';
 	import Text from '$lib/graphs/Text.svelte';
+	import DataFrame from '$lib/graphs/DataFrame.svelte';
 	import { max } from 'd3';
 
 	const screen_width = 2560;
@@ -100,31 +101,51 @@
 		socket.on('data', (/** @type {Object[]} */ response) => {
 			data_buffer.push(response);
 		});
+
+		socket.emit('get_keys');
+
+		socket.on('keys', (/** @type {String[]} */ keys) => {
+			console.log(keys);
+		});
 	});
 	onDestroy(() => {
 		// Very important to disconnect the socket, otherwise multiple different instances of the socket
 		// xw(on open/close) will be created which will the buffer with duplicates and lags the system.
 		socket.off('data');
+		socket.off('keys');
 		data_buffer.clear();
 	});
 </script>
 
-<div class="plots">
-	{#each text_configs as config}
-		<Text {...config} />
-	{/each}
-	<!-- {#each cube_configs as config}
-		<Cube {...config} />
-	{/each} -->
-	{#each trace_configs as config}
-		<Trace {...config} />
-	{/each}
-	<!-- {#each line_configs as config}
-		<Line {...config} />
-	{/each} -->
-</div>
+<body>
+	<div class="config">
+		<p> Select which signals to plot e.g. </p>
+	</div>
+	<div class="plots">
+		<DataFrame />
+		{#each text_configs as config}
+			<Text {...config} />
+		{/each}
+		<!-- {#each cube_configs as config}
+			<Cube {...config} />
+		{/each} -->
+		{#each trace_configs as config}
+			<Trace {...config} />
+		{/each}
+		<!-- {#each line_configs as config}
+			<Line {...config} />
+		{/each} -->
+	</div>
+</body>
 
 <style>
+	body {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		align-items: center;
+	}
+
 	.plots {
 		display: flex;
 		flex-direction: row;
