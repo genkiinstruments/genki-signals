@@ -26,7 +26,7 @@
         var trace = create_trace(el, id, sig_x, sig_y, x_domain, y_domain, svg_width, svg_height);
         data_buffer.subscribe(
             id,
-            (/** @type {Object[]} */ data) => { trace.update(data); }
+            (/** @type {Object[]} */ data) => { trace.update(data);}
         );
     });
     onDestroy(() => {

@@ -6,6 +6,7 @@
 	import Line from '$lib/graphs/Line.svelte';
 	import Cube from '$lib/graphs/Cube.svelte';
 	import Text from '$lib/graphs/Text.svelte';
+	import SciChart from '$lib/graphs/SciChart.svelte';
 	import { max } from 'd3';
 
 	const screen_width = 2560;
@@ -110,6 +111,7 @@
 </script>
 
 <div class="plots">
+	<SciChart />
 	{#each text_configs as config}
 		<Text {...config} />
 	{/each}
