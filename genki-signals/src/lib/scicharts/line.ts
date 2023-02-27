@@ -1,37 +1,55 @@
-import { SubChart } from './subchart';
-import { FastLineRenderableSeries } from 'scichart/Charting/Visuals/RenderableSeries/FastLineRenderableSeries';
+import { EAutoRange, FastLineRenderableSeries, NumberRange, NumericAxis, SciChartSubSurface, SciChartSurface, XyDataSeries } from 'scichart';
+import { BasePlot } from './baseplot';
+import { default_line_plot_options } from './options';
 
-import { defaultAxisOptions } from '../utils/constants';
-import { NumericAxis } from 'scichart';
+import type { TSciChart, NumberArray } from 'scichart';
+import type { LinePlotOptions } from './options';
 
-/**
- * Line chart that extends {@inheritdoc SubChart}
- */
-export class Line extends SubChart {
-	protected lines: FastLineRenderableSeries[] = [];
+export class Line extends BasePlot {
+    renderable_series: FastLineRenderableSeries;
+    x_axis: NumericAxis;
+    y_axis: NumericAxis;
+    data_series: XyDataSeries;
+	options: LinePlotOptions;
 
-	public create(n_lines: number): void {
-		this.delete_data_series();
-		this.create_data_series(n_lines);
+    constructor(wasm_context: TSciChart, surface: SciChartSubSurface | SciChartSurface, plot_options: LinePlotOptions = default_line_plot_options) {
+        super(wasm_context, surface);
 
-		for (let i = 0; i < n_lines; i++) {
-			const line = new FastLineRenderableSeries(this.wasm_context);
-			const xAxis = new NumericAxis(this.wasm_context, defaultAxisOptions);
-			const yAxis = new NumericAxis(this.wasm_context, defaultAxisOptions);
-			this.x_axes.push(xAxis);
-			this.y_axes.push(yAxis);
-			this.sub_chart_surface.xAxes.add(xAxis);
-			this.sub_chart_surface.yAxes.add(yAxis);
-			line.dataSeries = this.data_series_list[i];
-			this.lines.push(line);
-			this.sub_chart_surface.renderableSeries.add(line);
+        this.renderable_series = new FastLineRenderableSeries(this.wasm_context);
+        this.x_axis = new NumericAxis(this.wasm_context);
+        this.y_axis = new NumericAxis(this.wasm_context);
+        this.data_series = new XyDataSeries(this.wasm_context);
+		this.options = plot_options;
+
+        this.surface.xAxes.add(this.x_axis);
+        this.surface.yAxes.add(this.y_axis);
+        this.renderable_series.dataSeries = this.data_series;
+    }
+
+    private update_axis_domains(): void {
+		if (this.options.auto_range) {
+			this.y_axis.autoRange = EAutoRange.Always;
+		} else {
+			this.y_axis.autoRange = EAutoRange.Never;
+			this.y_axis.visibleRange = new NumberRange(this.options.y_domain_min, this.options.y_domain_max);
 		}
 
-		for (let i = 0; i < n_lines; i++) {
-			this.update_axes_alignment(this.x_axes[i], this.y_axes[i]);
-			this.update_axes_flipping(this.x_axes[i], this.y_axes[i]);
-			this.update_axes_domains(this.x_axes[i], this.y_axes[i]);
-		}
-		this.update_position();
+		const x_max = this._get_native_x(-1);
+		const x_min = this._get_native_x(this.options.n_visible_points);
+
+		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
 	}
+
+	public set_axis_domains(auto_range: boolean, y_max: number, y_min: number, n_visible_points: number): void {
+		this.options.auto_range = auto_range;
+		this.options.y_domain_max = y_max;
+		this.options.y_domain_min = y_min;
+		this.options.n_visible_points = n_visible_points;
+		this.update_axis_domains();
+	}
+    
+    public update(x: NumberArray, y: NumberArray): void {
+		this.data_series.appendRange(x, y);
+		this.update_axis_domains();
+    }
 }

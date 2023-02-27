@@ -7,7 +7,7 @@
 	import type { TSciChart } from 'scichart';
 
 	import { getSubChartRects } from '../utils/subchart_helpers';
-	import { defaultSubChartOptions } from '../scicharts/subchart';
+	import { default_sub_chart_options } from '../scicharts/subchart';
 	import { SCICHART_KEY } from '../utils/constants';
 
 	const socket = io('http://localhost:5000');
@@ -32,7 +32,7 @@
 			const num_graphs = 4;
 			const num_columns = 2;
 			const rects = getSubChartRects(num_graphs, 1/(num_graphs/num_columns), 1/num_columns, num_columns);
-			const default_options = defaultSubChartOptions;
+			const default_options = default_sub_chart_options;
 			default_options.x_domain_max = 2560;
 			default_options.x_domain_min = 0;
 			default_options.y_domain_max = 1440;
@@ -41,6 +41,7 @@
 			default_options.x_axis_flipped = false;
 			default_options.x_axis_align = 'bottom';
 			default_options.n_visible_points = 100;
+			default_options.data_is_sorted = true;
 			for (let i = 0; i < num_graphs; i++) {
 				console.log(rects[i]);
 				subplots.push(new Line(`line_{i}`, main_surface, wasm_context, rects[i], default_options));
