@@ -144,3 +144,9 @@ vite.config.ts.timestamp-*
 # Scichart stuff
 *.data
 *.wasm
+
+
+# Typescript stuff
+*.tsbuildinfo
+*.tsbuildinfo.*
+*.js.map

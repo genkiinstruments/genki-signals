@@ -45,8 +45,8 @@ def generate_data(ble_address=None):
         while True:
             data = system.read(as_dataframe=False)
             # data_points = [dict(row) for _, row in data.iterrows()]
-            data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
-            socketio.emit("data", data_points, broadcast=True)
+            # data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
+            socketio.emit("data", [data["mouse_pos"][:, 0].squeeze().tolist(), data["mouse_pos"][:, 1].squeeze().tolist()], broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
