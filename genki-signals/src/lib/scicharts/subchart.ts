@@ -40,7 +40,7 @@ export const defaultSubChartOptions: DefaultSubChartOptions = {
 	x_axis_visible: true,
 	y_axis_visible: true,
 	data_contains_nan: false,
-	data_is_sorted: true
+	data_is_sorted: false
 };
 
 /**
@@ -114,8 +114,8 @@ export abstract class SubChart {
 	}
 
 	protected update_axes_domains(x_axis: NumericAxis, y_axis: NumericAxis): void {
-		const x_max = this.options.x_domain_max === null ?  this._get_native_x(-1) : this.options.x_domain_max;
-		const x_min = this.options.x_domain_min === null ?  this._get_native_x(-this.options.n_visible_points) : this.options.x_domain_min;
+		const x_max = this.options.x_domain_max === null ? this._get_native_x(-1) : this.options.x_domain_max;
+		const x_min = this.options.x_domain_min === null ? this._get_native_x(-this.options.n_visible_points) : this.options.x_domain_min;
 
 		x_axis.visibleRange = new NumberRange(x_min, x_max);
 
@@ -172,11 +172,11 @@ export abstract class SubChart {
 		this.data_series_list.forEach((series, index) => {
 			series.appendRange(x_data, y_data_list[index]);
 
-			// if (this.options.x_domain_max !== null && this.options.x_domain_min !== null) {
-			//     if (series.count() > this.options.n_visible_points) {
-			//         series.removeRange(0, series.count() - this.options.n_visible_points);
-			//     }
-			// }
+			if (this.options.x_domain_max !== null && this.options.x_domain_min !== null) {
+			    if (series.count() > this.options.n_visible_points) {
+			        series.removeRange(0, series.count() - this.options.n_visible_points);
+			    }
+			}
 		});
 	}
 
