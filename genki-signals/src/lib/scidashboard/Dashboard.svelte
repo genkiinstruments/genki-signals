@@ -8,6 +8,7 @@
 
 	import { getSubChartRects } from '../utils/subchart_helpers';
 	import { defaultSubChartOptions } from '../scicharts/subchart';
+	import { SCICHART_KEY } from '../utils/constants';
 
 	const socket = io('http://localhost:5000');
 
@@ -19,6 +20,7 @@
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	let subplots: Line[] = [];
 	onMount(() => {
+		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
 		const sci_chart_promise = SciChartSurface.createSingle(el);
 		sci_chart_promise.catch((err) => {
 			console.error(err);
@@ -27,7 +29,7 @@
 			main_surface = resolve.sciChartSurface;
 			wasm_context = resolve.wasmContext;
 
-			const rects = getSubChartRects(4, 0.2, 0.2, 2);
+			const rects = getSubChartRects(4, 0.5, 0.5, 2);
 			const default_options = defaultSubChartOptions;
 			default_options.x_domain_max = 2560;
 			default_options.x_domain_min = 0;

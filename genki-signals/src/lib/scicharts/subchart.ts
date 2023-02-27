@@ -7,7 +7,7 @@ import {
 	SciChartSubSurface
 } from 'scichart';
 import { XyDataSeries } from 'scichart/Charting/Model/XyDataSeries.js';
-import type { TSciChart, SciChartSurface } from 'scichart';
+import type { TSciChart, SciChartSurface, NumberArray } from 'scichart';
 
 import { createSubSurfaceOptions } from '../utils/subchart_helpers';
 
@@ -114,13 +114,8 @@ export abstract class SubChart {
 	}
 
 	protected update_axes_domains(x_axis: NumericAxis, y_axis: NumericAxis): void {
-		let x_max, x_min;
-		if (this.options.x_domain_max === null) {
-			x_max = this._get_native_x(-1);
-		}
-		if (this.options.x_domain_min === null) {
-			x_min = this._get_native_x(-this.options.n_visible_points);
-		}
+		const x_max = this.options.x_domain_max === null ?  this._get_native_x(-1) : this.options.x_domain_max;
+		const x_min = this.options.x_domain_min === null ?  this._get_native_x(-this.options.n_visible_points) : this.options.x_domain_min;
 
 		x_axis.visibleRange = new NumberRange(x_min, x_max);
 
@@ -170,7 +165,7 @@ export abstract class SubChart {
 	/**
 	 * Adds data to all the dataSeries in this subplot and updates the axes.
 	 */
-	protected update_data_series(x_data: Array<number>, y_data_list: Array<number>[]): void {
+	protected update_data_series(x_data: NumberArray, y_data_list: NumberArray[]): void {
 		if (y_data_list.length !== this.data_series_list.length) {
 			throw new Error('The number of y_data_list arrays must match the number of dataSeries.');
 		}
