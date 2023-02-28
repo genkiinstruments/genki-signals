@@ -139,3 +139,14 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# Scichart stuff
+*.data
+*.wasm
+
+
+# Typescript stuff
+*.tsbuildinfo
+*.tsbuildinfo.*
+*.js.map
