@@ -1,3 +1,6 @@
+import { BasePlot, default_plot_options } from './baseplot';
+import type { PlotOptions } from './baseplot';
+
 import {
 	EAutoRange,
 	FastLineRenderableSeries,
@@ -9,37 +12,41 @@ import {
 } from 'scichart';
 import type { TSciChart, NumberArray } from 'scichart';
 
-import { BasePlot, default_plot_options } from './baseplot';
-import type { PlotOptions } from './baseplot';
-
-export interface LinePlotOptions extends PlotOptions {
-	/** If auto range is true, then y_domain_max and y_domain_min are not used */
-	auto_range: boolean;
+export interface TracePlotOptions extends PlotOptions {
+	/** If auto_range_x is true, then x_domain_max and x_domain_min are not used */
+	auto_range_x: boolean;
+	/** If auto_range_y is true, then y_domain_max and y_domain_min are not used */
+	auto_range_y: boolean;
+	x_domain_max: number;
+	x_domain_min: number;
 	y_domain_max: number;
 	y_domain_min: number;
-	n_visible_points: number;
-	type: 'line'; // TODO: Hack, overrides the no_type default as 'immutable' "line"
+	buffer_size: number;
+	type: 'trace'; //TODO: This is a hack to get around the fact that I can't use instanceof to check if a class is a subclass of another class. I need to find a better way to do this.
 }
-export const default_line_plot_options: LinePlotOptions = {
+export const default_trace_plot_options: TracePlotOptions = {
 	...default_plot_options,
-	auto_range: false,
-	y_domain_max: 1,
+	auto_range_x: false,
+	auto_range_y: false,
+	x_domain_max: 2560,
+	x_domain_min: 0,
+	y_domain_max: 1440,
 	y_domain_min: 0,
-	n_visible_points: 100,
-	type: 'line'
+	buffer_size: 1000,
+	type: 'trace'
 };
 
-export class Line extends BasePlot {
+export class Trace extends BasePlot {
 	renderable_series: FastLineRenderableSeries;
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
 	data_series: XyDataSeries;
-	options: LinePlotOptions;
+	options: TracePlotOptions;
 
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: LinePlotOptions = default_line_plot_options
+		plot_options: TracePlotOptions = default_trace_plot_options
 	) {
 		super(wasm_context, surface);
 
@@ -49,14 +56,9 @@ export class Line extends BasePlot {
 		this.data_series = new XyDataSeries(this.wasm_context);
 		this.options = plot_options;
 
-		this.data_series.containsNaN = this.options.data_contains_nan;
-		this.data_series.isSorted = this.options.data_is_sorted;
-
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
 		this.renderable_series.dataSeries = this.data_series;
-
-		this.surface.renderableSeries.add(this.renderable_series);
 	}
 
 	private update_axis_domains(): void {

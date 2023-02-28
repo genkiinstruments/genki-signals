@@ -42,7 +42,6 @@ const _subChartPositioningCoordinateMode = ECoordinateMode.Relative;
 const _subChartPadding = Thickness.fromNumber(3);
 
 export function createSubSurfaceOptions(id: string, position: Rect): I2DSubSurfaceOptions {
-	console.log('createSubSurfaceOptions', id, position);
 	return {
 		id,
 		position,
