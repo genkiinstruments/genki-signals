@@ -57,6 +57,10 @@ export class Line extends BasePlot {
 		this.renderable_series.dataSeries = this.data_series;
 
 		this.surface.renderableSeries.add(this.renderable_series);
+
+		this.update_axes_alignment();
+        this.update_axes_flipping();
+        this.update_axes_visibility();
 	}
 
 	private update_axis_domains(): void {

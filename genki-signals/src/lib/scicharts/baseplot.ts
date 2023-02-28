@@ -92,6 +92,11 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.y_axis.flippedCoordinates = this.options.y_axis_flipped;
 	}
 
+    protected update_axes_visibility(): void {
+        this.x_axis.isVisible = this.options.x_axis_visible;
+        this.y_axis.isVisible = this.options.y_axis_visible;
+    }
+
 	// TODO: abstract set_options instead?
 	public set_axis_alignment(x_align: 'top' | 'bottom', y_align: 'left' | 'right'): void {
 		this.options.x_axis_align = x_align;

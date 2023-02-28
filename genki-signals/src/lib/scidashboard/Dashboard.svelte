@@ -8,6 +8,7 @@
 	import { SubChart } from '../scicharts/subchart';
 	import { Line, default_line_plot_options } from '../scicharts/line';
 	import { SCICHART_KEY } from '../utils/constants';
+	import { line } from 'd3';
 
 	const socket = io('http://localhost:5000');
 
@@ -36,20 +37,26 @@
 				1 / num_columns,
 				num_columns
 			);
-			const line1_options = default_line_plot_options;
-			line1_options.auto_range = false;
-			line1_options.y_domain_max = 2;
-			line1_options.y_domain_min = -2;
-			line1_options.data_is_sorted = true;
-			line1_options.data_contains_nan = false;
-			line1_options.n_visible_points = 100;
+			const line_options = default_line_plot_options;
+			line_options.auto_range = true;
+			line_options.x_axis_flipped = true;
+			line_options.x_axis_visible = false;
+			line_options.data_is_sorted = true;
+			line_options.data_contains_nan = false;
+			line_options.n_visible_points = 100;
 
-			const subchart = new SubChart('bla', main_surface, wasm_context, rects[0], [line1_options]);
+			const subcharts = Array(num_graphs)
+				.fill(0)
+				.map((_, i) => new SubChart('bla', main_surface, wasm_context, rects[i], [line_options])
+			);
+
 
 			socket.on('data', (response) => {
 				const x = response[0];
 				const y = response[1];
-				subchart.update(x, [y]);
+				subcharts.forEach((subchart) => {
+					subchart.update(x, [y]);
+				});
 			});
 		});
 	});
