@@ -6,7 +6,7 @@ import {
 	SciChartSubSurface,
 	SciChartSurface,
 	XyDataSeries,
-	type TSciChart,
+	type TSciChart
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
@@ -27,8 +27,8 @@ export function get_default_line_plot_options(): LinePlotOptions {
 		y_domain_max: 1,
 		y_domain_min: 0,
 		n_visible_points: 100,
-		type: 'line', // overrides default_plot_options.type
-	};	
+		type: 'line' // overrides default_plot_options.type
+	};
 }
 
 export class Line extends BasePlot {
@@ -42,10 +42,10 @@ export class Line extends BasePlot {
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: LinePlotOptions = get_default_line_plot_options(),
+		plot_options: LinePlotOptions = get_default_line_plot_options()
 	) {
 		super(wasm_context, surface);
-		
+
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
@@ -55,8 +55,8 @@ export class Line extends BasePlot {
 		this.options.sig_y.forEach(() => this.append_line()); // one to one mapping of data series to renderable series
 
 		this.update_axes_alignment();
-        this.update_axes_flipping();
-        this.update_axes_visibility();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
 	}
 
 	private append_line(): void {

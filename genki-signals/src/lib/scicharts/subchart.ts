@@ -30,7 +30,7 @@ export class SubChart implements Updatable, Deletable {
 		parent_surface: SciChartSurface,
 		wasm_context: TSciChart,
 		rect: Rect,
-		options: PlotOptions,
+		options: PlotOptions
 	) {
 		this.id = id;
 		this.wasm_context = wasm_context;
@@ -55,7 +55,6 @@ export class SubChart implements Updatable, Deletable {
 				throw new Error(`Unknown plot type: ${plot_options.type}`);
 		}
 	}
-
 
 	public set_position(rect: Rect): void {
 		this.rect = rect;

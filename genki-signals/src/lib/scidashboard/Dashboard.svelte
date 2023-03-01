@@ -51,9 +51,7 @@
 
 			const subcharts = Array(num_graphs)
 				.fill(0)
-				.map((_, i) => new SubChart('bla', main_surface, wasm_context, rects[i], line_options)
-			);
-
+				.map((_, i) => new SubChart('bla', main_surface, wasm_context, rects[i], line_options));
 
 			socket.on('data', (response) => {
 				subcharts.forEach((subchart) => {

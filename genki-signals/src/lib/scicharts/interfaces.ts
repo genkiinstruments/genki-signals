@@ -6,7 +6,7 @@ export interface Updatable {
 	 * @returns void
 	 */
 	update(data: ArrayDict): void;
-};
+}
 
 export interface Deletable {
 	/**
@@ -14,4 +14,4 @@ export interface Deletable {
 	 * @returns void
 	 */
 	delete(): void;
-};
+}

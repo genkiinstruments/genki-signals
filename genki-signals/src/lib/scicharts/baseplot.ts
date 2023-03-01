@@ -1,11 +1,18 @@
 import { EAxisAlignment, type NumberArray } from 'scichart';
-import type { TSciChart, AxisBase2D, BaseRenderableSeries, SciChartSubSurface, SciChartSurface, BaseDataSeries } from 'scichart';
+import type {
+	TSciChart,
+	AxisBase2D,
+	BaseRenderableSeries,
+	SciChartSubSurface,
+	SciChartSurface,
+	BaseDataSeries
+} from 'scichart';
 
 import type { Deletable, Updatable } from './interfaces';
-import type {  SignalConfig, ArrayDict } from './types';
+import type { SignalConfig, ArrayDict } from './types';
 
 export interface PlotOptions {
-    type: string,
+	type: string;
 	x_axis_align: 'top' | 'bottom';
 	y_axis_align: 'left' | 'right';
 	x_axis_flipped: boolean;
@@ -14,37 +21,36 @@ export interface PlotOptions {
 	y_axis_visible: boolean;
 	data_contains_nan: boolean;
 	data_is_sorted: boolean;
-    sig_x: SignalConfig;
-    sig_y: SignalConfig[];  // This defines the signals that are plotted
+	sig_x: SignalConfig;
+	sig_y: SignalConfig[]; // This defines the signals that are plotted
 }
-export function get_default_plot_options(): PlotOptions { // Function so that a copy is returned
-    return {
-        type: 'no_type',
-        x_axis_align: 'bottom',
-        y_axis_align: 'left',
-        x_axis_flipped: false,
-        y_axis_flipped: false,
-        x_axis_visible: true,
-        y_axis_visible: true,
-        data_contains_nan: false,
-        data_is_sorted: false,
-        sig_x: { sig_name: 'timestamp_us', sig_idx: 0 },
-        sig_y: [],
-    };
-} 
-
+export function get_default_plot_options(): PlotOptions {
+	// Function so that a copy is returned
+	return {
+		type: 'no_type',
+		x_axis_align: 'bottom',
+		y_axis_align: 'left',
+		x_axis_flipped: false,
+		y_axis_flipped: false,
+		x_axis_visible: true,
+		y_axis_visible: true,
+		data_contains_nan: false,
+		data_is_sorted: false,
+		sig_x: { sig_name: 'timestamp_us', sig_idx: 0 },
+		sig_y: []
+	};
+}
 
 export abstract class BasePlot implements Updatable, Deletable {
 	protected wasm_context: TSciChart;
 	protected surface: SciChartSubSurface | SciChartSurface;
-	
-    protected abstract options: PlotOptions;
+
+	protected abstract options: PlotOptions;
 
 	protected abstract x_axis: AxisBase2D;
 	protected abstract y_axis: AxisBase2D;
 	protected abstract renderable_series: BaseRenderableSeries[];
 	protected abstract data_series: BaseDataSeries[];
-
 
 	constructor(wasm_context: TSciChart, surface: SciChartSubSurface | SciChartSurface) {
 		this.wasm_context = wasm_context;
@@ -56,8 +62,8 @@ export abstract class BasePlot implements Updatable, Deletable {
 	 * @returns The x-value at index i.
 	 */
 	protected _get_native_x(i: number): number {
-        const data_series = this.data_series[0]; // All series have the same x-values
-        const count = data_series.count();
+		const data_series = this.data_series[0]; // All series have the same x-values
+		const count = data_series.count();
 		const x_values = data_series.getNativeXValues();
 
 		if (i < 0) {
@@ -94,10 +100,10 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.y_axis.flippedCoordinates = this.options.y_axis_flipped;
 	}
 
-    protected update_axes_visibility(): void {
-        this.x_axis.isVisible = this.options.x_axis_visible;
-        this.y_axis.isVisible = this.options.y_axis_visible;
-    }
+	protected update_axes_visibility(): void {
+		this.x_axis.isVisible = this.options.x_axis_visible;
+		this.y_axis.isVisible = this.options.y_axis_visible;
+	}
 
 	// TODO: abstract set_options instead?
 	public set_axis_alignment(x_align: 'top' | 'bottom', y_align: 'left' | 'right'): void {
@@ -112,13 +118,13 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.update_axes_flipping();
 	}
 
-    /**
-     * Access the data with the given signal config and throws errors.
-     * @param data - The data to access
-     * @param sig - The signal config to access
-     * @returns the data at signal_config.name and signal_config.idx
-     */
-    protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
+	/**
+	 * Access the data with the given signal config and throws errors.
+	 * @param data - The data to access
+	 * @param sig - The signal config to access
+	 * @returns the data at signal_config.name and signal_config.idx
+	 */
+	protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
 		const sig_name = sig.sig_name;
 		const sig_idx = sig.sig_idx;
 		if (!(sig_name in data)) throw new Error(`sig_name ${sig_name} not in data`);
@@ -134,9 +140,9 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.surface.yAxes.remove(this.y_axis);
 		this.x_axis.delete();
 		this.y_axis.delete();
-        this.surface.delete();
+		this.surface.delete();
 
-        this.renderable_series.forEach((rs) => rs.delete());
+		this.renderable_series.forEach((rs) => rs.delete());
 		this.data_series.forEach((ds) => ds.delete());
 	}
 
