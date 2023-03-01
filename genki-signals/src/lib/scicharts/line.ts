@@ -10,6 +10,7 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
+import { compare_signals } from './types';
 import type { ArrayDict, SignalConfig } from './types';
 
 export interface LinePlotOptions extends PlotOptions {
@@ -23,11 +24,12 @@ export interface LinePlotOptions extends PlotOptions {
 export function get_default_line_plot_options(): LinePlotOptions {
 	return {
 		...get_default_plot_options(),
+		type: 'line', // overrides default_plot_options.type
 		auto_range: false,
 		y_domain_max: 1,
 		y_domain_min: 0,
 		n_visible_points: 100,
-		type: 'line' // overrides default_plot_options.type
+		
 	};
 }
 
@@ -52,28 +54,16 @@ export class Line extends BasePlot {
 		this.surface.yAxes.add(this.y_axis);
 		this.options = plot_options;
 
-		this.options.sig_y.forEach(() => this.append_line()); // one to one mapping of data series to renderable series
+		if (this.options.sig_x.length > 1) {
+			throw new Error('Line plots only support one x signal');
+		}
+
+		// sig_y implicitly defines the number of plots
+		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
 
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
-	}
-
-	private append_line(): void {
-		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
-		const data_series = new XyDataSeries(this.wasm_context);
-		data_series.containsNaN = this.options.data_contains_nan;
-		data_series.isSorted = this.options.data_is_sorted;
-		renderable_series.dataSeries = data_series;
-
-		this.surface.renderableSeries.add(renderable_series);
-		this.renderable_series.push(renderable_series);
-		this.data_series.push(data_series);
-	}
-
-	public add_line(sig_y: SignalConfig) {
-		this.options.sig_y.push(sig_y);
-		this.append_line();
 	}
 
 	private update_axis_domains(): void {
@@ -87,8 +77,8 @@ export class Line extends BasePlot {
 			);
 		}
 
-		const x_max = this._get_native_x(-1);
-		const x_min = this._get_native_x(-this.options.n_visible_points);
+		const x_max = this.get_native_x(-1);
+		const x_min = this.get_native_x(-this.options.n_visible_points);
 
 		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
 	}
@@ -107,7 +97,9 @@ export class Line extends BasePlot {
 	}
 
 	public update(data: ArrayDict): void {
-		const x = this.fetch_and_check(data, this.options.sig_x);
+		if (this.options.sig_x.length === 0) return; // if no x signal is defined, then we can't update the plot
+
+		const x = this.fetch_and_check(data, this.options.sig_x[0]);
 
 		this.options.sig_y.forEach((sig_y, i) => {
 			const y = this.fetch_and_check(data, sig_y);
@@ -115,5 +107,43 @@ export class Line extends BasePlot {
 		});
 
 		this.update_axis_domains();
+	}
+
+	private create_plot(): void {
+		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
+		const data_series = new XyDataSeries(this.wasm_context);
+		data_series.containsNaN = this.options.data_contains_nan;
+		data_series.isSorted = this.options.data_is_sorted;
+		renderable_series.dataSeries = data_series;
+		
+		this.surface.renderableSeries.add(renderable_series);
+		this.renderable_series.push(renderable_series);
+		this.data_series.push(data_series);
+	}
+
+	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
+		if (sig_x !== null && this.options.sig_x.length > 0) {
+			throw new Error('Having multiple x signals / replacing the x signal is not supported for line plots');
+		}
+
+		this.options.sig_y.forEach((sig) => {
+			if (compare_signals(sig, sig_y)) {
+				throw new Error('Signal already exists in plot');
+			}
+		});
+
+		this.create_plot();
+		this.options.sig_y.push(sig_y);		
+	}
+
+	public remove_plot(idx: number) {
+		if (idx >= this.options.sig_y.length || idx < 0) {
+			throw new Error('Index out of bounds');
+		}
+
+		this.options.sig_y.splice(idx, 1);
+		this.surface.renderableSeries.remove(this.renderable_series[idx]);
+		this.renderable_series.splice(idx, 1);
+		this.data_series.splice(idx, 1);
 	}
 }

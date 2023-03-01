@@ -13,21 +13,29 @@ import type { SignalConfig, ArrayDict } from './types';
 
 export interface PlotOptions {
 	type: string;
+    /** 
+     * Some plots have a 1 to n mapping of sig_x to sig_y and others have a 1 to 1 mapping.
+     * In the former case, sig_x.length is maintained at 1.
+     * In the latter case, sig_x.length === sig_y.length is maintained.
+     */
+    sig_x: SignalConfig[];
+	sig_y: SignalConfig[];
 	x_axis_align: 'top' | 'bottom';
 	y_axis_align: 'left' | 'right';
 	x_axis_flipped: boolean;
 	y_axis_flipped: boolean;
-	x_axis_visible: boolean; // TODO: implement
+	x_axis_visible: boolean;
 	y_axis_visible: boolean;
 	data_contains_nan: boolean;
 	data_is_sorted: boolean;
-	sig_x: SignalConfig;
-	sig_y: SignalConfig[]; // This defines the signals that are plotted
+
 }
 export function get_default_plot_options(): PlotOptions {
 	// Function so that a copy is returned
 	return {
 		type: 'no_type',
+        sig_x: [],
+        sig_y: [],
 		x_axis_align: 'bottom',
 		y_axis_align: 'left',
 		x_axis_flipped: false,
@@ -35,9 +43,7 @@ export function get_default_plot_options(): PlotOptions {
 		x_axis_visible: true,
 		y_axis_visible: true,
 		data_contains_nan: false,
-		data_is_sorted: false,
-		sig_x: { sig_name: 'timestamp_us', sig_idx: 0 },
-		sig_y: []
+		data_is_sorted: false
 	};
 }
 
@@ -61,7 +67,7 @@ export abstract class BasePlot implements Updatable, Deletable {
 	 * @param i - The index of the data series. If i is negative, then the index is counted from the end.
 	 * @returns The x-value at index i.
 	 */
-	protected _get_native_x(i: number): number {
+	protected get_native_x(i: number): number {
 		const data_series = this.data_series[0]; // All series have the same x-values
 		const count = data_series.count();
 		const x_values = data_series.getNativeXValues();
@@ -69,6 +75,9 @@ export abstract class BasePlot implements Updatable, Deletable {
 		if (i < 0) {
 			return x_values.get(Math.max(count + i, 0));
 		}
+        if (i >= count) {
+            throw new Error(`Index ${i} out of bounds`);
+        }
 		return x_values.get(i);
 	}
 
@@ -105,7 +114,6 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.y_axis.isVisible = this.options.y_axis_visible;
 	}
 
-	// TODO: abstract set_options instead?
 	public set_axis_alignment(x_align: 'top' | 'bottom', y_align: 'left' | 'right'): void {
 		this.options.x_axis_align = x_align;
 		this.options.y_axis_align = y_align;
@@ -133,19 +141,33 @@ export abstract class BasePlot implements Updatable, Deletable {
 		return data[sig_name][sig_idx] as NumberArray;
 	}
 
-	public abstract update(data: ArrayDict): void;
-
+    
 	public delete(): void {
-		this.surface.xAxes.remove(this.x_axis);
+        this.surface.xAxes.remove(this.x_axis);
 		this.surface.yAxes.remove(this.y_axis);
 		this.x_axis.delete();
 		this.y_axis.delete();
 		this.surface.delete();
-
+        
 		this.renderable_series.forEach((rs) => rs.delete());
 		this.data_series.forEach((ds) => ds.delete());
 	}
+    
+    public abstract update(data: ArrayDict): void;
 
-	// TODO: abstract method to set options
-	// public abstract set_options(options: PlotOptions): void;
+    /**
+     * Creates a new renderable series / data series and adds it to the plot if it does not exist yet.
+
+     * The x component for each plot is predefined and cannot be changed.
+     * @param sig_y - The y component signal config to add
+     * @param sig_x - The x component signal config to add. Can be null.
+     */
+    public abstract add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
+
+    /**
+     * Removes the renderable series / data series at the given index.
+     * @param idx - The index of the signal config to remove
+     * @throws Error if the index is out of bounds
+     */
+    public abstract remove_plot(idx: number): void;
 }
