@@ -3,7 +3,7 @@ import type { Rect, SciChartSubSurface, TSciChart, SciChartSurface } from 'scich
 import { createSubSurfaceOptions } from '../utils/subchart_helpers';
 
 import { Line, type LinePlotOptions } from './line';
-// import { Trace, type TracePlotOptions } from './trace';
+import type { ArrayDict, SignalConfig } from './types';
 import type { Deletable, Updatable } from './interfaces';
 import type { BasePlot, PlotOptions } from './baseplot';
 
@@ -16,44 +16,31 @@ import type { BasePlot, PlotOptions } from './baseplot';
  * @param rect - The rect defining where to place the subchart on the parent surface.
  * @param options - Options describing the subcharts domain, axes etc.
  */
-export class SubChart implements Deletable, Updatable {
+export class SubChart implements Updatable, Deletable {
 	id: string;
 	wasm_context: TSciChart;
 	rect: Rect;
 	sub_chart_surface: SciChartSubSurface;
-	plots: BasePlot[]; // TODO: Array of BasePlot
+	plot: BasePlot; // TODO: Array of BasePlot
+
+	signal_configs: SignalConfig[] = []; // appendable / removable
 
 	constructor(
 		id: string,
 		parent_surface: SciChartSurface,
 		wasm_context: TSciChart,
 		rect: Rect,
-		options: PlotOptions[]
+		options: PlotOptions,
 	) {
 		this.id = id;
 		this.wasm_context = wasm_context;
 		this.rect = rect;
 
 		this.sub_chart_surface = parent_surface.addSubChart(
-			createSubSurfaceOptions(this.id, this.rect)
+			createSubSurfaceOptions(this.id, this.rect) // TODO: Improve this
 		);
 
-		this.plots = options.map((plot_options) => this.create_plot(plot_options));
-	}
-
-	public add_plot(plot_options: PlotOptions): void {
-		this.plots.push(this.create_plot(plot_options));
-	}
-
-	// TODO: Insufficient implementation
-	public remove_plot(plot_idx: number): void {
-		if (plot_idx < 0 || plot_idx >= this.plots.length)
-			throw new Error(`Invalid plot index: ${plot_idx}`);
-
-		const plot = this.plots[plot_idx];
-		if (plot) plot.delete();
-
-		this.plots.splice(plot_idx, 1);
+		this.plot = this.create_plot(options);
 	}
 
 	private create_plot(plot_options: PlotOptions): BasePlot {
@@ -69,23 +56,19 @@ export class SubChart implements Deletable, Updatable {
 		}
 	}
 
+
 	public set_position(rect: Rect): void {
 		this.rect = rect;
 		this.sub_chart_surface.subPosition = this.rect;
 	}
 
-	public update(x_data: Array<number>, y_data_list: Array<number>[]): void {
-		// Update each plot
-		if (y_data_list.length !== this.plots.length)
-			throw new Error('Number of plots does not match number of y data arrays');
-
-		this.plots.map((plot, idx) => plot.update(x_data, y_data_list[idx]));
+	public update(data: ArrayDict): void {
+		this.plot.update(data);
 	}
 
 	public delete(): void {
 		// call delete on each plot
 		this.sub_chart_surface.delete();
-		this.plots.map((plot) => plot.delete());
-		this.plots = [];
+		this.plot.delete();
 	}
 }

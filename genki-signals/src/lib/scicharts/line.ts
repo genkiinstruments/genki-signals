@@ -5,62 +5,75 @@ import {
 	NumericAxis,
 	SciChartSubSurface,
 	SciChartSurface,
-	XyDataSeries
+	XyDataSeries,
+	type TSciChart,
 } from 'scichart';
-import type { TSciChart, NumberArray } from 'scichart';
 
-import { BasePlot, default_plot_options } from './baseplot';
-import type { PlotOptions } from './baseplot';
+import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
+import type { ArrayDict, SignalConfig } from './types';
 
 export interface LinePlotOptions extends PlotOptions {
+	type: 'line';
 	/** If auto range is true, then y_domain_max and y_domain_min are not used */
 	auto_range: boolean;
 	y_domain_max: number;
 	y_domain_min: number;
 	n_visible_points: number;
-	type: 'line'; // TODO: Hack, overrides the no_type default as 'immutable' "line"
 }
-export const default_line_plot_options: LinePlotOptions = {
-	...default_plot_options,
-	auto_range: false,
-	y_domain_max: 1,
-	y_domain_min: 0,
-	n_visible_points: 100,
-	type: 'line'
-};
+export function get_default_line_plot_options(): LinePlotOptions {
+	return {
+		...get_default_plot_options(),
+		auto_range: false,
+		y_domain_max: 1,
+		y_domain_min: 0,
+		n_visible_points: 100,
+		type: 'line', // overrides default_plot_options.type
+	};	
+}
 
 export class Line extends BasePlot {
-	renderable_series: FastLineRenderableSeries;
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
-	data_series: XyDataSeries;
 	options: LinePlotOptions;
+
+	renderable_series: FastLineRenderableSeries[] = [];
+	data_series: XyDataSeries[] = [];
 
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: LinePlotOptions = default_line_plot_options
+		plot_options: LinePlotOptions = get_default_line_plot_options(),
 	) {
 		super(wasm_context, surface);
-
-		this.renderable_series = new FastLineRenderableSeries(this.wasm_context);
+		
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
-		this.data_series = new XyDataSeries(this.wasm_context);
-		this.options = plot_options;
-
-		this.data_series.containsNaN = this.options.data_contains_nan;
-		this.data_series.isSorted = this.options.data_is_sorted;
-
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
-		this.renderable_series.dataSeries = this.data_series;
+		this.options = plot_options;
 
-		this.surface.renderableSeries.add(this.renderable_series);
+		this.options.sig_y.forEach(() => this.append_line()); // one to one mapping of data series to renderable series
 
 		this.update_axes_alignment();
         this.update_axes_flipping();
         this.update_axes_visibility();
+	}
+
+	private append_line(): void {
+		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
+		const data_series = new XyDataSeries(this.wasm_context);
+		data_series.containsNaN = this.options.data_contains_nan;
+		data_series.isSorted = this.options.data_is_sorted;
+		renderable_series.dataSeries = data_series;
+
+		this.surface.renderableSeries.add(renderable_series);
+		this.renderable_series.push(renderable_series);
+		this.data_series.push(data_series);
+	}
+
+	public add_line(sig_y: SignalConfig) {
+		this.options.sig_y.push(sig_y);
+		this.append_line();
 	}
 
 	private update_axis_domains(): void {
@@ -93,8 +106,14 @@ export class Line extends BasePlot {
 		this.update_axis_domains();
 	}
 
-	public update(x: NumberArray, y: NumberArray): void {
-		this.data_series.appendRange(x, y);
+	public update(data: ArrayDict): void {
+		const x = this.fetch_and_check(data, this.options.sig_x);
+
+		this.options.sig_y.forEach((sig_y, i) => {
+			const y = this.fetch_and_check(data, sig_y);
+			this.data_series[i].appendRange(x, y);
+		});
+
 		this.update_axis_domains();
 	}
 }

@@ -44,10 +44,11 @@ def generate_data(ble_address=None):
     with system:
         while True:
             data = system.read(as_dataframe=False)
-            # data_points = [dict(row) for _, row in data.iterrows()]
-            # data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
         
-            socketio.emit("data", [data["timestamp_us"][:, 0].squeeze().tolist(), data["random"][:, 0].squeeze().tolist()], broadcast=True)
+            for key in data:
+                data[key] = data[key].T.tolist() # NOTE: easier to work with in JS
+        
+            socketio.emit("data", data, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 

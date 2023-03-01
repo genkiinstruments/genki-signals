@@ -1,18 +1,11 @@
-import {
-	type NumberArray,
-	type TSciChart,
-	type AxisBase2D,
-	type BaseRenderableSeries,
-	type SciChartSubSurface,
-	type SciChartSurface,
-	type XyDataSeries,
-	EAxisAlignment
-} from 'scichart';
+import { EAxisAlignment, type NumberArray } from 'scichart';
+import type { TSciChart, AxisBase2D, BaseRenderableSeries, SciChartSubSurface, SciChartSurface, BaseDataSeries } from 'scichart';
 
 import type { Deletable, Updatable } from './interfaces';
+import type {  SignalConfig, ArrayDict } from './types';
 
 export interface PlotOptions {
-	type: string;
+    type: string,
 	x_axis_align: 'top' | 'bottom';
 	y_axis_align: 'left' | 'right';
 	x_axis_flipped: boolean;
@@ -21,28 +14,37 @@ export interface PlotOptions {
 	y_axis_visible: boolean;
 	data_contains_nan: boolean;
 	data_is_sorted: boolean;
+    sig_x: SignalConfig;
+    sig_y: SignalConfig[];  // This defines the signals that are plotted
 }
-export const default_plot_options: PlotOptions = {
-	type: 'no_type',
-	x_axis_align: 'bottom',
-	y_axis_align: 'left',
-	x_axis_flipped: false,
-	y_axis_flipped: false,
-	x_axis_visible: true,
-	y_axis_visible: true,
-	data_contains_nan: false,
-	data_is_sorted: false
-};
+export function get_default_plot_options(): PlotOptions { // Function so that a copy is returned
+    return {
+        type: 'no_type',
+        x_axis_align: 'bottom',
+        y_axis_align: 'left',
+        x_axis_flipped: false,
+        y_axis_flipped: false,
+        x_axis_visible: true,
+        y_axis_visible: true,
+        data_contains_nan: false,
+        data_is_sorted: false,
+        sig_x: { sig_name: 'timestamp_us', sig_idx: 0 },
+        sig_y: [],
+    };
+} 
+
 
 export abstract class BasePlot implements Updatable, Deletable {
 	protected wasm_context: TSciChart;
 	protected surface: SciChartSubSurface | SciChartSurface;
+	
+    protected abstract options: PlotOptions;
 
-	protected abstract renderable_series: BaseRenderableSeries;
 	protected abstract x_axis: AxisBase2D;
 	protected abstract y_axis: AxisBase2D;
-	protected abstract data_series: XyDataSeries;
-	protected abstract options: PlotOptions;
+	protected abstract renderable_series: BaseRenderableSeries[];
+	protected abstract data_series: BaseDataSeries[];
+
 
 	constructor(wasm_context: TSciChart, surface: SciChartSubSurface | SciChartSurface) {
 		this.wasm_context = wasm_context;
@@ -54,12 +56,12 @@ export abstract class BasePlot implements Updatable, Deletable {
 	 * @returns The x-value at index i.
 	 */
 	protected _get_native_x(i: number): number {
-		const x_values = this.data_series.getNativeXValues();
+        const data_series = this.data_series[0]; // All series have the same x-values
+        const count = data_series.count();
+		const x_values = data_series.getNativeXValues();
 
 		if (i < 0) {
-			const x_count = this.data_series.count();
-			if (x_count + i < 0) return x_values.get(0);
-			return x_values.get(x_count + i); // + (negative number)
+			return x_values.get(Math.max(count + i, 0));
 		}
 		return x_values.get(i);
 	}
@@ -110,16 +112,32 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.update_axes_flipping();
 	}
 
-	public abstract update(x: NumberArray, y: NumberArray): void;
+    /**
+     * Access the data with the given signal config and throws errors.
+     * @param data - The data to access
+     * @param sig - The signal config to access
+     * @returns the data at signal_config.name and signal_config.idx
+     */
+    protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
+		const sig_name = sig.sig_name;
+		const sig_idx = sig.sig_idx;
+		if (!(sig_name in data)) throw new Error(`sig_name ${sig_name} not in data`);
+		if (sig_idx >= data[sig_name].length) throw new Error(`sig_idx ${sig_idx} out of bounds`);
+
+		return data[sig_name][sig_idx] as NumberArray;
+	}
+
+	public abstract update(data: ArrayDict): void;
 
 	public delete(): void {
 		this.surface.xAxes.remove(this.x_axis);
 		this.surface.yAxes.remove(this.y_axis);
-		this.surface.renderableSeries.remove(this.renderable_series);
-		this.renderable_series.delete();
 		this.x_axis.delete();
 		this.y_axis.delete();
-		this.data_series.delete();
+        this.surface.delete();
+
+        this.renderable_series.forEach((rs) => rs.delete());
+		this.data_series.forEach((ds) => ds.delete());
 	}
 
 	// TODO: abstract method to set options

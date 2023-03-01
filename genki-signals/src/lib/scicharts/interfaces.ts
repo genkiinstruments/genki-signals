@@ -1,14 +1,12 @@
-import type { NumberArray } from 'scichart';
+import type { ArrayDict } from './types';
 
 export interface Updatable {
 	/**
-	 * Updates the plots.
-	 * @param x - The x values.
-	 * @param y - The y values.
+	 * Updates accordingly, given the data.
 	 * @returns void
 	 */
-	update(x: NumberArray, y: NumberArray | NumberArray[]): void;
-}
+	update(data: ArrayDict): void;
+};
 
 export interface Deletable {
 	/**
@@ -16,4 +14,4 @@ export interface Deletable {
 	 * @returns void
 	 */
 	delete(): void;
-}
+};
