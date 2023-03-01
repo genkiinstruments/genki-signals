@@ -6,7 +6,12 @@
 
 	import { getSubChartRects } from '../utils/subchart_helpers';
 	import { SubChart } from '../scicharts/subchart';
+<<<<<<< HEAD:dashboard/src/lib/components/Dashboard.svelte
 	import type { LinePlotOptions } from '../scicharts/line';
+=======
+	import { get_default_line_plot_options } from '../scicharts/line';
+	import { get_default_trace_plot_options } from '../scicharts/trace';
+>>>>>>> cce0048 (added trace,  n_visible_points does not work):genki-signals/src/lib/scidashboard/Dashboard.svelte
 	import { SCICHART_KEY } from '../utils/constants';
 
 	import { option_store, selected_chart_store } from '../stores/chart_stores';
@@ -59,7 +64,34 @@
 				1 / num_columns,
 				num_columns
 			);
+<<<<<<< HEAD:dashboard/src/lib/components/Dashboard.svelte
 			
+=======
+			// const line_options = get_default_line_plot_options();
+			// line_options.auto_range = true;
+			// line_options.x_axis_flipped = true;
+			// line_options.x_axis_visible = false;
+			// line_options.data_is_sorted = true;
+			// line_options.data_contains_nan = false;
+			// line_options.n_visible_points = 100;
+			// line_options.sig_x = [{ sig_name: 'timestamp_us', sig_idx: 0 }];
+			// line_options.sig_y = [
+			// 	{ sig_name: 'mouse_pos', sig_idx: 0 },
+			// 	{ sig_name: 'mouse_pos', sig_idx: 1 }
+			// ];
+
+			const line_options = get_default_trace_plot_options();
+			line_options.x_axis_flipped = false;
+			line_options.x_axis_visible = true;
+			line_options.y_axis_flipped = true;
+			line_options.data_is_sorted = true;
+			line_options.data_contains_nan = false;
+			line_options.n_visible_points = 100;
+			line_options.sig_x = [{ sig_name: 'mouse_pos', sig_idx: 0 }];
+			line_options.sig_y = [{ sig_name: 'mouse_pos', sig_idx: 1 }];
+			
+
+>>>>>>> cce0048 (added trace,  n_visible_points does not work):genki-signals/src/lib/scidashboard/Dashboard.svelte
 
 			subcharts = Array(num_charts)
 				.fill(0)

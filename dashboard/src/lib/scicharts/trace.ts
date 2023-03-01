@@ -1,6 +1,3 @@
-import { BasePlot, get_default_plot_options } from './baseplot';
-import type { PlotOptions } from './baseplot';
-
 import {
 	EAutoRange,
 	FastLineRenderableSeries,
@@ -8,12 +5,17 @@ import {
 	NumericAxis,
 	SciChartSubSurface,
 	SciChartSurface,
-	XyDataSeries
+	XyDataSeries,
+	type TSciChart
 } from 'scichart';
-import type { TSciChart, NumberArray } from 'scichart';
+
+import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
+import { compare_signals } from './types';
+import type { ArrayDict, SignalConfig } from './types';
 
 export interface TracePlotOptions extends PlotOptions {
     type: 'trace';
+    group_sig: SignalConfig;
 	/** If auto_range_x is true, then x_domain_max and x_domain_min are not used */
 	auto_range_x: boolean;
 	/** If auto_range_y is true, then y_domain_max and y_domain_min are not used */
@@ -22,77 +24,166 @@ export interface TracePlotOptions extends PlotOptions {
 	x_domain_min: number;
 	y_domain_max: number;
 	y_domain_min: number;
-	buffer_size: number;
+	n_visible_points: number;
 }
-export const default_trace_plot_options: TracePlotOptions = {
-	...get_default_plot_options(),
-    auto_range_x: false,
-	auto_range_y: false,
-	x_domain_max: 2560,
-	x_domain_min: 0,
-	y_domain_max: 1440,
-	y_domain_min: 0,
-	buffer_size: 1000,
-    type: 'trace'
-};
+export function get_default_trace_plot_options(): TracePlotOptions {
+    return {
+        ...get_default_plot_options(),
+        type: 'trace', // overrides default_plot_options.type
+        group_sig: { sig_name: 'timestamp_us', sig_idx: 0 },
+        auto_range_x: false,
+        auto_range_y: false,
+        x_domain_max: 2560,
+        x_domain_min: 0,
+        y_domain_max: 1440,
+        y_domain_min: 0,
+        n_visible_points: 100
+    };
+} 
+
 
 export class Trace extends BasePlot {
-	renderable_series: FastLineRenderableSeries;
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
-	data_series: XyDataSeries;
 	options: TracePlotOptions;
+
+    /** 
+     * Contains the timestamp / index values which are not plotted but used to group the trace with other plots.
+     */
+    group_axis: NumericAxis; //
+    group_data_series: XyDataSeries; 
+
+	renderable_series: FastLineRenderableSeries[] = [];
+	data_series: XyDataSeries[] = [];
 
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: TracePlotOptions = default_trace_plot_options
+		plot_options: TracePlotOptions = get_default_trace_plot_options()
 	) {
 		super(wasm_context, surface);
 
-		this.renderable_series = new FastLineRenderableSeries(this.wasm_context);
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
-		this.data_series = new XyDataSeries(this.wasm_context);
-		this.options = plot_options;
-
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
-		this.renderable_series.dataSeries = this.data_series;
+        
+        this.group_axis = new NumericAxis(this.wasm_context);
+        this.group_axis.isVisible = false;
+        this.surface.xAxes.add(this.group_axis);
+        this.group_data_series = new XyDataSeries(this.wasm_context);
+
+		this.options = plot_options;
+
+        if (this.options.sig_x.length !== this.options.sig_y.length) {
+            throw new Error('sig_x and sig_y must have the same length');
+        }
+
+		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
+
+		this.update_axes_alignment();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
+	}
+
+    /**
+	 * @param i - The index of the data series. If i is negative, then the index is counted from the end.
+	 * @returns The x-value at index i.
+	 */
+	protected get_group_value(i: number): number {
+		const count = this.group_data_series.count();
+		const values = this.group_data_series.getNativeXValues();
+
+		if (i < 0) {
+			return values.get(Math.max(count + i, 0));
+		}
+        if (i >= count) {
+            throw new Error(`Index ${i} out of bounds`);
+        }
+		return values.get(i);
 	}
 
 	private update_axis_domains(): void {
-		if (this.options.auto_range) {
-			this.y_axis.autoRange = EAutoRange.Always;
+		if (this.options.auto_range_x) {
+			this.x_axis.autoRange = EAutoRange.Always;
 		} else {
-			this.y_axis.autoRange = EAutoRange.Never;
-			this.y_axis.visibleRange = new NumberRange(
-				this.options.y_domain_min,
-				this.options.y_domain_max
-			);
+			this.x_axis.autoRange = EAutoRange.Never;
+            const x_min = this.options.x_domain_min;
+            const x_max = this.options.x_domain_max;
+            this.x_axis.visibleRange = new NumberRange(x_min, x_max);
 		}
 
-		const x_max = this._get_native_x(-1);
-		const x_min = this._get_native_x(-this.options.n_visible_points);
+        if (this.options.auto_range_y) {
+            this.y_axis.autoRange = EAutoRange.Always;
+        } else {
+            this.y_axis.autoRange = EAutoRange.Never;
+            const y_min = this.options.y_domain_min;
+            const y_max = this.options.y_domain_max;
+            this.y_axis.visibleRange = new NumberRange(y_min, y_max);
+        }
 
-		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
+        const group_min = this.get_group_value(-this.options.n_visible_points);
+        const group_max = this.get_group_value(-1);
+        this.group_axis.visibleRange = new NumberRange(group_min, group_max);
 	}
 
 	public set_axis_domains(
-		auto_range: boolean,
-		y_max: number,
-		y_min: number,
-		n_visible_points: number
-	): void {
-		this.options.auto_range = auto_range;
+		auto_range_x: boolean, auto_range_y: boolean,y_max: number,y_min: number
+    ): void {
+		this.options.auto_range_x = auto_range_x;
+        this.options.auto_range_y = auto_range_y;
 		this.options.y_domain_max = y_max;
 		this.options.y_domain_min = y_min;
-		this.options.n_visible_points = n_visible_points;
+
 		this.update_axis_domains();
 	}
 
-	public update(x: NumberArray, y: NumberArray): void {
-		this.data_series.appendRange(x, y);
+	public update(data: ArrayDict): void {
+        const n = this.options.sig_x.length; // we maintain sig_x and sig_y so that they have the same length
+
+        for (let i = 0; i < n; i++) {
+            const x = this.fetch_and_check(data, this.options.sig_x[i]);
+            const y = this.fetch_and_check(data, this.options.sig_y[i]);
+            this.data_series[i].appendRange(x, y);
+        }
+
+        const group_x = this.fetch_and_check(data, this.options.group_sig);
+        this.group_data_series.appendRange(group_x, group_x);
+
 		this.update_axis_domains();
+	}
+
+	private create_plot(): void {
+		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
+		const data_series = new XyDataSeries(this.wasm_context);
+		data_series.containsNaN = this.options.data_contains_nan;
+		data_series.isSorted = this.options.data_is_sorted;
+		renderable_series.dataSeries = data_series;
+		
+		this.surface.renderableSeries.add(renderable_series);
+		this.renderable_series.push(renderable_series);
+		this.data_series.push(data_series);
+	}
+
+	public add_plot(sig_y: SignalConfig) {
+		this.options.sig_y.forEach((sig) => {
+			if (compare_signals(sig, sig_y)) {
+				throw new Error('Signal already exists in plot');
+			}
+		});
+
+		this.create_plot();
+		this.options.sig_y.push(sig_y);		
+	}
+
+	public remove_plot(idx: number) {
+		if (idx >= this.options.sig_y.length || idx < 0) {
+			throw new Error('Index out of bounds');
+		}
+
+		this.options.sig_y.splice(idx, 1);
+		this.surface.renderableSeries.remove(this.renderable_series[idx]);
+		this.renderable_series.splice(idx, 1);
+		this.data_series.splice(idx, 1);
 	}
 }
