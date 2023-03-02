@@ -4,8 +4,11 @@
 	"private": true,
 	"scripts": {
 		"tsc": "tsc",
-		"dev": "vite dev --open",
-		"build": "vite build --watch",
+		"vite:dev": "vite dev --open",
+		"vite:build": "vite build --watch",
+		"copy:wasm": "cpy node_modules/scichart/_wasm/scichart2d.wasm ./  --flat",
+		"copy:data": "cpy node_modules/scichart/_wasm/scichart2d.data ./  --flat",
+		"dev": "concurrently npm:copy:wasm npm:copy:data npm:vite:dev",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -21,6 +24,8 @@
 		"@typescript-eslint/eslint-plugin": "^5.45.0",
 		"@typescript-eslint/parser": "^5.45.0",
 		"@vitejs/plugin-vue": "^4.0.0",
+		"concurrently": "^7.6.0",
+		"cpy-cli": "^4.2.0",
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte3": "^4.0.0",
@@ -37,6 +42,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"scichart": "^3.0.300"
+		"scichart": "^3.0.301"
 	}
 }

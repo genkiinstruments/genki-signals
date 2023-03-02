@@ -13,7 +13,7 @@
 
 	let el: HTMLDivElement;
 
-	const pixel_width = 2540;
+	const pixel_width = 1000;
 	const pixel_height = 1000;
 
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
@@ -56,6 +56,7 @@
 				.map((_, i) => new SubChart('bla', main_surface, wasm_context, rects[i], line_options));
 
 			socket.on('data', (response) => {
+				console.log(response);
 				subcharts.forEach((subchart) => {
 					subchart.update(response);
 				});
