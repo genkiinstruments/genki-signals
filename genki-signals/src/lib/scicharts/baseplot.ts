@@ -13,12 +13,12 @@ import type { SignalConfig, ArrayDict } from './types';
 
 export interface PlotOptions {
 	type: string;
-    /** 
-     * Some plots have a 1 to n mapping of sig_x to sig_y and others have a 1 to 1 mapping.
-     * In the former case, sig_x.length is maintained at 1.
-     * In the latter case, sig_x.length === sig_y.length is maintained.
-     */
-    sig_x: SignalConfig[];
+	/**
+	 * Some plots have a 1 to n mapping of sig_x to sig_y and others have a 1 to 1 mapping.
+	 * In the former case, sig_x.length is maintained at 1.
+	 * In the latter case, sig_x.length === sig_y.length is maintained.
+	 */
+	sig_x: SignalConfig[];
 	sig_y: SignalConfig[];
 	x_axis_align: 'top' | 'bottom';
 	y_axis_align: 'left' | 'right';
@@ -28,14 +28,13 @@ export interface PlotOptions {
 	y_axis_visible: boolean;
 	data_contains_nan: boolean;
 	data_is_sorted: boolean;
-
 }
 export function get_default_plot_options(): PlotOptions {
 	// Function so that a copy is returned
 	return {
 		type: 'no_type',
-        sig_x: [],
-        sig_y: [],
+		sig_x: [],
+		sig_y: [],
 		x_axis_align: 'bottom',
 		y_axis_align: 'left',
 		x_axis_flipped: false,
@@ -75,9 +74,9 @@ export abstract class BasePlot implements Updatable, Deletable {
 		if (i < 0) {
 			return x_values.get(Math.max(count + i, 0));
 		}
-        if (i >= count) {
-            throw new Error(`Index ${i} out of bounds`);
-        }
+		if (i >= count) {
+			throw new Error(`Index ${i} out of bounds`);
+		}
 		return x_values.get(i);
 	}
 
@@ -141,33 +140,34 @@ export abstract class BasePlot implements Updatable, Deletable {
 		return data[sig_name][sig_idx] as NumberArray;
 	}
 
-    
 	public delete(): void {
-        this.surface.xAxes.remove(this.x_axis);
+		this.surface.xAxes.remove(this.x_axis);
 		this.surface.yAxes.remove(this.y_axis);
 		this.x_axis.delete();
 		this.y_axis.delete();
 		this.surface.delete();
-        
+
 		this.renderable_series.forEach((rs) => rs.delete());
 		this.data_series.forEach((ds) => ds.delete());
 	}
-    
-    public abstract update(data: ArrayDict): void;
 
-    /**
+	public abstract update(data: ArrayDict): void;
+
+	/**
      * Creates a new renderable series / data series and adds it to the plot if it does not exist yet.
 
      * The x component for each plot is predefined and cannot be changed.
      * @param sig_y - The y component signal config to add
      * @param sig_x - The x component signal config to add. Can be null.
      */
-    public abstract add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
+	public abstract add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
 
-    /**
-     * Removes the renderable series / data series at the given index.
-     * @param idx - The index of the signal config to remove
-     * @throws Error if the index is out of bounds
+	/**
+     * Removes a renderable series / data series from the plot if it exists.
+
+     * The x component for each plot is predefined and cannot be changed.
+     * @param sig_y - The y component signal config to remove
+     * @param sig_x - The x component signal config to remove. Can be null.
      */
-    public abstract remove_plot(idx: number): void;
+	public abstract remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
 }

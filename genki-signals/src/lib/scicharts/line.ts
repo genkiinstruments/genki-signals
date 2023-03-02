@@ -28,8 +28,7 @@ export function get_default_line_plot_options(): LinePlotOptions {
 		auto_range: false,
 		y_domain_max: 1,
 		y_domain_min: 0,
-		n_visible_points: 100,
-		
+		n_visible_points: 100
 	};
 }
 
@@ -106,6 +105,8 @@ export class Line extends BasePlot {
 			this.data_series[i].appendRange(x, y);
 		});
 
+		if (this.options.sig_y.length === 0) return;
+
 		this.update_axis_domains();
 	}
 
@@ -115,7 +116,7 @@ export class Line extends BasePlot {
 		data_series.containsNaN = this.options.data_contains_nan;
 		data_series.isSorted = this.options.data_is_sorted;
 		renderable_series.dataSeries = data_series;
-		
+
 		this.surface.renderableSeries.add(renderable_series);
 		this.renderable_series.push(renderable_series);
 		this.data_series.push(data_series);
@@ -123,7 +124,9 @@ export class Line extends BasePlot {
 
 	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
 		if (sig_x !== null && this.options.sig_x.length > 0) {
-			throw new Error('Having multiple x signals / replacing the x signal is not supported for line plots');
+			throw new Error(
+				'Having multiple x signals / replacing the x signal is not supported for line plots'
+			);
 		}
 
 		this.options.sig_y.forEach((sig) => {
@@ -133,17 +136,31 @@ export class Line extends BasePlot {
 		});
 
 		this.create_plot();
-		this.options.sig_y.push(sig_y);		
+		this.options.sig_y.push(sig_y);
 	}
 
-	public remove_plot(idx: number) {
-		if (idx >= this.options.sig_y.length || idx < 0) {
-			throw new Error('Index out of bounds');
+	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
+		if (
+			sig_x !== null &&
+			(this.options.sig_x.length == 0 || !compare_signals(this.options.sig_x[0], sig_x))
+		) {
+			throw new Error('x signal does not exist on this plot');
 		}
 
-		this.options.sig_y.splice(idx, 1);
-		this.surface.renderableSeries.remove(this.renderable_series[idx]);
-		this.renderable_series.splice(idx, 1);
-		this.data_series.splice(idx, 1);
+		let deleted = false;
+
+		this.options.sig_y.forEach((sig, idx) => {
+			if (compare_signals(sig, sig_y)) {
+				this.options.sig_y.splice(idx, 1);
+				this.surface.renderableSeries.remove(this.renderable_series[idx]);
+				this.renderable_series.splice(idx, 1);
+				this.data_series.splice(idx, 1);
+				deleted = true;
+			}
+		});
+
+		if (!deleted) {
+			throw new Error('Signal does not exist on this plot');
+		}
 	}
 }
