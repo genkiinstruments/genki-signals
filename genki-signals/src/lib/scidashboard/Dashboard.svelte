@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { io } from 'socket.io-client';
 	import { SciChartSurface } from 'scichart/Charting/Visuals/SciChartSurface';
-	import type { TSciChart, NumericAxis } from 'scichart';
+	import { type TSciChart, NumericAxis, EZoomState } from 'scichart';
 
 	import { getSubChartRects } from '../utils/subchart_helpers';
 	import { SubChart } from '../scicharts/subchart';
@@ -25,8 +25,6 @@
 	let mainXAxis: NumericAxis;
 	let subcharts: SubChart[] = [];
 
-	let is_live = true;
-
 	onMount(() => {
 		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
 		const sci_chart_promise = SciChartSurface.createSingle(el);
@@ -38,6 +36,9 @@
 			main_surface = resolve.sciChartSurface;
 			wasm_context = resolve.wasmContext;
 
+			mainXAxis = new NumericAxis(wasm_context, {isVisible: false});
+			main_surface.xAxes.add(mainXAxis);
+
 			const num_graphs = 4;
 			const num_columns = 2;
 			const rects = getSubChartRects(
@@ -48,7 +49,7 @@
 			);
 			const line_options = get_default_line_plot_options();
 			line_options.auto_range = true;
-			line_options.x_axis_flipped = true;
+			line_options.x_axis_flipped = false;
 			line_options.x_axis_visible = false;
 			line_options.data_is_sorted = true;
 			line_options.data_contains_nan = false;
@@ -74,9 +75,13 @@
 				);
 
 			socket.on('data', (response) => {
-				signals = Object.fromEntries(
-					Object.entries(response).map((entry) => [entry[0], entry[1].length])
-				);
+				if(Object.keys(response).length == 0){return;}
+				if(Object.keys(signals).length == 0){
+					console.log(signals)
+					signals = Object.fromEntries(
+						Object.entries(response).map((entry) => [entry[0], entry[1].length])
+					);
+				}
 				subcharts.forEach((subchart) => {
 					subchart.update(response);
 				});
@@ -90,7 +95,7 @@
 
 		// Destroy the SciChartSurface
 		main_surface?.delete();
-		// subchart.delete();
+		subcharts.forEach((subchart) => subchart.delete());
 	});
 
 	function toggle_plots(sig: string, checked: boolean) {
@@ -114,7 +119,10 @@
 	}
 
 	function live_toggle() {
-		is_live = !is_live;
+		for (let subchart of subcharts) {
+			const state = subchart.sub_chart_surface.zoomState^1;
+			subchart.sub_chart_surface.setZoomState(state);
+		}
 	}
 
 	function signal_sub_selection_toggle(sig: string) {
@@ -122,10 +130,10 @@
 		if (x == null) {
 			return;
 		}
-		if (x.style.display === 'none') {
-			x.style.display = 'block';
-		} else {
+		if (x.style.display === 'block') {
 			x.style.display = 'none';
+		} else {
+			x.style.display = 'block';
 		}
 	}
 </script>
@@ -135,7 +143,7 @@
 	<div class="signal_select">
 		{#each Object.keys(signals) as sig}
 			<div class="dropbtn">
-				<input type="checkbox" id={sig} on:change={(a) => toggle_plots(sig, a.target.checked)} />
+				<input type="checkbox" id={sig} on:change={(a) => toggle_plots(sig, a.target?.checked)} />
 				<label class="signal_selector" for={sig}>{sig}</label><br />
 				<button on:click={() => signal_sub_selection_toggle(sig)}>v</button>
 			</div>

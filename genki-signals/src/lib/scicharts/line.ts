@@ -6,6 +6,10 @@ import {
 	SciChartSubSurface,
 	SciChartSurface,
 	XyDataSeries,
+	MouseWheelZoomModifier,
+	ZoomExtentsModifier,
+	ZoomPanModifier,
+	EZoomState,
 	type TSciChart
 } from 'scichart';
 
@@ -47,11 +51,39 @@ export class Line extends BasePlot {
 	) {
 		super(wasm_context, surface);
 
+		let thiss = this;
+
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
+
 		this.options = plot_options;
+
+		this.surface.chartModifiers.add(new MouseWheelZoomModifier({modifierGroup:"mouseZoomGroup"}));
+		this.surface.chartModifiers.add(new ZoomPanModifier());
+		this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false, modifierGroup:"zoomExtentsGroup", onZoomExtents: function(surface){
+			let idx_range = surface.renderableSeries.get(0).getIndicesRange(surface.xAxes.get(0).visibleRange)
+			let idx_range_len = idx_range.max - idx_range.min + 1;
+			thiss.options.n_visible_points = Math.max(idx_range_len, 1);
+			thiss.surface.setZoomState(EZoomState.AtExtents);
+			return false;
+		}}));
+
+		if(this.surface instanceof SciChartSubSurface){
+			let parent_surface = this.surface.parentSurface;
+			let parent_axis = this.surface.parentSurface.xAxes.get(0);
+			this.x_axis.visibleRangeChanged.subscribe(() => {
+				if(this.surface.zoomState == EZoomState.UserZooming){
+					parent_surface.setZoomState(EZoomState.UserZooming);
+					parent_axis.visibleRange = this.x_axis.visibleRange;
+				}
+			})
+			parent_axis.visibleRangeChanged.subscribe(() => {
+				this.surface.setZoomState(parent_surface.zoomState);
+				this.x_axis.visibleRange = parent_axis.visibleRange;
+			})
+		}
 
 		if (this.options.sig_x.length > 1) {
 			throw new Error('Line plots only support one x signal');
@@ -60,12 +92,21 @@ export class Line extends BasePlot {
 		// sig_y implicitly defines the number of plots
 		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
 
+		this.update_y_domain();
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
 	}
 
-	private update_axis_domains(): void {
+	private update_x_domain(): void {
+		const x_max = this.get_native_x(-1);
+		const x_min = this.get_native_x(-this.options.n_visible_points);
+
+		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
+	}
+
+
+	private update_y_domain(): void {
 		if (this.options.auto_range) {
 			this.y_axis.autoRange = EAutoRange.Always;
 		} else {
@@ -75,11 +116,6 @@ export class Line extends BasePlot {
 				this.options.y_domain_max
 			);
 		}
-
-		const x_max = this.get_native_x(-1);
-		const x_min = this.get_native_x(-this.options.n_visible_points);
-
-		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
 	}
 
 	public set_axis_domains(
@@ -92,7 +128,8 @@ export class Line extends BasePlot {
 		this.options.y_domain_max = y_max;
 		this.options.y_domain_min = y_min;
 		this.options.n_visible_points = n_visible_points;
-		this.update_axis_domains();
+		this.update_y_domain();
+		this.update_x_domain();
 	}
 
 	public update(data: ArrayDict): void {
@@ -105,9 +142,11 @@ export class Line extends BasePlot {
 			this.data_series[i].appendRange(x, y);
 		});
 
-		if (this.options.sig_y.length === 0) return;
+		if (this.options.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
 
-		this.update_axis_domains();
+		console.log(this.data_series[0]?.count());
+
+		this.update_x_domain();
 	}
 
 	private create_plot(): void {
