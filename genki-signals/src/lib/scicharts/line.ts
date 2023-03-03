@@ -144,8 +144,6 @@ export class Line extends BasePlot {
 
 		if (this.options.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
 
-		console.log(this.data_series[0]?.count());
-
 		this.update_x_domain();
 	}
 

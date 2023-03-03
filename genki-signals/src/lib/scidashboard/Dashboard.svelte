@@ -171,8 +171,8 @@
 	.container {
 		display: flex;
 		flex-direction: row;
-		width: '{pixel_width}px';
-		height: '{pixel_height}px';
+		width: 100%;
+		height: 100%;
 	}
 
 	.dashboard {
