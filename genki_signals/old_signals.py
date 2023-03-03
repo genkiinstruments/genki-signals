@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 
 import imufusion
+import joblib
 import numpy as np
 import pandas as pd
 import scipy.signal
@@ -17,11 +18,11 @@ from omegaconf import DictConfig, ListConfig
 from scipy import integrate
 from scipy.spatial.transform import Rotation
 
-from signal_processing.system import upsample
-from signal_processing.is_touching_models import StateGruInferenceOnly
-from signal_processing.buffers import PandasBuffer, NumpyBuffer
-from signal_processing.dead_reckoning import calc_per_t_power, combine_power
-from signal_processing.filters import ButterFilter, FirFilter, gaussian_smooth_offline
+from genki_signals.system import upsample
+from genki_signals.is_touching_models import StateGruInferenceOnly
+from genki_signals.buffers import PandasBuffer, NumpyBuffer
+from genki_signals.dead_reckoning import calc_per_t_power, combine_power
+from genki_signals.filters import ButterFilter, FirFilter, gaussian_smooth_offline
 
 logger = logging.getLogger(__name__)
 
@@ -783,6 +784,15 @@ class Delay(Signal):
         self.buffer.extend(sig)
         out = self.buffer.popleft(len(sig))
         return out
+
+
+class Sum(Signal):
+    def __init__(self, sig_a, sig_b, name):
+        self.name = name
+        self.input_names = [sig_a, sig_b]
+
+    def __call__(self, a, b):
+        return a + b
 
 
 class Multiply(Signal):

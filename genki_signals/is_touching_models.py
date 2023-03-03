@@ -7,7 +7,7 @@ from torch import nn, Tensor
 from torchmetrics import Accuracy, ConfusionMatrix, MatthewsCorrCoef
 from torchmetrics.wrappers import MultioutputWrapper
 
-from signal_processing.fft_ops import SpectrogramFeaturesTorch
+from genki_signals.fft_ops import SpectrogramFeaturesTorch
 
 
 class StateGruInferenceOnly(pl.LightningModule):

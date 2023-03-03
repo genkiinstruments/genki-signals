@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from signal_processing.filters import gaussian_smooth_offline
+from genki_signals.filters import gaussian_smooth_offline
 
 
 def calc_per_t_power(x: np.ndarray) -> np.ndarray:

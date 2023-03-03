@@ -1,5 +1,5 @@
 """
-A DataSource is an input to a SignalSystem (see signals.py).
+A DataSource is an input to a SignalSystem (see old_signals.py).
 
 DataSources are expected to collect some data into a queue, usually by
 using a separate thread for writing. A concrete DataSource just needs to
@@ -11,11 +11,11 @@ Data is returned as a list of dicts, the keys of the dicts should be consistent
 across reads. The base class also implements functionality for recording data
 into csv files.
 """
+import abc
 import sys
 import datetime
 import threading
 import time
-from abc import ABC, abstractmethod
 from pathlib import Path
 from queue import Queue
 from threading import Thread
@@ -26,78 +26,160 @@ import numpy as np
 import pandas as pd
 from genki_wave.data import DataPackage, RawDataPackage
 
-from signal_processing.array_frame import ArrayFrame
+from genki_signals.array_frame import ArrayFrame
+from genki_signals.buffers import DataBuffer
 
 logger = logging.getLogger(__name__)
 
 
-class DataSource(ABC):
-    def __init__(self, rec_buffer_size=50_000):
+class BusyThread(threading.Thread):
+    """
+    Opens a thread that runs a callback at a given interval.
+    """
+
+    def __init__(self, interval: int, callback: Callable, sleep_time: float = 1e-6):
+        super().__init__()
+        self.interval = interval
+        self.callback = callback
+        self._stop_event = threading.Event()
+        self.sleep_time = sleep_time
+
+    def run(self):
+        while not self._stop_event.is_set():
+            start_time = time.time()
+            self.callback(start_time)
+            sleep_end = start_time + self.interval
+            while time.time() < sleep_end:
+                time.sleep(self.sleep_time)
+
+    def stop(self):
+        self._stop_event.set()
+
+
+class DataSource(abc.ABC):
+    @abc.abstractmethod
+    def start(self):
+        pass
+
+    @abc.abstractmethod
+    def stop(self):
+        pass
+
+    @abc.abstractmethod
+    def read(self):
+        pass
+
+    @abc.abstractmethod
+    def start_listening(self):
+        pass
+
+    @abc.abstractmethod
+    def read_current(self):
+        pass
+
+    def add_follower(self, follower):
+        self.followers.append(follower)
+
+
+# TODO: Better name for this
+# it's just a DataSource? It uses a function, FunctionalDataSource?
+# it uses local time as clock, LocalTimeDataSource? LocallyTimedDataSource? ManualTimerDataSource?
+class LocalDataSource(DataSource):
+    """
+    A DataSource that generates data from a function.
+
+    A DataSource can operate in two ways:
+      * As a primary source, where a sampling rate needs to be specified, and the source generates data at the specified
+      rate.
+      * As a secondary source, where the source does not control the clock but can be read at any time, and will return
+      the most recent value.
+    """
+    def __init__(self, data_fn, signal_names):
+        self.busy_loop = None
+        self.sample_rate = None
+        self.start_time = None
+        self.data_fn = data_fn
         self.buffer = Queue()
+        if "timestamp" not in signal_names:
+            signal_names = ["timestamp"] + signal_names
+        self._signal_names = signal_names
+        self.is_active = False
+        self.lead = True
+        self.followers = []
 
-        self.record_data = ArrayFrame()
-        # Default value of 50000 is ~30MB of csv data, using prod firmware
-        # and trackpad, and on 100Hz corresponds to 500s or ~8 minutes
-        self.rec_buffer_size = rec_buffer_size
+    def start(self, sample_rate):
+        if not self.lead:
+            logger.warning("Using start with a source marked as follower.")
+        self.sample_rate = sample_rate
+        self.is_active = True
+        self.start_listening()
+        for follower in self.followers:
+            # TODO This is weird but only way to ensure synced start times
+            follower.start_time = self.start_time
+        self.busy_loop = BusyThread(1 / self.sample_rate, self._callback)
+        self.busy_loop.start()
 
-    @property
-    def is_recording(self):
-        if not hasattr(self, "_recording"):
-            return False
-        return self._recording
+    def stop(self):
+        if self.lead:
+            self.busy_loop.stop()
+            self.busy_loop.join()
+            for follower in self.followers:
+                follower.stop()
+        self.is_active = False
 
-    def start_recording(self, filename):
-        self._recording = True
-        self.filename = filename
-        self.has_written_file = False
+    def _callback(self, t):
+        data = self.get_data_for_time(t)
+        for follower in self.followers:
+            data.update(**follower.get_data_for_time(t))
+        self.buffer.put(data)
 
-    def _flush_to_file(self):
-        df = self.record_data.as_dataframe()
-        if self.has_written_file:
-            df.to_csv(self.filename, header=False, index=False, mode="a")
-        else:
-            df.to_csv(self.filename, index=False)
-            self.has_written_file = True
-        self.record_data.clear()
+    def start_listening(self):
+        self.start_time = time.time()
 
-    def stop_recording(self):
-        self._flush_to_file()
-        self._recording = False
+    def read_current(self):
+        if self.lead:
+            logger.warning("Using read_current with a source marked as lead.")
+        return self.get_data_for_time(time.time())
 
-    def _process_for_recording(self, data):
+    def get_data_for_time(self, t):
+        data = self.data_fn(t - self.start_time)
+        if not isinstance(data, dict):
+            data = dict(zip(self._signal_names, [t] + [data]))
+        for follower in self.followers:
+            data.update(**follower.get_data_for_time(t))
         return data
 
     def read(self):
-        """
-        Return all objects received since the last call to read.
-        """
-        items = ArrayFrame()
-        cur_qsize = self.buffer.qsize()
-        for _ in range(cur_qsize):
-            items.append(self.buffer.get())
-        if self.is_recording:
-            self.record_data.extend(items)
-            if len(self.record_data) >= self.rec_buffer_size:
-                self._flush_to_file()
-        return items
+        if not self.lead:
+            logger.warning("Using read with a source marked as follower.")
+        data = DataBuffer()
+        while not self.buffer.empty():
+            d = self.buffer.get()
+            data.append(d)
+        return data
 
-    @abstractmethod
-    def start(self):
-        """
-        Implement setup logic for writer thread here
-        """
+    def set_follower(self):
+        self.lead = False
 
-    @abstractmethod
-    def stop(self):
-        """
-        Implement cleanup logic for writer thread here
-        """
-        if self.is_recording:
-            self.stop_recording()
+    def set_lead(self):
+        self.lead = True
 
-    @abstractmethod
+    @property
     def signal_names(self):
-        pass
+        all_names = self._signal_names
+        for follower in self.followers:
+            all_names += [name for name in follower.signal_names if name != "timestamp"]
+        return all_names
+
+    def set_signal_name_postfix(self, postfix):
+        self._signal_names = ["timestamp"] + [name + postfix for name in self.signal_names if name != "timestamp"]
+
+    def add_follower(self, follower):
+        self.followers.append(follower)
+
+# =============================
+# Wave
+# =============================
 
 
 class WaveDataSource(DataSource):
@@ -109,21 +191,20 @@ class WaveDataSource(DataSource):
     the WaveDataSource receives data.
     """
 
-    def __init__(self, ble_address=None, secondary_sources=None, godot=False):
-        super().__init__()
-        self.addr = ble_address
+    def __init__(self, ble_address=None, godot=False):
+        if ble_address is None and not godot:
+            raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
+        self.wave = None
+        self._signal_names = None
+        self.followers = []
+        self.buffer = Queue()
+        self.addr = ble_address
+        self.latest_point = None
+        self.lead = True
 
-        if secondary_sources is None:
-            self.secondary = []
-        elif not isinstance(secondary_sources, list):
-            self.secondary = [secondary_sources]
-        else:
-            self.secondary = secondary_sources
-
-    def start(self):
+    def start_listening(self):
         from genki_wave.threading_runner import WaveListener
-
 
         if self.godot:
             from godot import GodotListener
@@ -131,38 +212,58 @@ class WaveDataSource(DataSource):
         else:
             self.wave = WaveListener(self.addr, callbacks=[self.process_data])
 
-        for source in self.secondary:
+        for source in self.followers:
             source.start()
         self.wave.start()
 
+    def read_current(self):
+        return self.latest_point
+
+    def read(self):
+        data = DataBuffer()
+        while not self.buffer.empty():
+            d = self.buffer.get()
+            data.append(d)
+        return data
+
+    def start(self):
+        self.start_listening()
+
     def stop(self):
         self.wave.stop()
-        for source in self.secondary:
+        for source in self.followers:
             source.stop()
         self.wave.join()
 
     def process_data(self, data):
         if isinstance(data, (DataPackage, RawDataPackage)):
             data = data.as_dict()
-            for source in self.secondary:
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    data[key] = np.array(list(value.values()))
+            for source in self.followers:
                 secondary_data = source.read_current()
                 secondary_data.pop("timestamp")
                 data.update(**secondary_data)
-            if not hasattr(self, "_signal_names"):
+            if self._signal_names is None:
                 self._signal_names = list(data.keys())
-            self.buffer.put(data)
+
+            if self.lead:
+                self.buffer.put(data)
+            else:
+                self.latest_point = data
 
     def is_active(self):
         return hasattr(self, "wave") and self.wave.is_alive()
 
     def _repr_markdown_(self):
         active_text = "active" if self.is_active() else "not active"
-        recording_text = ", recording" if self.is_recording else ""
-        return f"{self.__class__.__name__}, **{active_text+recording_text}**, address: `{self.ble_address}`"
+        return f"{self.__class__.__name__}, **{active_text}**, address: `{self.ble_address}`"
 
+    @property
     def signal_names(self):
         seconds_waited = 0
-        while not hasattr(self, "_signal_names"):
+        while self._sigal_names is None:
             logger.warn(
                 f"{self.__class__.__name__} started but no package arrived, waiting."
             )
@@ -177,162 +278,12 @@ class WaveDataSource(DataSource):
         return self._signal_names
 
 
-class BusyThread(threading.Thread):
-    """
-    Opens a thread that runs a callback at a given interval.
-    """
-
-    def __init__(self, interval: int, callback: Callable):
-        super().__init__()
-        self.interval = interval
-        self.callback = callback
-        self._stop_event = threading.Event()
-
-    def run(self):
-        while not self._stop_event.is_set():
-            start_time = time.time()
-            self.callback(start_time)
-            sleep_end = start_time + self.interval
-            while time.time() < sleep_end:
-                time.sleep(1e-6)
-
-    def stop(self):
-        self._stop_event.set()
+# =============================
+# Locally timed
+# =============================
 
 
-class ManualTimerDataSource(DataSource):
-    """
-    A data source designed to enable data collection at a given sampling rate without
-    a Wave. It can include one or more 'secondary sources', e.g. mouse,
-    trackpad, keyboard, etc.
-    """
-
-    def __init__(self, sampling_rate: int, secondary_sources: list[DataSource] = None):
-        super().__init__()
-
-        self.sampling_rate = sampling_rate
-
-        if secondary_sources is None:
-            self.secondary_sources = []
-
-        self.secondary_sources = (
-            secondary_sources
-            if isinstance(secondary_sources, list)
-            else [secondary_sources]
-        )
-
-    def _callback(self, start_time):
-        data_point = {
-            "timestamp_us": start_time * 1e6,
-        }
-        for source in self.secondary_sources:
-            source_data = source.read_current()
-            source_data.pop("timestamp")
-            data_point.update(**source_data)
-
-        self.buffer.put(data_point)
-        self._signal_names = list(data_point.keys())
-
-    def start(self):
-        for source in self.secondary_sources:
-            source.start()
-
-        self.busy_loop = BusyThread(1 / self.sampling_rate, self._callback)
-        self.busy_loop.start()
-
-    def stop(self):
-        self.busy_loop.stop()
-
-    def signal_names(self):
-        seconds_waited = 0
-        while not hasattr(self, "_signal_names"):
-            logger.warn(
-                f"{self.__class__.__name__} waiting to confirm secondary sources."
-            )
-            time.sleep(1)
-            seconds_waited += 1
-            if seconds_waited >= 5:
-                logger.error(
-                    f"{self.__class__.__name__} waited for secondary sources for {seconds_waited} seconds. Exiting."
-                )
-                self.stop()
-                sys.exit(1)
-        return self._signal_names
-
-
-class MouseDataSource(DataSource):
-    """
-    A MouseDataSource is designed as a secondary source with WaveDataSource,
-    and gives the current location of the pointer on screen.
-    """
-
-    def start(self):
-        from pynput import mouse
-
-        self.mouse = mouse.Controller()
-
-    def stop(self):
-        pass
-
-    def read_current(self):
-        x, y = self.mouse.position
-        data_point = {
-            "timestamp": datetime.datetime.now(),
-            "mouse_pos": np.array([x, y]),
-        }
-        return data_point
-
-    def signal_names(self):
-        return ["timestamp", "mouse_pos"]
-
-
-class KeyboardDataSource(DataSource):
-    """
-    A KeyboardDataSource is designed as a secondary source with WaveDataSource,
-    and gives a boolean value indicating whether the keys from a given set of
-    keys are being pressed or not.
-    """
-
-    def __init__(self, keys: list[str] = ["enter"]):
-        self.keys = keys
-
-    def start(self):
-        from pynput import keyboard
-
-        self.is_pressing = {k: 0 for k in self.keys}
-        self.listener = keyboard.Listener(
-            on_press=self.on_press, on_release=self.on_release
-        )
-        self.listener.start()
-
-    def stop(self):
-        self.listener.stop()
-        self.listener.join()
-        super().stop()
-
-    def on_press(self, key):
-        key_name = (
-            str(key).replace("'", "").split(".")[-1]
-        )  # transforms keyboard.Key and keyboard.KeyCode to strings
-        if key_name in self.is_pressing:
-            self.is_pressing[key_name] = 1
-
-    def on_release(self, key):
-        key_name = (
-            str(key).replace("'", "").split(".")[-1]
-        )  # transforms keyboard.Key and keyboard.KeyCode to strings
-        if key_name in self.is_pressing:
-            self.is_pressing[key_name] = 0
-
-    def read_current(self):
-        return {"timestamp": datetime.datetime.now()} | {
-            f"pressing_{key}": value for key, value in self.is_pressing.items()
-        }  # Merges the dictionaries
-
-    def signal_names(self):
-        return ["timestamp"] + [f"pressing_{key}" for key in self.keys]
-
-
+# TODO - implementing this is not urgent (but probably quite easy)
 class EvdevTrackpadDataSource(DataSource):
     """
     An EvdevTrackpadDataSource is designed as a secondary data source for
@@ -409,6 +360,7 @@ class EvdevTrackpadDataSource(DataSource):
         return ["timestamp", "mouse_pos", "is_touching"]
 
 
+# TODO - implementing this is not urgent (but probably quite easy)
 class MacOsTrackpadDataSource(DataSource):
     """
     A trackpad data source, equivalent to EvdevTrackpadDataSource, but works on a Mac.
@@ -448,6 +400,7 @@ class MacOsTrackpadDataSource(DataSource):
         self.tp_thread.start()
 
     def stop(self):
+        super().stop()
         self.comm.cancel = True
         self.tp_thread.join()
 
@@ -464,6 +417,60 @@ class MacOsTrackpadDataSource(DataSource):
 
     def signal_names(self):
         return ["timestamp", "mouse_pos", "is_touching"]
+
+
+# TODO - numpy is probably not the best way to store the frames, do some research
+# TODO - implementing this is not urgent
+class CameraDataSource(DataSource):
+    """
+    A class to use a camera as a secondary DataSource.
+    The recorded frames are in RGB format and have shape (1, height, width, 3)
+    """
+
+    def __init__(self, camera_id=0, resolution=(640, 480)):
+        super().__init__()
+        import cv2
+
+        self.cv = cv2
+
+        self.camera_id = camera_id
+        self.resolution = resolution
+
+        self.cap = self.cv.VideoCapture(self.camera_id)
+        self.last_frame = None
+
+    def start(self):
+        self.cap.open(self.camera_id)
+
+    def stop(self):
+        super().stop()
+        self.cap.release()
+
+    def read(self):
+        ret, frame = self.cap.read()
+        data_point = {
+            "timestamp": datetime.datetime.now(),
+        }
+        if ret:
+            frame = self.cv.cvtColor(frame, self.cv.COLOR_BGR2RGB)
+            frame = self.cv.resize(frame, self.resolution)
+            frame = np.expand_dims(frame, axis=0)
+            self.last_frame = frame
+            return data_point | {"image": frame}
+        else:
+            return data_point | {"image": self.last_frame}
+
+    def read_current(self):
+        return self.read()
+
+    def signal_names(self):
+        return ["timestamp", "image"]
+
+# =============================
+# DataFrame sources, how to square this with real time? Sample rate becomes lines read per second?
+# What about read_current? Just read next line?
+# Probably should only be available as leader, throw error if used as follower.
+# =============================
 
 
 class DataFrameDataSource(DataSource):
@@ -540,131 +547,66 @@ class SessionDataSource(DataFrameDataSource):
         super().__init__(session.df, lines_per_read)
 
 
-class SystemDataSource(DataSource):
-    """
-    A class to use a SignalSystem as a DataSource (i.e. input to another
-    SignalSystem), convenient for resampling - one can e.g. define one system
-    with a source at a high frequency and some derived signals, and then
-    use this system, but downsampled, as a source to another system, and define
-    some derived signals on this lower frequency.
-    """
-
-    def __init__(self, system, sampling_rate):
-        self.system = system
-        self.rate = sampling_rate
-
-    def start(self):
-        self.system.start()
-
-    def stop(self):
-        self.system.stop()
-
-    def read(self):
-        data = self.system.read()
-        return self.resample_data(data)
-
-    def resample_data(self, data):
-        return data.iloc[:: self.rate]
-
-    def signal_names(self):
-        return self.system.source.signal_names() + [s.name for s in self.system.derived]
+# =============================
+# Mic source, local time but specific sampling rate. Meant as a leading source. Quite different from other sources.
+# Meant to be used with high sampling rate, e.g. 44100 Hz, does it even make sense to use it as a follower?
+# Maybe we can have a self._is_leading attribute, raise warning if mic is started and not leading?
+# =============================
 
 
 class MicDataSource(DataSource):
     """Primary data source to read data from microphone."""
 
-    def __init__(self):
+    def __init__(self, chunk_size=1024):
         import pyaudio
 
-        super().__init__()
         self.pa = pyaudio.PyAudio()
         self.mic_info = self.pa.get_default_input_device_info()
-        self.sampling_rate = int(self.mic_info["defaultSampleRate"])
+        self.sample_rate = int(self.mic_info["defaultSampleRate"])
         self.format = pyaudio.paInt16
+        self.chunk_size = chunk_size
+        self.stream = None
+        self.buffer = DataBuffer(max_size=None)
+        self.is_active = False
 
     def start(self):
-        CHUNK = 1024
 
         self.stream = self.pa.open(
             format=self.format,
             channels=self.mic_info["maxInputChannels"],
-            rate=self.sampling_rate,
+            rate=self.sample_rate,
             input=True,
-            frames_per_buffer=CHUNK,
+            frames_per_buffer=self.chunk_size,
             stream_callback=self.receive,
         )
         self.stream.start_stream()
+        self.is_active = True
 
     def stop(self):
         self.stream.stop_stream()
         self.stream.close()
+        self.is_active = False
 
     def receive(self, in_data, frame_count, time_info, status):
         from pyaudio import paContinue
 
         data = np.frombuffer(in_data, dtype=np.int16)
-        self.buffer.put({"audio": data[:, None]})
-        return (in_data, paContinue)
+        self.buffer.extend({"audio": data[:, None]})
+        return in_data, paContinue
 
+    @property
     def signal_names(self):
         return ["audio"]
 
-
-class CameraDataSource(DataSource):
-    """
-    A class to use a camera as a secondary DataSource.
-    The recorded frames are in RGB format and have shape (1, height, width, 3)
-    """
-
-    def __init__(self, camera_id=0, resolution=(640, 480)):
-        super().__init__()
-        import cv2
-
-        self.cv = cv2
-
-        self.camera_id = camera_id
-        self.resolution = resolution
-
-        self.cap = self.cv.VideoCapture(self.camera_id)
-        self.last_frame = None
-
-    def start(self):
-        self.cap.open(self.camera_id)
-
-    def stop(self):
-        self.cap.release()
-
     def read(self):
-        ret, frame = self.cap.read()
-        data_point = {
-            "timestamp": datetime.datetime.now(),
-        }
-        if ret:
-            frame = self.cv.cvtColor(frame, self.cv.COLOR_BGR2RGB)
-            frame = self.cv.resize(frame, self.resolution)
-            frame = np.expand_dims(frame, axis=0)
-            last_frame = frame
-            return data_point | {"image": frame}
-        else:
-            return data_point | {"image": last_frame}
+        value = self.buffer.copy()
+        self.buffer.clear()
+        return value
+
+    def start_listening(self):
+        raise Exception("start_listening called on MicDataSource which is not intended to be used as a follower.")
 
     def read_current(self):
-        return self.read()
-
-    def signal_names(self):
-        return ["timestamp", "image"]
+        raise Exception("read_current called on MicDataSource which is not intended to be used as a follower.")
 
 
-class RandomDataSource(DataSource):
-    """Secondary data source to generate random data."""
-
-    signal_names = ["random"]
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def read_current(self):
-        return {"random": np.random.rand(1, 1), "timestamp": datetime.datetime.now()}

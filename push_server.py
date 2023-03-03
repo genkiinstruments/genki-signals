@@ -15,14 +15,16 @@ from flask import Flask
 from flask_socketio import SocketIO
 from flask_cors import CORS
 
-import signal_processing.signals as s  # noqa: E402
-from signal_processing.data_sources import (  # noqa: E402
-    ManualTimerDataSource,
-    MouseDataSource,
-    RandomDataSource,
+import genki_signals.signals as s  # noqa: E402
+from genki_signals.data_sources import (  # noqa: E402
     WaveDataSource
 )
-from signal_processing.system import SignalSystem  # noqa: E402
+from genki_signals.data_generators import (
+    MouseDataSource,
+    RandomNoise
+)
+from genki_signals.sampler import Sampler  # noqa: E402
+from genki_signals.system import System  # noqa: E402
 
 eventlet.monkey_patch()
 app = Flask(__name__)
@@ -34,19 +36,21 @@ GUI_UPDATE_RATE = 50
 
 
 def generate_data(ble_address=None):
-    ds = [RandomDataSource(), MouseDataSource()]
     if ble_address is not None:
-        source = WaveDataSource(ble_address, secondary_sources=ds)
+        source = WaveDataSource(ble_address)
     else:
-        source = ManualTimerDataSource(SAMPLING_RATE, secondary_sources=ds)
+        source = Sampler({
+            "random": RandomNoise(),
+            "mouse_position": MouseDataSource()
+        }, SAMPLING_RATE)
         
-    system = SignalSystem(source, derived=[s.SamplingRate()])
-    with system:
+    with System(source, [s.SampleRate()]) as system:
         while True:
-            data = system.read(as_dataframe=False)
-            # data_points = [dict(row) for _, row in data.iterrows()]
-            data_points = [dict(zip(data, [list(v) for v in vs])) for vs in zip(*data.values())]
-            socketio.emit("data", data_points, broadcast=True)
+            data = system.read()
+            data_dict = {}
+            for key in data:
+                data_dict[key] = data[key].T.tolist()
+            socketio.emit("data", data_dict, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
