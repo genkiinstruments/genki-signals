@@ -47,7 +47,11 @@ export class SubChart implements Updatable, Deletable {
 			case 'line':
 				return new Line(this.wasm_context, this.sub_chart_surface, plot_options as LinePlotOptions);
 			case 'trace':
-				return new Trace(this.wasm_context, this.sub_chart_surface, plot_options as TracePlotOptions);
+				return new Trace(
+					this.wasm_context,
+					this.sub_chart_surface,
+					plot_options as TracePlotOptions
+				);
 			case 'no_type':
 				throw new Error('No plot type specified');
 			default:
