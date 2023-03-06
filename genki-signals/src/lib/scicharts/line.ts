@@ -77,6 +77,7 @@ export class Line extends BasePlot {
 				if(this.surface.zoomState == EZoomState.UserZooming){
 					parent_surface.setZoomState(EZoomState.UserZooming);
 					parent_axis.visibleRange = this.x_axis.visibleRange;
+					
 				}
 			});
 			parent_axis.visibleRangeChanged.subscribe(() => {

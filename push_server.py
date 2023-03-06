@@ -26,6 +26,8 @@ from genki_signals.data_generators import (
 from genki_signals.sampler import Sampler  # noqa: E402
 from genki_signals.system import System  # noqa: E402
 
+import numpy as np
+
 eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
@@ -49,7 +51,10 @@ def generate_data(ble_address=None):
             data = system.read()
             data_dict = {}
             for key in data:
-                data_dict[key] = data[key].T.tolist()
+                if(data[key].ndim == 1):
+                    data_dict[key] = np.expand_dims(data[key].T, axis = 0).tolist()
+                else:
+                    data_dict[key] = data[key].T.tolist()
             socketio.emit("data", data_dict, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 

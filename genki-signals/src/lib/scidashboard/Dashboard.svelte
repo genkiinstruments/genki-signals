@@ -7,6 +7,7 @@
 	import { getSubChartRects } from '../utils/subchart_helpers';
 	import { SubChart } from '../scicharts/subchart';
 	import { get_default_line_plot_options, type LinePlotOptions } from '../scicharts/line';
+	import type  { BarPlotOptions } from '../scicharts/barplot';
 	import { SCICHART_KEY } from '../utils/constants';
 	import type { SignalConfig } from '$lib/scicharts/types';
 	import { compare_signals } from '../scicharts/types';
@@ -21,9 +22,11 @@
 	const num_charts = 2;
 	const num_columns = 1;
 
-	const line_options: LinePlotOptions = {
-		type: 'line', // only line for now
-        sig_x: [{ sig_name: 'timestamp_us', sig_idx: 0 }],
+	const line_options: BarPlotOptions = {
+		type: 'bar', // only line for now
+        sig_x: [
+			// { sig_name: 'timestamp', sig_idx: 0 }
+		],
         sig_y: [
 			// { sig_name: 'random', sig_idx: 0 },
 			// { sig_name: 'mouse_pos', sig_idx: 0 },
@@ -33,14 +36,14 @@
 		y_axis_align: 'left',
 		x_axis_flipped: false,
 		y_axis_flipped: false,
-		x_axis_visible: false,
+		x_axis_visible: true,
 		y_axis_visible: true,
 		data_contains_nan: false,
 		data_is_sorted: true,
-		auto_range: true,
-		y_domain_max: 1,
+		auto_range: false,
+		y_domain_max: 3000,
 		y_domain_min: 0,
-		n_visible_points: 100,
+		// n_visible_points: 100,
 	};
 	let signals: Object<string, number> = {};
 	let selected_signal: string;

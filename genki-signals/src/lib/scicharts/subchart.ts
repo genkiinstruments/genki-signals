@@ -7,6 +7,7 @@ import { Trace, type TracePlotOptions } from './trace';
 import type { ArrayDict, SignalConfig } from './types';
 import type { Deletable, Updatable } from './interfaces';
 import type { BasePlot, PlotOptions } from './baseplot';
+import { Bar, type BarPlotOptions } from './barplot';
 
 /**
  * An abstract base class for all subcharts.
@@ -46,6 +47,8 @@ export class SubChart implements Updatable, Deletable {
 		switch (plot_options.type) {
 			case 'line':
 				return new Line(this.wasm_context, this.sub_chart_surface, plot_options as LinePlotOptions);
+			case 'bar':
+				return new Bar(this.wasm_context, this.sub_chart_surface, plot_options as BarPlotOptions);
 			case 'trace':
 				return new Trace(
 					this.wasm_context,
