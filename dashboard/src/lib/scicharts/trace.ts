@@ -15,7 +15,6 @@ import type { ArrayDict, SignalConfig } from './types';
 
 export interface TracePlotOptions extends PlotOptions {
     type: 'trace';
-    group_sig: SignalConfig;
 	/** If auto_range_x is true, then x_domain_max and x_domain_min are not used */
 	auto_range_x: boolean;
 	/** If auto_range_y is true, then y_domain_max and y_domain_min are not used */
@@ -30,7 +29,6 @@ export function get_default_trace_plot_options(): TracePlotOptions {
     return {
         ...get_default_plot_options(),
         type: 'trace', // overrides default_plot_options.type
-        group_sig: { sig_name: 'timestamp_us', sig_idx: 0 },
         auto_range_x: false,
         auto_range_y: false,
         x_domain_max: 2560,
@@ -47,12 +45,6 @@ export class Trace extends BasePlot {
 	y_axis: NumericAxis;
 	options: TracePlotOptions;
 
-    /** 
-     * Contains the timestamp / index values which are not plotted but used to group the trace with other plots.
-     */
-    group_axis: NumericAxis; //
-    group_data_series: XyDataSeries; 
-
 	renderable_series: FastLineRenderableSeries[] = [];
 	data_series: XyDataSeries[] = [];
 
@@ -67,11 +59,6 @@ export class Trace extends BasePlot {
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
-        
-        this.group_axis = new NumericAxis(this.wasm_context);
-        this.group_axis.isVisible = false;
-        this.surface.xAxes.add(this.group_axis);
-        this.group_data_series = new XyDataSeries(this.wasm_context);
 
 		this.options = plot_options;
 
@@ -84,23 +71,6 @@ export class Trace extends BasePlot {
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
-	}
-
-    /**
-	 * @param i - The index of the data series. If i is negative, then the index is counted from the end.
-	 * @returns The x-value at index i.
-	 */
-	protected get_group_value(i: number): number {
-		const count = this.group_data_series.count();
-		const values = this.group_data_series.getNativeXValues();
-
-		if (i < 0) {
-			return values.get(Math.max(count + i, 0));
-		}
-        if (i >= count) {
-            throw new Error(`Index ${i} out of bounds`);
-        }
-		return values.get(i);
 	}
 
 	private update_axis_domains(): void {
@@ -121,10 +91,6 @@ export class Trace extends BasePlot {
             const y_max = this.options.y_domain_max;
             this.y_axis.visibleRange = new NumberRange(y_min, y_max);
         }
-
-        const group_min = this.get_group_value(-this.options.n_visible_points);
-        const group_max = this.get_group_value(-1);
-        this.group_axis.visibleRange = new NumberRange(group_min, group_max);
 	}
 
 	public set_axis_domains(
@@ -145,10 +111,13 @@ export class Trace extends BasePlot {
             const x = this.fetch_and_check(data, this.options.sig_x[i]);
             const y = this.fetch_and_check(data, this.options.sig_y[i]);
             this.data_series[i].appendRange(x, y);
+
+			if (this.data_series[i].count() > this.options.n_visible_points) {
+				this.data_series[i].removeRange(0, this.data_series[i].count() - this.options.n_visible_points);
+			}
         }
 
-        const group_x = this.fetch_and_check(data, this.options.group_sig);
-        this.group_data_series.appendRange(group_x, group_x);
+
 
 		this.update_axis_domains();
 	}
