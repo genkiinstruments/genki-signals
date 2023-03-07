@@ -51,8 +51,6 @@ export class Line extends BasePlot {
 	) {
 		super(wasm_context, surface);
 
-		let thiss = this;
-
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
@@ -60,6 +58,7 @@ export class Line extends BasePlot {
 
 		this.options = plot_options;
 
+<<<<<<< HEAD:genki-signals/src/lib/scicharts/line.ts
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier({modifierGroup:"mouseZoomGroup"}));
 		this.surface.chartModifiers.add(new ZoomPanModifier());
 		this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false, modifierGroup:"zoomExtentsGroup", onZoomExtents: function(surface){
@@ -86,6 +85,8 @@ export class Line extends BasePlot {
 			});
 		}
 
+=======
+>>>>>>> a14ee2f5f84b67256d4d4a06c3c54b6922f031ac:dashboard/src/lib/scicharts/line.ts
 		if (this.options.sig_x.length > 1) {
 			throw new Error('Line plots only support one x signal');
 		}

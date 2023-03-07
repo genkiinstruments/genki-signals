@@ -42,7 +42,7 @@ export function get_default_plot_options(): PlotOptions {
 		x_axis_visible: true,
 		y_axis_visible: true,
 		data_contains_nan: false,
-		data_is_sorted: false
+		data_is_sorted: true
 	};
 }
 
