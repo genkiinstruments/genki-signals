@@ -26,6 +26,8 @@ from genki_signals.data_sources import (
 )
 from genki_signals.system import System  # noqa: E402
 
+import numpy as np
+
 eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
