@@ -31,7 +31,7 @@ import numpy as np
 eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
-socketio = SocketIO(app, cors_allowed_origins="*") #, cors_allowed_origins=["http://localhost:5173/"]) # TODO: remove cors_allowed_origins
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
@@ -44,15 +44,20 @@ def generate_data(ble_address=None):
         source = Sampler({
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
-        }, SAMPLING_RATE)
+        }, SAMPLING_RATE, timestamp_key="timestamp_us")
         
-    with System(source, [s.SampleRate()]) as system:
+    with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
         while True:
             data = system.read()
             data_dict = {}
             for key in data:
+<<<<<<< HEAD
                 if(data[key].ndim == 1):
                     data_dict[key] = np.expand_dims(data[key].T, axis = 0).tolist()
+=======
+                if data[key].ndim == 1:
+                    data_dict[key] = data[key][:, None].T.tolist()
+>>>>>>> 14ce76d8d81e4e777af2c5dbd36c3972bfbec796
                 else:
                     data_dict[key] = data[key].T.tolist()
             socketio.emit("data", data_dict, broadcast=True)

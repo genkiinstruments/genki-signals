@@ -5,11 +5,6 @@ from genki_signals.buffers import DataBuffer
 logger = logging.getLogger(__name__)
 
 
-def upsample(signal, factor):
-    # Note that we can potentially use other methods for upsampling e.g. interpolation
-    return signal.repeat(factor, axis=0)
-
-
 class System:
     """
     A System is a DataSource with a list of derived signals. The system
@@ -46,7 +41,7 @@ class System:
             #       * If the signal throws an exception, this context is useful
             #       * the output should have the same length as the input
             output = signal(*inputs)
-            assert len(output) == len(data), f"Expected output of length {len(data)=}, got {len(output)=}"
+            assert output.shape[-1] == len(data), f"Expected output of length {len(data)=}, got {output.shape[-1]=}"
             data[signal.name] = output
 
     def read(self):
@@ -54,5 +49,6 @@ class System:
         Return all new data points received since the last call to read()
         """
         data = self.source.read()
-        self._compute_derived(data)
+        if len(data) > 0:
+            self._compute_derived(data)
         return data

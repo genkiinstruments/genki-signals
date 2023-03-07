@@ -47,7 +47,7 @@ class Multiply(Signal):
 class Integrate(Signal):
     """Integrates a signal with respect to another signal (usually time)"""
 
-    def __init__(self, sig_a, sig_b="timestamp_us", use_trapz=True, name=None):
+    def __init__(self, sig_a, sig_b="timestamp", use_trapz=True, name=None):
         self.name = f"Int({sig_a} w.r.t. {sig_b})" if name is None else name
         self.state = 0.0
         self.trapezoid = use_trapz
@@ -77,7 +77,7 @@ class Differentiate(Signal):
     If sig_b is None, the discrete difference of sig_a is used.
     """
 
-    def __init__(self, sig_a, sig_b="timestamp_us", name=None):
+    def __init__(self, sig_a, sig_b="timestamp", name=None):
         self.name = (
             f"Diff({sig_a})" if sig_b is None else f"Diff({sig_a} w.r.t. {sig_b})"
         )
@@ -88,20 +88,20 @@ class Differentiate(Signal):
 
     def __call__(self, a, b=None):
         if b is None:  # I.e. use discrete difference
-            b = np.arange(len(a)).reshape(-1, 1)  # Make sure it's a column vector
+            b = np.arange(len(a))
 
-        prepend_a = a[0:1] if self.last_a is None else self.last_a
-        prepend_b = b[0:1] if self.last_b is None else self.last_b
-        da = np.diff(a, prepend=prepend_a, axis=0)
-        db = np.diff(b, prepend=prepend_b, axis=0)
+        prepend_a = a[..., 0:1] if self.last_a is None else self.last_a
+        prepend_b = b[..., 0:1] if self.last_b is None else self.last_b
+        da = np.diff(a, prepend=prepend_a)
+        db = np.diff(b, prepend=prepend_b)
 
         # when there is no change in b, the derivative (da/db) is set to 0
         zeros = np.where(db == 0)[0]
         da[zeros] = 0
         db[zeros] = 1
 
-        self.last_a = a[-1:]
-        self.last_b = b[-1:]
+        self.last_a = a[..., -1:]
+        self.last_b = b[..., -1:]
 
         return da / db
 

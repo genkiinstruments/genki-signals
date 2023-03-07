@@ -31,17 +31,21 @@ class BusyThread(threading.Thread):
 
 
 class Sampler:
-    def __init__(self, sources, sample_rate, sleep_time=1e-6):
+    def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
         self.sources = sources
-        self._busy_loop = BusyThread(1 / sample_rate, self._callback, sleep_time=sleep_time)
         self.is_active = False
         self.buffer = Queue()
         self.start_time = None
+        self.timestamp_key = timestamp_key
+        self._busy_loop = None
+        self.sample_rate = sample_rate
+        self.sleep_time = sleep_time
 
     def start(self):
         for source in self.sources.values():
             source.start()
         self.start_time = time.time()
+        self._busy_loop = BusyThread(1 / self.sample_rate, self._callback, sleep_time=self.sleep_time)
         self._busy_loop.start()
         self.is_active = True
 
@@ -53,7 +57,7 @@ class Sampler:
         self.is_active = False
 
     def _callback(self, t):
-        data = {"timestamp": t}
+        data = {self.timestamp_key: t}
         for name, source in self.sources.items():
             d = source(t - self.start_time)
             if isinstance(d, dict):
