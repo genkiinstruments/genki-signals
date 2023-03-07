@@ -51,13 +51,8 @@ def generate_data(ble_address=None):
             data = system.read()
             data_dict = {}
             for key in data:
-<<<<<<< HEAD
-                if(data[key].ndim == 1):
-                    data_dict[key] = np.expand_dims(data[key].T, axis = 0).tolist()
-=======
                 if data[key].ndim == 1:
                     data_dict[key] = data[key][:, None].T.tolist()
->>>>>>> 14ce76d8d81e4e777af2c5dbd36c3972bfbec796
                 else:
                     data_dict[key] = data[key].T.tolist()
             socketio.emit("data", data_dict, broadcast=True)
