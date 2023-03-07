@@ -18,13 +18,14 @@ class Norm(Signal):
     Euclidian norm of a vector signal
     """
 
-    def __init__(self, input_names, name=None):
+    def __init__(self, input_names, name):
         # TODO: Can we abstract this away?
-        self.name = str(input_names) if name is None else name
+        self.name = name
         self.input_names = input_names
 
     def __call__(self, vec):
-        return np.sqrt((vec**2).sum(axis=1))
+        shape = vec.shape
+        return np.sqrt((vec**2).sum(axis=shape[:-1]))
 
 
 class EulerOrientation(Signal):
@@ -37,24 +38,24 @@ class EulerOrientation(Signal):
         self.input_names = [input_signal]
 
     def __call__(self, qs):
-        qw = qs[:, 0:1]
+        qw = qs[0:1]
         angle = 2 * np.arccos(qw)
         norm = np.sqrt(1 - qw**2)
-        normed = qs[:, 1:] / norm
-        return np.concatenate([angle * 360 / (2 * np.pi), normed], axis=1)
+        normed = qs[1:] / norm
+        return np.concatenate([angle * 360 / (2 * np.pi), normed], axis=0)
 
 
 class EulerAngle(Signal):
     """
-    Convert quaternion representation to Euler angles representation
+    Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
     """
 
-    def __init__(self, input_signal="current_pose", name=None):
-        self.name = f"euler({input_signal})" if name is None else name
+    def __init__(self, input_signal, name="euler_angle"):
+        self.name = name
         self.input_names = [input_signal]
 
     def __call__(self, qs):
-        qw, qx, qy, qz = qs[:, 0], qs[:, 1], qs[:, 2], qs[:, 3]
+        qw, qx, qy, qz = qs[0], qs[1], qs[2], qs[3]
 
         # roll
         sinr = 2 * (qw * qx + qy * qz)
@@ -82,7 +83,7 @@ class Gravity(Signal):
         self.input_names = [input_signal]
 
     def __call__(self, qs):
-        qw, qx, qy, qz = qs[:, 0], qs[:, 1], qs[:, 2], qs[:, 3]
+        qw, qx, qy, qz = qs[0], qs[1], qs[2], qs[3]
 
         grav_x = 2.0 * (qx * qz - qw * qy)
         grav_y = 2.0 * (qw * qx + qy * qz)
@@ -102,22 +103,22 @@ class Rotate(Signal):
         self.input_names = [orientation_signal, signal]
 
     def __call__(self, qs, xs):
-        rot = Rotation.from_quat(qs[:, [1, 2, 3, 0]])
-        return rot.apply(xs)
+        rot = Rotation.from_quat(qs[:, [1, 2, 3, 0]].T)
+        return rot.apply(xs.T).T
 
 
 def _half_plane(data: np.ndarray) -> np.ndarray:
     """Finds if a 2D vector is in the upper or lower half-plane (y-coord is positive or negative). Returns the sign
 
     Examples:
-        >>> x = np.array([[-1, 2], [2, -10], [3, 4]])
+        >>> x = np.array([[-1, 2, 3], [2, -10, 4]])
         >>> _half_plane(x)
         array([ 1, -1,  1])
     """
     assert (
-            data.ndim == 2 and data.shape[-1] == 2
+            data.ndim == 2 and data.shape[0] == 2
     ), f"Expected a matrix of 2D vectors. Got a matrix {data.shape=}"
-    return (data[:, 1] >= 0).astype(int) * 2 - 1
+    return (data[1] >= 0).astype(int) * 2 - 1
 
 
 def calc_angle_from_org(xy_vectors: np.ndarray, xy_org: np.ndarray) -> np.ndarray:
@@ -173,19 +174,6 @@ class OrientationXy(Signal):
         angles = calc_angle_from_org(xy, self.xy_org)
         out = np.c_[angles, xyz]
         return out
-
-
-class Linacc(Signal):
-    """
-    Compute linacc from gravity and acceleration
-    """
-
-    def __init__(self, acc_signal="acc", grav_signal="grav", name="linacc"):
-        self.name = name
-        self.input_names = [acc_signal, grav_signal]
-
-    def __call__(self, acc, grav):
-        return acc - grav
 
 
 class MadgwickOrientation(Signal):
@@ -384,7 +372,7 @@ class DeadReckoning(Signal):
 
 class ExtractDimension(Signal):
     """
-    Signal to extract a single dimension from a k-dimensional signal, i.e (n, k) -> (n, 1)
+    Signal to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
     """
 
     def __init__(self, signal, dim, name=None):
@@ -394,8 +382,8 @@ class ExtractDimension(Signal):
         self.input_names = [signal]
 
     def __call__(self, v):
-        # Slice ensures that the output is 2D i.e. (n, 1)
-        return v[:, self.dim : self.dim + 1]
+        # Slice ensures that the output is 2D i.e. (1, n)
+        return v[self.dim:self.dim + 1]
 
 
 class ZeroCrossing(Signal):

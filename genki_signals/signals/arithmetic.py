@@ -117,7 +117,7 @@ class MovingAverage(Signal):
     def __call__(self, x):
         output = np.zeros(x.shape)
         for i in range(len(x)):
-            self.buffer.extend(x[i:i+1])
-            output[i] = np.mean(self.buffer.view(), axis=0)
+            self.buffer.extend(x[..., i:i+1])
+            output[i] = np.mean(self.buffer.view(), axis=-1)
         return output
 

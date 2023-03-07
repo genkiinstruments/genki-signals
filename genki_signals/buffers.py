@@ -226,6 +226,9 @@ class DataBuffer(MutableMapping):
     def from_dataframe(cls, df, max_size=None):
         return cls(max_size=max_size, data={k: df[k].values for k in df.columns})
 
+    def __repr__(self):
+        return f"DataBuffer(max_size={self.max_size}, data={self.data})"
+
 
 class Buffer(ABC):
     """deque-like buffer for pandas dataframes and numpy arrays"""
