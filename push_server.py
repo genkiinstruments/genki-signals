@@ -46,9 +46,10 @@ def generate_data(ble_address=None):
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
         
-    with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
+    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(input_name="random", name="randomFourier")]) as system:
         while True:
             data = system.read()
+            data["randomFourier"] = np.abs(data["randomFourier"]).T
             data_dict = {}
             for key in data:
                 if data[key].ndim == 1:

@@ -41,6 +41,24 @@
 		n_visible_points: 1000,
 	};
 
+	const spectogram_options: SpectogramPlotOptions = {
+        sig_x: [{ sig_name: 'timestamp_us', sig_idx: 0 }],
+        sig_y: [
+			{ sig_name: 'randomFourier', sig_idx: 0}
+			// { sig_name: 'mouse_pos', sig_idx: 0 },
+			// { sig_name: 'mouse_pos', sig_idx: 1 },
+		],
+		x_axis_align: 'bottom',
+		y_axis_align: 'left',
+		x_axis_flipped: false,
+		y_axis_flipped: false,
+		x_axis_visible: false,
+		y_axis_visible: true,
+		data_contains_nan: false,
+		data_is_sorted: false,
+		n_visible_windows: 50,
+	};
+
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	onMount(() => {
 		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
