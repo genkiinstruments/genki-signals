@@ -1,3 +1,5 @@
 from .arithmetic import *
-from .frequency import *
+from .filters import *
+from .geometry import *
 from .inference import *
+from .windowed import *

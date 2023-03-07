@@ -1,5 +1,5 @@
 """
-A DataSource is an input to a SignalSystem (see old_signals.py).
+A DataSource is an input to a SignalSystem
 
 DataSources are expected to collect some data into a queue, usually by
 using a separate thread for writing. A concrete DataSource just needs to
