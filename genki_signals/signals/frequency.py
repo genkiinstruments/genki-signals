@@ -7,7 +7,7 @@ from genki_signals.signals.base import Signal
 
 def upsample(signal, factor):
     # Note that we can potentially use other methods for upsampling e.g. interpolation
-    return signal.repeat(factor, axis=0)
+    return signal.repeat(factor, axis=-1)
 
 
 class SampleRate(Signal):
@@ -24,14 +24,15 @@ class SampleRate(Signal):
 
 
 class WindowedSignal(Signal):
-    def __init__(self, window_size, window_overlap, output_shape, default_value=0.0):
+    def __init__(self, window_size, window_overlap, output_shape, default_value=0.0, upsample=True):
         self.win_size = window_size
         self.window_overlap = window_overlap
         self.num_to_pop = self.win_size - window_overlap
         self.input_buffer = NumpyBuffer(None)
         self.output_buffer = NumpyBuffer(None, n_cols=output_shape)
-        self.output_buffer.extend(default_value * np.ones((window_size-1, *output_shape)))
+        self.output_buffer.extend(default_value * np.ones((*output_shape, window_size-1)))
         self.default_value = default_value
+        self.upsample = upsample
 
     def __call__(self, sig):
         self.input_buffer.extend(sig)
@@ -39,7 +40,11 @@ class WindowedSignal(Signal):
             x = self.input_buffer.view(self.win_size)
             self.input_buffer.popleft(self.num_to_pop)
             out = self.windowed_fn(x)
-            self.output_buffer.extend(upsample(out, self.num_to_pop))
+            if self.upsample:
+                upsampled = upsample(out, self.num_to_pop)
+            else:
+                upsampled = out
+            self.output_buffer.extend(upsampled)
         return self.output_buffer.popleft(len(sig))
 
     def windowed_fn(self, x):
@@ -72,33 +77,8 @@ class FourierTransform(WindowedSignal):
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)
-        sig = sig.squeeze() * self.window_fn(len(sig))  # Note this only works for 1D signals
+        sig = sig * self.window_fn(sig.shape[-1])
         sig_fft = np.fft.rfft(sig) / self.win_size
-        return sig_fft.reshape(1, -1)
-
-
-if __name__ == '__main__':
-    data = np.arange(20)
-    wf = WindowedSignal(6, 2, tuple())
-
-    wf_out = np.zeros(len(data))
-    for i in range(len(data)):
-        wf_out[i] = wf(data[i:i+1])
-
-    print(wf_out)
-
-    wf = WindowedSignal(6, 2, tuple())
-    print(wf(data))
-
-    # fft = FourierTransform("raw", "fft", window_size=256, window_overlap=0)
-    # t = np.arange(1, 10, 0.01)
-    # x = np.sin(2 * np.pi * 5 * t)
-    # omega = np.fft.rfftfreq(256, 0.01)
-    #
-    # fft_out = np.zeros((len(x), 129), dtype=complex)
-    # for i in range(len(x)):
-    #     fft_out[i] = fft(x[i:i+1])
-    #
-    # psd = np.abs(fft_out)**2
-    # print(omega.shape, psd.shape)
-    # print(omega[psd.argmax(axis=1)])
+        if sig_fft.ndim == 1:
+            sig_fft = sig_fft[:, None]
+        return sig_fft

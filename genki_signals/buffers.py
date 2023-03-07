@@ -9,9 +9,9 @@ import bqplot as bq
 
 def _slice(data, length, end=True):
     if end:
-        return {k: v[-length:] for k, v in data.items()}
+        return {k: v[..., -length:] for k, v in data.items()}
     else:
-        return {k: v[:length] for k, v in data.items()}
+        return {k: v[..., :length] for k, v in data.items()}
 
 
 class DataBuffer(MutableMapping):
@@ -28,20 +28,20 @@ class DataBuffer(MutableMapping):
     def __len__(self):
         if self.data == {}:
             return 0
-        return len(next(iter(self.data.values())))
+        return next(iter(self.data.values())).shape[-1]
 
     def __getitem__(self, k):
         if k not in self.keys():
             m = re.match(r"(.+)_(\d+)", k)
             if m is not None:
                 key, index = m.groups()
-                return self.data[key][:, int(index)]
+                return self.data[key][int(index)]
             else:
                 raise KeyError(f"Key {k} not found in {self.keys()}")
         return self.data[k]
 
     def __setitem__(self, key, value):
-        assert len(value) == len(self), f"Length of value must be the same as the buffer, {len(value)=} != {len(self)=}"
+        assert value.shape[-1] == len(self), f"Length of value must be the same as the buffer, {value.shape[-1]=} != {len(self)=}"
         self.data[key] = value
 
     def __delitem__(self, v):
@@ -52,19 +52,15 @@ class DataBuffer(MutableMapping):
 
     def _init_cols_if_needed(self, data):
         if len(self) == 0:
-            self.data = {k: np.empty((0, *v.shape[1:])) for k, v in data.items()}
+            self.data = {k: np.empty((*v.shape[:-1], 0)) for k, v in data.items()}
 
     def _validate(self, data):
         assert set(self.keys()) == set(data.keys()), f"Data keys must be the same, {self.keys()=} != {data.keys()=}"
-        try:
-            len_added = len(next(iter(data.values())))
-        except StopIteration as e:
-            print(data)
-            raise e
-        assert all(len(v) == len_added for v in data.values()), f"Data values must have same length, {data.values()}"
+        len_added = next(iter(data.values())).shape[-1]
+        assert all(v.shape[-1] == len_added for v in data.values()), f"Data values must have same length, {data.values()}"
 
     def _concat(self, data_list):
-        return {k: np.concatenate([d[k] for d in data_list]) for k in self.keys()}
+        return {k: np.concatenate([d[k] for d in data_list], axis=-1) for k in self.keys()}
 
     def extend(self, data):
         """Appends data to the buffer and pops off and slices s.t. the length matches maxlen"""
@@ -78,7 +74,7 @@ class DataBuffer(MutableMapping):
         self._update_charts()
 
     def append(self, pt):
-        pts = {k: np.array([v]) for k, v in pt.items()}
+        pts = {k: np.array([v]).T for k, v in pt.items()}
         self.extend(pts)
 
     def plot(self, key, plot_type="chart", **kwargs):
@@ -88,6 +84,8 @@ class DataBuffer(MutableMapping):
             return self._plot_spectrogram(key, **kwargs)
         elif plot_type == "trace2D":
             return self._plot_trace(key, **kwargs)
+        elif plot_type == "histogram":
+            return self._plot_histogram(key, **kwargs)
 
     def _update_charts(self):
         for chart in self.charts:
@@ -97,13 +95,15 @@ class DataBuffer(MutableMapping):
                 self._update_spectrogram(chart)
             elif chart["type"] == "trace2D":
                 self._update_trace(chart)
+            elif chart["type"] == "histogram":
+                self._update_histogram(chart)
 
     def _plot_line_chart(self, key, x_key=None):
         xs = bq.LinearScale()
         ys = bq.LinearScale()
         xax = bq.Axis(scale=xs, label="t")
         yax = bq.Axis(scale=ys, orientation="vertical", label=key)
-        line = bq.Lines(x=np.arange(len(self[key])), y=self[key].T, scales={"x": xs, "y": ys})
+        line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[line], axes=[xax, yax])
         chart_obj = {
             "type": "line",
@@ -122,10 +122,10 @@ class DataBuffer(MutableMapping):
         line = chart["line"]
         x_key = chart["x_key"]
         if x_key is None:
-            line.x = np.arange(len(self[key]))
+            line.x = np.arange(len(self))
         else:
             line.x = self[x_key]
-        line.y = self[key].T
+        line.y = self[key]
 
     def _plot_spectrogram(self, key, **kwargs):
         xs = bq.LinearScale()
@@ -154,7 +154,7 @@ class DataBuffer(MutableMapping):
         line = chart["line"]
         sample_rate = chart["sample_rate"]
         window_size = chart["window_size"]
-        data = self[key][-1]
+        data = self[key][..., -1]
         omega = np.fft.rfftfreq(window_size, 1 / sample_rate)
         line.x = omega
         line.y = 10 * np.log10(np.maximum(np.abs(data), 1e-20))
@@ -180,11 +180,38 @@ class DataBuffer(MutableMapping):
     def _update_trace(self, chart):
         key = chart["key"]
         line = chart["line"]
-        line.x = self[key][:, 0]
-        line.y = -self[key][:, 1]
+        line.x = self[key][0]
+        line.y = -self[key][1]
+
+    def _plot_histogram(self, key, **kwargs):
+        x_names = kwargs.get("class_names", None)
+        xs = bq.OrdinalScale()
+        ys = bq.LinearScale()
+        xax = bq.Axis(scale=xs)
+        yax = bq.Axis(scale=ys, orientation="vertical", label="Probability")
+        bars = bq.Bars(x=x_names, y=[], scales={"x": xs, "y": ys})
+        fig = bq.Figure(marks=[bars], axes=[xax, yax])
+        chart_obj = {
+            "type": "histogram",
+            "key": key,
+            "bars": bars
+        }
+        # Call _update_histogram first, if there is an error
+        # we won't add the chart to self.charts
+        self._update_histogram(chart_obj)
+        self.charts.append(chart_obj)
+        return fig
+
+    def _update_histogram(self, chart):
+        key = chart["key"]
+        bars = chart["bars"]
+        bars.y = self[key][..., -1]
 
     def keys(self):
         return self.data.keys()
+
+    def values(self):
+        return self.data.values()
 
     def clear(self):
         self.data = {}
@@ -263,7 +290,7 @@ class Buffer(ABC):
         if len(self._data) == 0:
             raise IndexError("Pop from empty buffer")
         data_out = self._slice(self._data, n)
-        n_to_keep = len(self._data) - n
+        n_to_keep = self._data.shape[-1] - n
         self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
         return data_out
 
@@ -301,21 +328,21 @@ class NumpyBuffer(Buffer):
 
     def _init_cols_if_needed(self, data):
         if self.cols is None:
-            self.cols = data.shape[1:]
+            self.cols = data.shape[:-1]
 
     def _empty(self):
         if self.cols is None:
             return np.empty((0, 0))
-        return np.empty((0, *self.cols))
+        return np.empty((*self.cols, 0))
 
     def _validate(self, data):
-        assert data.shape[1:] == self.cols, "Expected a fixed number of cols to be able to concatenate"
+        assert data.shape[:-1] == self.cols, "Expected a fixed number of cols to be able to concatenate"
 
     def _slice(self, data, n, end=False):
-        return data[-n:] if end else data[:n]
+        return data[..., -n:] if end else data[..., :n]
 
     def _concat(self, data_list):
-        return np.concatenate([d for d in data_list if d.size != 0], axis=0)
+        return np.concatenate([d for d in data_list if d.size != 0], axis=-1)
 
 
 class NumpyBufferResample(NumpyBuffer):
