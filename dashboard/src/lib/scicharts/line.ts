@@ -90,23 +90,10 @@ export class Line extends BasePlot {
 		}
 	}
 
-	public set_axis_domains(
-		auto_range: boolean,
-		y_max: number,
-		y_min: number,
-		n_visible_points: number
-	): void {
-		this.options.auto_range = auto_range;
-		this.options.y_domain_max = y_max;
-		this.options.y_domain_min = y_min;
-		this.options.n_visible_points = n_visible_points;
-		this.update_y_domain();
-		this.update_x_domain();
-	}
 
 	public update(data: ArrayDict): void {
 		if (this.options.sig_x.length === 0) return; // if no x signal is defined, then we can't update the plot
-
+		
 		const x = this.fetch_and_check(data, this.options.sig_x[0]);
 
 		this.options.sig_y.forEach((sig_y, i) => {
@@ -171,5 +158,23 @@ export class Line extends BasePlot {
 		if (!deleted) {
 			throw new Error('Signal does not exist on this plot');
 		}
+	}
+
+	public update_all_options(options: LinePlotOptions): void {
+		this.options = options;
+
+		const n = this.options.sig_y.length;
+		if (n > this.renderable_series.length) {
+			for (let i = this.renderable_series.length; i < n; i++) {
+				this.create_plot();
+			}
+		}
+
+		// this.update_x_domain();
+		this.update_y_domain();
+		this.update_axes_alignment();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
+		this.update_data_optimizations();
 	}
 }

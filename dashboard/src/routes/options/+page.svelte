@@ -1,20 +1,15 @@
-<script>
-    import OptionWindow from '$lib/components/OptionWindow.svelte';
-    import { get_default_line_plot_options } from '$lib/scicharts/line';
+<script lang="ts">
+    import { writable } from 'svelte/store';
 
-    const options = get_default_line_plot_options();
+    import OptionMenu from '$lib/components/OptionMenu.svelte';
+    import type { PlotOptions } from '$lib/scicharts/baseplot';
 
-    options.sig_x.push(
-        {'sig_name': 'timestamp', 'sig_idx': 0},
-    );
+    import { option_store, selected_index_store } from '$lib/stores/chart_stores';
 
-    options.sig_y.push(
-        {'sig_name': 'acc', 'sig_idx': 0},
-        {'sig_name': 'acc', 'sig_idx': 1},
-        {'sig_name': 'acc', 'sig_idx': 2},
-    );
+
+    $: selected_index = $selected_index_store;
+	$: selected_store = selected_index === -1? writable({} as PlotOptions) : $option_store[selected_index];
 
 </script>
 
-<!-- <OptionWindow/> -->
-<OptionWindow object={options}/>
+<OptionMenu selected_store={selected_store}/>

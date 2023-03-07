@@ -50,11 +50,7 @@ export class SubChart implements Updatable, Deletable {
 			case 'bar':
 				return new Bar(this.wasm_context, this.sub_chart_surface, plot_options as BarPlotOptions);
 			case 'trace':
-				return new Trace(
-					this.wasm_context,
-					this.sub_chart_surface,
-					plot_options as TracePlotOptions
-				);
+				return new Trace(this.wasm_context, this.sub_chart_surface, plot_options as TracePlotOptions);
 			case 'no_type':
 				throw new Error('No plot type specified');
 			default:
@@ -75,5 +71,9 @@ export class SubChart implements Updatable, Deletable {
 		// call delete on each plot
 		this.sub_chart_surface.delete();
 		this.plot.delete();
+	}
+
+	public update_all_options(plot_options: PlotOptions): void {
+		this.plot.update_all_options(plot_options);
 	}
 }

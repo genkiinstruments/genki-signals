@@ -13,6 +13,7 @@ import type { SignalConfig, ArrayDict } from './types';
 
 export interface PlotOptions {
 	type: string;
+	description: string;
 	/**
 	 * Some plots have a 1 to n mapping of sig_x to sig_y and others have a 1 to 1 mapping.
 	 * In the former case, sig_x.length is maintained at 1.
@@ -30,9 +31,9 @@ export interface PlotOptions {
 	data_is_sorted: boolean;
 }
 export function get_default_plot_options(): PlotOptions {
-	// Function so that a copy is returned
 	return {
 		type: 'no_type',
+		description: 'no_description',
 		sig_x: [],
 		sig_y: [],
 		x_axis_align: 'bottom',
@@ -68,6 +69,9 @@ export abstract class BasePlot implements Updatable, Deletable {
 	 */
 	protected get_native_x(i: number): number {
 		const data_series = this.data_series[0]; // All series have the same x-values
+
+		if (data_series === undefined) throw new Error('Data series is undefined');
+
 		const count = data_series.count();
 		const x_values = data_series.getNativeXValues();
 
@@ -113,16 +117,11 @@ export abstract class BasePlot implements Updatable, Deletable {
 		this.y_axis.isVisible = this.options.y_axis_visible;
 	}
 
-	public set_axis_alignment(x_align: 'top' | 'bottom', y_align: 'left' | 'right'): void {
-		this.options.x_axis_align = x_align;
-		this.options.y_axis_align = y_align;
-		this.update_axes_alignment();
-	}
-
-	public set_axis_flipped(x_axis_flipped: boolean, y_axis_flipped: boolean): void {
-		this.options.x_axis_flipped = x_axis_flipped;
-		this.options.y_axis_flipped = y_axis_flipped;
-		this.update_axes_flipping();
+	protected update_data_optimizations(): void {
+		this.data_series.forEach((ds) => {
+			ds.containsNaN = this.options.data_contains_nan;
+			ds.isSorted = this.options.data_is_sorted;
+		});
 	}
 
 	/**
@@ -134,8 +133,8 @@ export abstract class BasePlot implements Updatable, Deletable {
 	protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
 		const sig_name = sig.sig_name;
 		const sig_idx = sig.sig_idx;
-		if (!(sig_name in data)) throw new Error(`sig_name ${sig_name} not in data`);
-		if (sig_idx >= data[sig_name].length) throw new Error(`sig_idx ${sig_idx} out of bounds`);
+		if (!(sig_name in data)) return []; //throw new Error(`sig_name ${sig_name} not in data`);
+		if (sig_idx >= data[sig_name].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
 
 		return data[sig_name][sig_idx] as NumberArray;
 	}
@@ -170,4 +169,11 @@ export abstract class BasePlot implements Updatable, Deletable {
      * @param sig_x - The x component signal config to remove. Can be null.
      */
 	public abstract remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
+
+
+	/**
+	 * Calls each update option functions.
+	 * @param options - The new plot options
+	 */
+	public abstract update_all_options(options: PlotOptions): void;
 }
