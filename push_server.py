@@ -19,11 +19,11 @@ import genki_signals.signals as s  # noqa: E402
 from genki_signals.data_sources import (  # noqa: E402
     WaveDataSource
 )
-from genki_signals.data_generators import (
+from genki_signals.data_sources import (
     MouseDataSource,
-    RandomNoise
+    RandomNoise,
+    Sampler
 )
-from genki_signals.sampler import Sampler  # noqa: E402
 from genki_signals.system import System  # noqa: E402
 
 eventlet.monkey_patch()

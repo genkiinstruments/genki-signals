@@ -4,6 +4,7 @@ from queue import Queue
 from typing import Callable
 
 from genki_signals.buffers import DataBuffer
+from genki_signals.data_sources.base import SamplerBase
 
 
 class BusyThread(threading.Thread):
@@ -30,7 +31,7 @@ class BusyThread(threading.Thread):
         self._stop_event.set()
 
 
-class Sampler:
+class Sampler(SamplerBase):
     def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
         self.sources = sources
         self.is_active = False
@@ -43,7 +44,8 @@ class Sampler:
 
     def start(self):
         for source in self.sources.values():
-            source.start()
+            if hasattr(source, "start"):
+                source.start()
         self.start_time = time.time()
         self._busy_loop = BusyThread(1 / self.sample_rate, self._callback, sleep_time=self.sleep_time)
         self._busy_loop.start()
@@ -51,7 +53,8 @@ class Sampler:
 
     def stop(self):
         for source in self.sources.values():
-            source.stop()
+            if hasattr(source, "stop"):
+                source.stop()
         self._busy_loop.stop()
         self._busy_loop.join()
         self.is_active = False
@@ -72,3 +75,6 @@ class Sampler:
             d = self.buffer.get()
             data.append(d)
         return data
+
+    def __repr__(self):
+        return f"Sampler({self.sources}, {self.sample_rate=})"
