@@ -1,5 +1,5 @@
-import { Rect } from 'scichart/Core/Rect.js';
-import { Thickness } from 'scichart/Core/Thickness.js';
+import { Rect } from 'scichart/Core/Rect';
+import { Thickness } from 'scichart/Core/Thickness';
 import { ECoordinateMode } from 'scichart/Charting/Visuals/Annotations/AnnotationBase';
 import type { I2DSubSurfaceOptions } from 'scichart';
 

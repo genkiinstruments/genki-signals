@@ -51,39 +51,12 @@ export class Line extends BasePlot {
 	) {
 		super(wasm_context, surface);
 
-		let thiss = this;
-
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
 
 		this.options = plot_options;
-
-		this.surface.chartModifiers.add(new MouseWheelZoomModifier({modifierGroup:"mouseZoomGroup"}));
-		this.surface.chartModifiers.add(new ZoomPanModifier());
-		this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false, modifierGroup:"zoomExtentsGroup", onZoomExtents: function(surface){
-			let idx_range = surface.renderableSeries.get(0).getIndicesRange(surface.xAxes.get(0).visibleRange)
-			let idx_range_len = idx_range.max - idx_range.min + 1;
-			thiss.options.n_visible_points = Math.max(idx_range_len, 1);
-			thiss.surface.setZoomState(EZoomState.AtExtents);
-			return false;
-		}}));
-
-		if(this.surface instanceof SciChartSubSurface){
-			let parent_surface = this.surface.parentSurface;
-			let parent_axis = this.surface.parentSurface.xAxes.get(0);
-			this.x_axis.visibleRangeChanged.subscribe(() => {
-				if(this.surface.zoomState == EZoomState.UserZooming){
-					parent_surface.setZoomState(EZoomState.UserZooming);
-					parent_axis.visibleRange = this.x_axis.visibleRange;
-				}
-			});
-			parent_axis.visibleRangeChanged.subscribe(() => {
-				this.surface.setZoomState(parent_surface.zoomState);
-				this.x_axis.visibleRange = parent_axis.visibleRange;
-			});
-		}
 
 		if (this.options.sig_x.length > 1) {
 			throw new Error('Line plots only support one x signal');
