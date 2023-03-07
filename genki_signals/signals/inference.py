@@ -13,7 +13,8 @@ from more_itertools import zip_equal
 
 from genki_signals.buffers import PandasBuffer, NumpyBuffer
 from genki_signals.is_touching_models import StateGruInferenceOnly
-from genki_signals.signals import Signal, upsample
+from genki_signals.signals.windowed import upsample
+from genki_signals.signals.base import Signal
 
 
 logger = logging.getLogger(__name__)

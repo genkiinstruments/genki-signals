@@ -346,29 +346,3 @@ class NumpyBuffer(Buffer):
 
     def _concat(self, data_list):
         return np.concatenate([d for d in data_list if d.size != 0], axis=-1)
-
-
-class NumpyBufferResample(NumpyBuffer):
-    """A numpy buffer that picks out (end emits) every n sample"""
-
-    def __init__(self, maxlen, n_cols, every_n_samples):
-        super().__init__(maxlen, n_cols)
-        self._every_n_samples = every_n_samples
-        self._n_seen = 0
-
-    def extend(self, data):
-        """Appends downsampled data to the buffer and pops off and slices s.t. the length matches maxlen"""
-        self._init_cols_if_needed(data)
-        self._validate(data)
-
-        emit_data = self._every_n_samples < (self._n_seen + len(data)) or self._n_seen == 0
-        if emit_data:
-            start_point = (self._every_n_samples - self._n_seen) % self._every_n_samples
-            d_out = data[start_point :: self._every_n_samples]
-            self._data = self._concat([self._data, d_out])
-        self._n_seen = (self._n_seen + len(data)) % self._every_n_samples
-
-        if self.maxlen is None:
-            return
-
-        self._data = self._slice(self._data, self.maxlen, end=True)
