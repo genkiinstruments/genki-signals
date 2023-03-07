@@ -51,8 +51,6 @@ export class Line extends BasePlot {
 	) {
 		super(wasm_context, surface);
 
-		let thiss = this;
-
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
 		this.surface.xAxes.add(this.x_axis);
