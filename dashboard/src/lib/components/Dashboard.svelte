@@ -27,6 +27,12 @@
 		num_columns
 	);
 
+	export function remove_chart(idx: number): void {
+		subcharts[idx]?.delete();
+		subcharts.splice(idx, 1);
+		option_store.remove_option_at(idx);
+	}
+
 
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	onMount(async () => {
@@ -82,12 +88,30 @@
 	});
 </script>
 
+<div class='container'>
+	<div class='remove-buttons'>
+		{#each $option_store as _, i}
+			<button on:click={() => remove_chart(i)}>Remove chart {i}</button>
+		{/each}
+	</div>
 
-<div bind:this={el} id={'blabla'} class='dashboard'/>
+	<div bind:this={el} id={'blabla'} class='dashboard'/>
+</div>
 
 <style>
 	.dashboard {
-		width: 60%;
+		width: 100%;
 		height: 100%;
+	}
+
+	.container {
+		display: flex;
+		width: 60%;
+	}
+
+	.remove-buttons {
+		width: 5%;
+		display: flex;
+		flex-direction: column;
 	}
 </style>
