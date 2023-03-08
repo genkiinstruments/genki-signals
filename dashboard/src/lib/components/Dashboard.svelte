@@ -63,7 +63,6 @@
 				}
 			});
 			data_idxs_store.set(idxs_ranges);
-
 			subcharts.forEach((subchart) => {
 				subchart.update(response);
 			});

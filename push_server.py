@@ -33,7 +33,7 @@ app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-SAMPLING_RATE = 100
+SAMPLING_RATE = 1000
 GUI_UPDATE_RATE = 50
 
 
@@ -46,15 +46,17 @@ def generate_data(ble_address=None):
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
         
-    with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
+    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=256, window_overlap=128)]) as system:
         while True:
             data = system.read()
             data_dict = {}
             for key in data:
                 if data[key].ndim == 1:
-                    data_dict[key] = data[key][:, None].T.tolist()
+                    data_dict[key] = data[key][None, :].tolist()
                 else:
-                    data_dict[key] = data[key].T.tolist()
+                    data_dict[key] = data[key].tolist()
+            if("fourier" in data):
+                data_dict["fourier"] = np.abs(data_dict["fourier"]).tolist()
             socketio.emit("data", data_dict, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 

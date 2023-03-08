@@ -21,7 +21,7 @@ export interface SpectrogramPlotOptions extends PlotOptions {
     colormap_min: number;
     colormap_max: number;
 }
-export function get_default_spectogram_plot_options(): SpectrogramPlotOptions {
+export function get_default_spectrogram_plot_options(): SpectrogramPlotOptions {
 	return {
 		...get_default_plot_options(),
 		type: 'spectrogram', // overrides default_plot_options.type
@@ -36,6 +36,7 @@ export class Spectrogram extends BasePlot {
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
 	options: SpectrogramPlotOptions;
+    n_visible_windows: number;
 
     zValues: number[][];
 
@@ -45,7 +46,7 @@ export class Spectrogram extends BasePlot {
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: SpectrogramPlotOptions = get_default_spectogram_plot_options()
+		plot_options: SpectrogramPlotOptions = get_default_spectrogram_plot_options()
 	) {
 		super(wasm_context, surface);
 
@@ -57,7 +58,7 @@ export class Spectrogram extends BasePlot {
         });
 		this.y_axis = new NumericAxis(this.wasm_context, {
             autoRange: EAutoRange.Always,
-            // drawLabels: false,
+            drawLabels: false,
             drawMinorTickLines: false,
             drawMajorTickLines: false,
         });
@@ -66,6 +67,7 @@ export class Spectrogram extends BasePlot {
 		this.surface.yAxes.add(this.y_axis);
 
 		this.options = plot_options;
+        this.n_visible_windows = this.options.n_visible_windows;
 
 		if (this.options.sig_y.length > 1 ) {
 			throw new Error('Spectrogram only support one y signal');
@@ -137,4 +139,21 @@ export class Spectrogram extends BasePlot {
             'This method is not supported for Spectrogram'
         );
 	}
+
+    public update_all_options(options: SpectrogramPlotOptions): void {
+        console.log(options.n_visible_windows, this.n_visible_windows)
+        let reinit = options.n_visible_windows != this.n_visible_windows;
+        this.options = options;
+        if(reinit){
+            this.data_series[0].delete();
+            this.renderable_series[0].delete();
+            this.data_series = [];
+            this.renderable_series = [];
+            this.create_plot()
+            this.n_visible_windows = this.options.n_visible_windows;
+        }
+        this.update_axes_alignment();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
+    }
 }

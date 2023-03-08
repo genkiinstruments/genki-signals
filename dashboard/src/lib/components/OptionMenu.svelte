@@ -5,6 +5,7 @@
 	import { get_default_line_plot_options } from '$lib/scicharts/line';
 	import { get_default_trace_plot_options } from '$lib/scicharts/trace';
     import { get_default_bar_plot_options } from '$lib/scicharts/barplot';
+    import { get_default_spectrogram_plot_options } from '$lib/scicharts/spectrogram';
     import { option_store, selected_index_store } from '$lib/stores/chart_stores';
 
 	import OptionWindow from './OptionWindow.svelte';
@@ -30,6 +31,10 @@
             new_options = get_default_bar_plot_options();
             new_options.description = 'New bar plot';
         }
+        else if (type === 'spectrogram') {
+            new_options = get_default_spectrogram_plot_options();
+            new_options.description = 'New spectrogram';
+        }
         else {
             throw new Error('Invalid option type');
         }
@@ -52,6 +57,9 @@
         </button>
         <button on:click={add_option('bar')}>
             Add bar plot
+        </button>
+        <button on:click={add_option('spectrogram')}>
+            Add spectrogram
         </button>
 
 		<ul>
