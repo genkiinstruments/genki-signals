@@ -161,7 +161,7 @@ export class Line extends BasePlot {
 	}
 
 	public update_all_options(options: LinePlotOptions): void {
-		this.options = options;
+		this.options = options; // TODO: check if this is redundant since it should be the same object in memory
 
 		const n = this.options.sig_y.length;
 		if (n > this.renderable_series.length) {

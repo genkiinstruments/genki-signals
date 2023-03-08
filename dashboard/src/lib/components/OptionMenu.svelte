@@ -66,7 +66,7 @@
 			{#each $option_store as store, idx}
 				<li>
 					<button on:click={() => change_selected(idx)}>
-						{get(store).description}
+						{idx}: {get(store).description}
 					</button>
 				</li>
 			{/each}

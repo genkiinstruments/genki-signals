@@ -31,6 +31,7 @@
 		subcharts[idx]?.delete();
 		subcharts.splice(idx, 1);
 		option_store.remove_option_at(idx);
+		selected_index_store.set(option_store.count() - 1); // Select the last option (-1 is a valid and handled as nothing).
 	}
 
 
@@ -125,8 +126,10 @@
 	}
 
 	.remove-buttons {
-		width: 5%;
+		width: 6%;
 		display: flex;
 		flex-direction: column;
+		height: 100%;
+		overflow: scroll;
 	}
 </style>
