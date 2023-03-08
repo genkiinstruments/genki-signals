@@ -48,7 +48,7 @@ class WindowedSignal(Signal):
         return self.output_buffer.popleft(len(sig))
 
     def windowed_fn(self, x):
-        return x.sum(axis=0, keepdims=True)
+        raise NotImplementedError
 
 
 class FourierTransform(WindowedSignal):
@@ -63,6 +63,7 @@ class FourierTransform(WindowedSignal):
             window_overlap=0,
             detrend_type="linear",
             window_type="hann",
+            **kwargs
     ):
         self.name = name
         self.win_size = window_size
@@ -73,7 +74,7 @@ class FourierTransform(WindowedSignal):
             self.window_fn = scipy.signal.windows.hann
         else:
             raise ValueError(f"Unknown window type: {window_type}")
-        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j)
+        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j, **kwargs)
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)
@@ -82,3 +83,23 @@ class FourierTransform(WindowedSignal):
         if sig_fft.ndim == 1:
             sig_fft = sig_fft[:, None]
         return sig_fft
+
+
+class Delay(Signal):
+    """Delays signal by n samples"""
+
+    def __init__(self, sig_a, n, name=None):
+        self.name = name if name is not None else "Delay"
+        self.n = n
+        self.input_names = [sig_a]
+        self.buffer = None
+
+    def __call__(self, sig):
+        if self.buffer is None:
+            self.buffer = NumpyBuffer(None, sig.shape[:-1])
+            init_vals = np.zeros((self.n, *sig.shape[:-1]))
+            self.buffer.extend(init_vals)
+
+        self.buffer.extend(sig)
+        out = self.buffer.popleft(len(sig))
+        return out

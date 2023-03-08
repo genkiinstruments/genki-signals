@@ -8,6 +8,7 @@ import type { ArrayDict, SignalConfig } from './types';
 import type { Deletable, Updatable } from './interfaces';
 import type { BasePlot, PlotOptions } from './baseplot';
 import { Bar, type BarPlotOptions } from './barplot';
+import { Spectrogram, type SpectrogramPlotOptions } from './spectrogram';
 
 /**
  * An abstract base class for all subcharts.
@@ -51,6 +52,8 @@ export class SubChart implements Updatable, Deletable {
 				return new Bar(this.wasm_context, this.sub_chart_surface, plot_options as BarPlotOptions);
 			case 'trace':
 				return new Trace(this.wasm_context, this.sub_chart_surface, plot_options as TracePlotOptions);
+			case 'spectrogram':
+				return new Spectrogram(this.wasm_context, this.sub_chart_surface, plot_options as SpectrogramPlotOptions);
 			case 'no_type':
 				throw new Error('No plot type specified');
 			default:
