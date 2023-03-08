@@ -85,17 +85,6 @@ export class Bar extends BasePlot {
 		}
 	}
 
-	public set_axis_domains(
-		auto_range: boolean,
-		y_max: number,
-		y_min: number,
-	): void {
-		this.options.auto_range = auto_range;
-		this.options.y_domain_max = y_max;
-		this.options.y_domain_min = y_min;
-		this.update_y_domain();
-	}
-
 	public update(data: ArrayDict): void {
         this.data_series[0]?.clear()
 		this.options.sig_y.forEach((sig_y, i) => {
@@ -170,5 +159,16 @@ export class Bar extends BasePlot {
 		}
 
         this.update_label_format();
+	}
+
+	public update_all_options(options: BarPlotOptions): void {
+		this.options = options
+
+		this.update_y_domain();
+		this.update_axes_alignment();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
+		this.update_axes_visibility();
+		this.update_data_optimizations();
 	}
 }

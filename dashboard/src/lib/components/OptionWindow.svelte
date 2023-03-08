@@ -1,63 +1,92 @@
-<script>
-	import { writable, get } from 'svelte/store';
 
-	export let options = {};
-	export let onSave = () => {};
+<script lang="ts">
+	import { get, writable, type Writable} from 'svelte/store';
+	import type { PlotOptions } from '$lib/scicharts/baseplot';
 
-	const options_store = writable({ ...options });
+	import { option_store, selected_index_store } from '$lib/stores/chart_stores';
+	import { data_keys_store } from '$lib/stores/data_stores';
 
-	function saveChanges() {
-		onSave(get(options_store));
-	}
+	export let selected_store: Writable<PlotOptions>;
 
-	function appendSig(key) {
+	function appendSig(key: string) {
 		return () => {
-			const options = get(options_store);
-			options[key].push({ sig_name: '', sig_idx: 0 });
-			options_store.set(options);
+			const new_sig = {'sig_name': '', 'sig_idx': 0};
+			selected_store.update((store) => {
+				store[key].push(new_sig);
+				return store;
+			});
 		};
 	}
+	$: dropdown_values = {
+		'x_axis_align': ['top', 'bottom'],
+		'y_axis_align': ['left', 'right'],
+		'sig_x': $data_keys_store,
+		'sig_y': $data_keys_store,
+	}
+
 </script>
 
-<div class="option_menu">
-	{#each Object.entries($options_store) as [key, value]}
-		{#if typeof value === 'string' || typeof value === 'number'}
+<div class="option_window">
+	{#each Object.entries($selected_store) as [key, value]}
+		{#if key === 'type'}
+			<p> {key}: {value }</p>
+		{:else if key === 'description'}
 			<label>
 				{key}:
-				<input type="text" bind:value={$options_store[key]} required/>
+				<input type="text" bind:value={$selected_store[key]} />
 			</label>
-		{:else if typeof value === 'boolean'}
-			<label>
+		{:else}
+			{#if typeof value === 'number'}
+				<label>
+					{key}:
+					<input type="number" bind:value={$selected_store[key]} required/>
+				</label>
+			{:else if typeof value === 'boolean'}
+				<label>
+					{key}:
+					<input type="checkbox" bind:checked={$selected_store[key]} />
+				</label>
+			{:else if typeof value === 'string'}
+				<label>
+					{key}:
+					<select bind:value={$selected_store[key]}>
+						{#each dropdown_values[key] as item}
+							<option value={item}>{item}</option>
+						{/each}
+					</select>
+				</label>
+			{:else if Array.isArray(value)}
 				{key}:
-				<input type="checkbox" bind:checked={$options_store[key]} />
-			</label>
-		{:else if Array.isArray(value)}
-            <label>
-                {key}:
-                <div class="signal_menu">
-					{#each value as item, idx}
-						<div>
-							<label>
-								sig_name:
-								<input type="text" bind:value={$options_store[key][idx].sig_name} />
-							</label>
-							<label>
-								sig_idx:
-								<input type="number" bind:value={$options_store[key][idx].sig_idx} />
-							</label>
-						</div>
-					{/each}
-                </div>
-            </label>
-            <button on:click={appendSig(key)}> Append signal </button>
+				<button on:click={appendSig(key)}> Add signal </button>
+				<label>
+					<div class="signal_menu">
+						{#each value as item, idx}
+							<div>
+								<label>
+									sig_name:
+									<select bind:value={$selected_store[key][idx].sig_name}>
+										{#each dropdown_values['sig_x'] as item}
+											<option value={item}>{item}</option>
+										{/each}
+									</select>
+								</label>
+								<label>
+									sig_idx:
+									<input type="number" bind:value={$selected_store[key][idx].sig_idx} />
+								</label>
+							</div>
+						{/each}
+					</div>
+				</label>
+			{/if}
 		{/if}
 	{/each}
-	<button on:click={saveChanges}>Save changes</button>
+	<!-- <button on:click={() => console.log(get(selected_store))}> Log </button> -->
 </div>
 
 <style>
-	.option_menu {
-		width: 25%;
+	.option_window {
+		width: 65%;
 		height: 1000px;
 		overflow: scroll;
 		display: flex;

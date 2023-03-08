@@ -29,6 +29,7 @@ export function get_default_trace_plot_options(): TracePlotOptions {
     return {
         ...get_default_plot_options(),
         type: 'trace', // overrides default_plot_options.type
+		data_is_sorted: false, // overrides default_plot_options.data_is_sorted
         auto_range_x: false,
         auto_range_y: false,
         x_domain_max: 2560,
@@ -71,38 +72,35 @@ export class Trace extends BasePlot {
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
+		this.update_x_domains();
+		this.update_y_domains();
+		this.update_data_optimizations();
 	}
 
-	private update_axis_domains(): void {
+	private update_x_domains(): void {
 		if (this.options.auto_range_x) {
 			this.x_axis.autoRange = EAutoRange.Always;
-		} else {
-			this.x_axis.autoRange = EAutoRange.Never;
-            const x_min = this.options.x_domain_min;
-            const x_max = this.options.x_domain_max;
-            this.x_axis.visibleRange = new NumberRange(x_min, x_max);
+			return;
+		} 
+
+		this.x_axis.autoRange = EAutoRange.Never;
+		const x_min = this.options.x_domain_min;
+		const x_max = this.options.x_domain_max;
+		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
+	}
+
+	private update_y_domains(): void {
+		if (this.options.auto_range_y) {
+			this.y_axis.autoRange = EAutoRange.Always;
+			return;
 		}
 
-        if (this.options.auto_range_y) {
-            this.y_axis.autoRange = EAutoRange.Always;
-        } else {
-            this.y_axis.autoRange = EAutoRange.Never;
-            const y_min = this.options.y_domain_min;
-            const y_max = this.options.y_domain_max;
-            this.y_axis.visibleRange = new NumberRange(y_min, y_max);
-        }
+		this.y_axis.autoRange = EAutoRange.Never;
+		const y_min = this.options.y_domain_min;
+		const y_max = this.options.y_domain_max;
+		this.y_axis.visibleRange = new NumberRange(y_min, y_max);
 	}
 
-	public set_axis_domains(
-		auto_range_x: boolean, auto_range_y: boolean,y_max: number,y_min: number
-    ): void {
-		this.options.auto_range_x = auto_range_x;
-        this.options.auto_range_y = auto_range_y;
-		this.options.y_domain_max = y_max;
-		this.options.y_domain_min = y_min;
-
-		this.update_axis_domains();
-	}
 
 	public update(data: ArrayDict): void {
         const n = this.options.sig_x.length; // we maintain sig_x and sig_y so that they have the same length
@@ -117,9 +115,8 @@ export class Trace extends BasePlot {
 			}
         }
 
-
-
-		this.update_axis_domains();
+		this.update_x_domains();
+		this.update_y_domains();
 	}
 
 	private create_plot(): void {
@@ -134,7 +131,12 @@ export class Trace extends BasePlot {
 		this.data_series.push(data_series);
 	}
 
-	public add_plot(sig_y: SignalConfig) {
+	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
+		if (this.options.sig_x.length === 0 && sig_x !== null) {
+			this.options.sig_x.push(sig_x);
+		} else throw new Error('only one sig_x supported for trace plots');
+
+
 		this.options.sig_y.forEach((sig) => {
 			if (compare_signals(sig, sig_y)) {
 				throw new Error('Signal already exists in plot');
@@ -145,14 +147,45 @@ export class Trace extends BasePlot {
 		this.options.sig_y.push(sig_y);		
 	}
 
-	public remove_plot(idx: number) {
-		if (idx >= this.options.sig_y.length || idx < 0) {
-			throw new Error('Index out of bounds');
+	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
+		if (
+			sig_x !== null &&
+			(this.options.sig_x.length == 0 || !compare_signals(this.options.sig_x[0], sig_x))
+		) {
+			throw new Error('x signal does not exist on this plot');
 		}
 
-		this.options.sig_y.splice(idx, 1);
-		this.surface.renderableSeries.remove(this.renderable_series[idx]);
-		this.renderable_series.splice(idx, 1);
-		this.data_series.splice(idx, 1);
+		let deleted = false;
+
+		this.options.sig_y.forEach((sig, idx) => {
+			if (compare_signals(sig, sig_y)) {
+				this.options.sig_y.splice(idx, 1);
+				this.surface.renderableSeries.remove(this.renderable_series[idx]);
+				this.renderable_series.splice(idx, 1);
+				this.data_series.splice(idx, 1);
+				deleted = true;
+			}
+		});
+
+		if (!deleted) {
+			throw new Error('Signal does not exist on this plot');
+		}
+	}
+
+	public update_all_options(options: TracePlotOptions): void {
+		this.options = options;
+
+		const n = this.options.sig_y.length;
+		if (n > this.renderable_series.length) {
+			for (let i = this.renderable_series.length; i < n; i++) {
+				this.create_plot();
+			}
+		}
+
+		this.update_axes_alignment();
+		this.update_axes_flipping();
+		this.update_axes_visibility();
+		this.update_x_domains();
+		this.update_y_domains(); // TODO: split?
 	}
 }
