@@ -18,14 +18,14 @@
 	let el: HTMLDivElement;
 	let subcharts: SubChart[] = [];
 
-	export let num_charts = 4;
-	const num_columns = 1;
-	const rects = getSubChartRects(
-		num_charts,
-		1 / (num_charts / num_columns),
-		1 / num_columns,
-		num_columns
-	);
+	// export let num_charts = 4;
+	// let num_columns = 1;
+	// const rects = getSubChartRects(
+	// 	num_charts,
+	// 	1 / (num_charts / num_columns),
+	// 	1 / num_columns,
+	// 	num_columns
+	// );
 
 	export function remove_chart(idx: number): void {
 		subcharts[idx]?.delete();
@@ -43,6 +43,22 @@
 
 		option_store.subscribe((options) => {
 			const n_subcharts = subcharts.length;
+
+			let num_columns = 1;
+			const num_charts = options.length
+			while(num_charts > num_columns**2) num_columns += 1;
+
+			const rects = getSubChartRects(num_charts,
+					1 / (num_charts / num_columns),
+					1 / num_columns,
+					num_columns);
+
+			subcharts.forEach((subchart, i) => {
+				console.log(rects[i])
+				subchart.set_position(rects[i])
+			});
+
+
 			if (n_subcharts >= options.length) return;
 
 			for (let i = n_subcharts; i < options.length; i++) {
@@ -53,7 +69,7 @@
 					new_subchart.update_all_options(option);
 				});
 			}
-		
+
 			subcharts.forEach((subchart, i) => {
 				subchart.update_all_options(get(options[i]));
 			});

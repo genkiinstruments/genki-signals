@@ -29,10 +29,10 @@ export function get_default_line_plot_options(): LinePlotOptions {
 	return {
 		...get_default_plot_options(),
 		type: 'line', // overrides default_plot_options.type
-		auto_range: false,
+		auto_range: true,
 		y_domain_max: 1,
 		y_domain_min: 0,
-		n_visible_points: 100
+		n_visible_points: 10000
 	};
 }
 

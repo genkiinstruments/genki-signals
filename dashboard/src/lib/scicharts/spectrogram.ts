@@ -141,7 +141,6 @@ export class Spectrogram extends BasePlot {
 	}
 
     public update_all_options(options: SpectrogramPlotOptions): void {
-        console.log(options.n_visible_windows, this.n_visible_windows)
         let reinit = options.n_visible_windows != this.n_visible_windows;
         this.options = options;
         if(reinit){
