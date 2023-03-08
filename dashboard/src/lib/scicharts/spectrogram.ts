@@ -6,24 +6,36 @@ import {
 	SciChartSurface,
     UniformHeatmapDataSeries,
     UniformHeatmapRenderableSeries,
+    NonUniformHeatmapRenderableSeries,
+    NonUniformHeatmapDataSeries,
 	EZoomState,
-	type TSciChart
+    HeatmapColorMap,
+	type TSciChart,
+    HeatMapDataLabelProvider,
+    ENumericFormat,
+    zeroArray2D,
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
 import { compare_signals } from './types';
 import type { ArrayDict, SignalConfig } from './types';
+import { polygonCentroid } from 'd3';
 
 export interface SpectrogramPlotOptions extends PlotOptions {
 	type: 'spectrogram';
-	/** If auto range is true, then y_domain_max and y_domain_min are not used */
+    bin_count: number;
 	n_visible_windows: number;
+    colormap_min: number;
+    colormap_max: number;
 }
 export function get_default_spectogram_plot_options(): SpectrogramPlotOptions {
 	return {
 		...get_default_plot_options(),
 		type: 'spectrogram', // overrides default_plot_options.type
-		n_visible_windows: 1
+        bin_count: 128,
+		n_visible_windows: 1,
+        colormap_min: 0,
+        colormap_max: 1,
 	};
 }
 
@@ -31,6 +43,8 @@ export class Spectrogram extends BasePlot {
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
 	options: SpectrogramPlotOptions;
+
+    zValues: number[][];
 
 	renderable_series: UniformHeatmapRenderableSeries[] = [];
 	data_series: UniformHeatmapDataSeries[] = [];
@@ -46,13 +60,13 @@ export class Spectrogram extends BasePlot {
             autoRange: EAutoRange.Always,
             drawLabels: false,
             drawMinorTickLines: false,
-            drawMajorTickLines: false
+            drawMajorTickLines: false,
         });
 		this.y_axis = new NumericAxis(this.wasm_context, {
             autoRange: EAutoRange.Always,
-            drawLabels: false,
+            // drawLabels: false,
             drawMinorTickLines: false,
-            drawMajorTickLines: false
+            drawMajorTickLines: false,
         });
 
 		this.surface.xAxes.add(this.x_axis);
@@ -60,64 +74,58 @@ export class Spectrogram extends BasePlot {
 
 		this.options = plot_options;
 
-		if (this.options.sig_x.length > 1) {
-			throw new Error('Line plots only support one x signal');
+		if (this.options.sig_y.length > 1 ) {
+			throw new Error('Spectrogram only support one y signal');
+		}
+        if (this.options.sig_x.length > 0 ) {
+			throw new Error('Spectrogram does not support x signals');
 		}
 
-		// sig_y implicitly defines the number of plots
-		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
+		this.create_plot();
 
-		this.update_y_domain();
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
 	}
 
-	private update_x_domain(): void {
-		const x_max = this.get_native_x(-1);
-		const x_min = this.get_native_x(-this.options.n_visible_points);
-		this.x_axis.visibleRange = new NumberRange(x_min, x_max);
-	}
-
-	public set_axis_domains(
-		auto_range: boolean,
-		y_max: number,
-		y_min: number,
-		n_visible_points: number
-	): void {
-		// this.options.auto_range = auto_range;
-		// this.options.y_domain_max = y_max;
-		// this.options.y_domain_min = y_min;
-		// this.options.n_visible_points = n_visible_points;
-		// this.update_x_domain();
-	}
-
 	public update(data: ArrayDict): void {
-		if (this.options.sig_x.length === 0) return; // if no x signal is defined, then we can't update the plot
+		if (this.options.sig_y.length !== 1) return; // if no x signal is defined, then we can't update the plot
 
-		const x = this.fetch_and_check(data, this.options.sig_x[0]);
+        const sig_name = this.options.sig_y[0].sig_name;
+		if (!(sig_name in data)) throw new Error(`sig_name ${sig_name} not in data`);  
+    
+        this.zValues = this.zValues.map((row, i) => row.concat(data[sig_name][i]).slice(-this.options.n_visible_windows - 1, -1))
 
-		this.options.sig_y.forEach((sig_y, i) => {
-			const y = this.fetch_and_check(data, sig_y);
-			this.data_series[i].appendRange(x, y);
-		});
-
-		if (this.options.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
-
-		this.update_x_domain();
+        this.data_series[0].setZValues(this.zValues);
 	}
 
 	private create_plot(): void {
-		const renderable_series = new UniformHeatmapRenderableSeries(this.wasm_context);
+		const renderable_series = new UniformHeatmapRenderableSeries(this.wasm_context, {
+            colorMap: new HeatmapColorMap({
+                minimum: this.options.colormap_min,
+                maximum: this.options.colormap_max,
+                gradientStops: [
+                    {offset: 0, color: "#000000"},
+                    {offset: 0.05, color: "#800080"},
+                    {offset: 0.2, color: "#FF0000"},
+                    {offset: 0.5, color: "#FFFF00"},
+                    {offset: 1, color: "#FFFFFF"}
+                ]
+            }),
+            dataLabels: {
+                numericFormat: ENumericFormat.NoFormat,
+                precision: 10,
+            }
+        });
+        this.zValues = zeroArray2D([this.options.bin_count, this.options.n_visible_windows])
 		const data_series = new UniformHeatmapDataSeries(this.wasm_context, {
             xStart: 0,
             xStep: 1,
             yStart: 0,
             yStep: 1,
+            zValues: this.zValues
         });
 
-		data_series.containsNaN = this.options.data_contains_nan;
-		data_series.isSorted = this.options.data_is_sorted;
 		renderable_series.dataSeries = data_series;
 
 		this.surface.renderableSeries.add(renderable_series);

@@ -7,6 +7,7 @@
 	import { getSubChartRects } from '../utils/subchart_helpers';
 	import { SubChart } from '../scicharts/subchart';
 	import type { LinePlotOptions } from '../scicharts/line';
+	import type { SpectrogramPlotOptions } from '../scicharts/spectrogram';
 	import { SCICHART_KEY } from '../utils/constants';
 
 	import { option_store, selected_chart_store } from '../stores/chart_stores';
@@ -16,14 +17,15 @@
 	let el: HTMLDivElement;
 	let subcharts: SubChart[] = [];
 
-	export let num_charts: number = 4;
+	export let num_charts: number = 2;
 	const num_columns = 1;
 
 	const line_options: LinePlotOptions = {
 		type: 'line', // only line for now
         sig_x: [{ sig_name: 'timestamp_us', sig_idx: 0 }],
         sig_y: [
-			{ sig_name: 'random', sig_idx: 0 },
+			{ sig_name: 'mouse_position', sig_idx: 0 },
+			{ sig_name: 'mouse_position', sig_idx: 1 },
 			// { sig_name: 'mouse_pos', sig_idx: 0 },
 			// { sig_name: 'mouse_pos', sig_idx: 1 },
 		],
@@ -36,15 +38,16 @@
 		data_contains_nan: false,
 		data_is_sorted: false,
 		auto_range: false,
-		y_domain_max: 1,
-		y_domain_min: 0,
+		y_domain_max: 0,
+		y_domain_min: 2560,
 		n_visible_points: 1000,
 	};
 
-	const spectogram_options: SpectogramPlotOptions = {
-        sig_x: [{ sig_name: 'timestamp_us', sig_idx: 0 }],
+	const spectrogram_options: SpectrogramPlotOptions = {
+		type: 'spectrogram',
+        sig_x: [],
         sig_y: [
-			{ sig_name: 'randomFourier', sig_idx: 0}
+			{ sig_name: 'accFourier', sig_idx: 0}
 			// { sig_name: 'mouse_pos', sig_idx: 0 },
 			// { sig_name: 'mouse_pos', sig_idx: 1 },
 		],
@@ -54,10 +57,15 @@
 		y_axis_flipped: false,
 		x_axis_visible: false,
 		y_axis_visible: true,
-		data_contains_nan: false,
 		data_is_sorted: false,
-		n_visible_windows: 50,
+		data_contains_nan: false,
+		bin_count: 129,
+		n_visible_windows: 8000,
+		colormap_min: 0,
+		colormap_max: 5,
 	};
+
+	const plotOptions = [line_options, spectrogram_options];
 
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	onMount(() => {
@@ -83,13 +91,15 @@
 				.fill(0)
 				.map((_, i) => {
 					option_store.update((options) => {
-						options.push(line_options)
+						options.push(plotOptions[i])
 						return options;
 					});
-					return new SubChart('bla', main_surface, wasm_context, rects[i], line_options)
+					return new SubChart('bla', main_surface, wasm_context, rects[i], plotOptions[i])
 				});
 
 			socket.on('data', (response) => {
+				if(Object.keys(response).length == 0) {return;}
+				console.log(response)
 				subcharts.forEach((subchart) => {
 					subchart.update(response);
 				});

@@ -33,7 +33,7 @@ app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-SAMPLING_RATE = 100
+SAMPLING_RATE = 1000
 GUI_UPDATE_RATE = 50
 
 
@@ -46,16 +46,21 @@ def generate_data(ble_address=None):
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
         
-    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(input_name="random", name="randomFourier")]) as system:
+    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(input_name="mouse_position_0", name="accFourier", window_size=256, window_overlap=128)]) as system:
         while True:
             data = system.read()
-            data["randomFourier"] = np.abs(data["randomFourier"]).T
             data_dict = {}
+            if("timestamp_us" not in data): 
+                continue
+            print("batch")
             for key in data:
+                print(data[key].shape, key)
                 if data[key].ndim == 1:
-                    data_dict[key] = data[key][:, None].T.tolist()
+                    data_dict[key] = data[key][None, :].tolist()
                 else:
-                    data_dict[key] = data[key].T.tolist()
+                    data_dict[key] = data[key].tolist()
+            if("accFourier" in data):
+                data_dict["accFourier"] = np.abs(data_dict["accFourier"]).tolist()
             socketio.emit("data", data_dict, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)
 
