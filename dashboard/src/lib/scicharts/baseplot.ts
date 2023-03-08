@@ -84,27 +84,28 @@ export abstract class BasePlot implements Updatable, Deletable {
 		return x_values.get(i);
 	}
 
-	protected update_axes_alignment(): void {
-		switch (this.options.x_axis_align) {
+	private axis_alignment(axis: AxisBase2D, axis_alignment: string): void {
+		switch (axis_alignment) {
 			case 'top':
-				this.x_axis.axisAlignment = EAxisAlignment.Top;
+				axis.axisAlignment = EAxisAlignment.Top;
 				break;
 			case 'bottom':
-				this.x_axis.axisAlignment = EAxisAlignment.Bottom;
+				axis.axisAlignment = EAxisAlignment.Bottom;
 				break;
-			default:
-				throw new Error(`Invalid x-axis alignment: ${this.options.x_axis_align}`);
-		}
-		switch (this.options.y_axis_align) {
 			case 'left':
-				this.y_axis.axisAlignment = EAxisAlignment.Left;
+				axis.axisAlignment = EAxisAlignment.Left;
 				break;
 			case 'right':
-				this.y_axis.axisAlignment = EAxisAlignment.Right;
+				axis.axisAlignment = EAxisAlignment.Right;
 				break;
 			default:
-				throw new Error(`Invalid y-axis alignment: ${this.options.y_axis_align}`);
+				throw new Error(`Invalid axis alignment: ${axis_alignment}`);
 		}
+	}
+
+	protected update_axes_alignment(): void {
+		this.axis_alignment(this.x_axis, this.options.x_axis_align);
+		this.axis_alignment(this.y_axis, this.options.y_axis_align);
 	}
 
 	protected update_axes_flipping(): void {

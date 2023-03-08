@@ -18,8 +18,8 @@
 		};
 	}
 	$: dropdown_values = {
-		'x_axis_align': ['top', 'bottom'],
-		'y_axis_align': ['left', 'right'],
+		'x_axis_align': ['top', 'bottom', 'left', 'right'],
+		'y_axis_align': ['top', 'bottom', 'left', 'right'],
 		'sig_x': $data_keys_store,
 		'sig_y': $data_keys_store,
 	}
