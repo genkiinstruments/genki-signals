@@ -63,6 +63,7 @@ class FourierTransform(WindowedSignal):
             window_overlap=0,
             detrend_type="linear",
             window_type="hann",
+            **kwargs
     ):
         self.name = name
         self.win_size = window_size
@@ -73,7 +74,7 @@ class FourierTransform(WindowedSignal):
             self.window_fn = scipy.signal.windows.hann
         else:
             raise ValueError(f"Unknown window type: {window_type}")
-        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j)
+        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j, **kwargs)
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)

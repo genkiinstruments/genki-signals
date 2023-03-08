@@ -15,7 +15,9 @@ def _slice(data, length, end=True):
 
 
 class DataBuffer(MutableMapping):
-    # TODO: Write tests for this, and performance tests, replace all buffers and ArrayFrame
+    """
+
+    """
     def __init__(self, max_size=None, data=None):
         if max_size is not None and max_size < 1:
             raise ValueError("Length of buffer has to be at least 1")
@@ -28,7 +30,7 @@ class DataBuffer(MutableMapping):
     def __len__(self):
         if self.data == {}:
             return 0
-        return next(iter(self.data.values())).shape[-1]
+        return max(v.shape[-1] for v in self.data.values())
 
     def __getitem__(self, k):
         if k not in self.keys():
@@ -41,7 +43,13 @@ class DataBuffer(MutableMapping):
         return self.data[k]
 
     def __setitem__(self, key, value):
-        assert value.shape[-1] == len(self), f"Length of value must be the same as the buffer, {value.shape[-1]=} != {len(self)=}"
+        self.data[key] = value
+
+    def _add_series(self, key, value, max_size=None):
+        if max_size is None:
+            max_size = self.max_size
+        if max_size is not None and len(value) > max_size:
+            value = value[-max_size:]
         self.data[key] = value
 
     def __delitem__(self, v):
@@ -54,21 +62,16 @@ class DataBuffer(MutableMapping):
         if len(self) == 0:
             self.data = {k: np.empty((*v.shape[:-1], 0)) for k, v in data.items()}
 
-    def _validate(self, data):
-        assert set(self.keys()) == set(data.keys()), f"Data keys must be the same, {self.keys()=} != {data.keys()=}"
-        len_added = next(iter(data.values())).shape[-1]
-        assert all(v.shape[-1] == len_added for v in data.values()), f"Data values must have same length, {data.values()}"
-
-    def _concat(self, data_list):
-        return {k: np.concatenate([d[k] for d in data_list], axis=-1) for k in self.keys()}
-
     def extend(self, data):
         """Appends data to the buffer and pops off and slices s.t. the length matches maxlen"""
         if len(data) == 0:
             return
         self._init_cols_if_needed(data)
-        self._validate(data)
-        self.data = self._concat([self.data, data])
+        for k, v in data.items():
+            if k in self.keys():
+                self[k] = np.concatenate([self[k], v], axis=-1)
+            else:
+                self[k] = v
         if self.max_size is not None:
             self.data = _slice(self.data, self.max_size, end=True)
         self._update_charts()
@@ -76,6 +79,25 @@ class DataBuffer(MutableMapping):
     def append(self, pt):
         pts = {k: np.array([v]).T for k, v in pt.items()}
         self.extend(pts)
+
+    def keys(self):
+        return self.data.keys()
+
+    def values(self):
+        return self.data.values()
+
+    def clear(self):
+        self.data = {}
+
+    def __copy__(self):
+        return DataBuffer(self.max_size, self.data.copy())
+
+    def copy(self):
+        return self.__copy__()
+
+    # =========
+    # Plotting
+    # =========
 
     def plot(self, key, plot_type="chart", **kwargs):
         if plot_type == "chart":
@@ -207,27 +229,25 @@ class DataBuffer(MutableMapping):
         bars = chart["bars"]
         bars.y = self[key][..., -1]
 
-    def keys(self):
-        return self.data.keys()
-
-    def values(self):
-        return self.data.values()
-
-    def clear(self):
-        self.data = {}
-
-    def __copy__(self):
-        return DataBuffer(self.max_size, self.data.copy())
-
-    def copy(self):
-        return self.__copy__()
+    # ==============
+    # Serialization
+    # ==============
 
     @classmethod
     def from_dataframe(cls, df, max_size=None):
         return cls(max_size=max_size, data={k: df[k].values for k in df.columns})
 
+    def to_dataframe(self):
+        # TODO
+        raise NotImplementedError
+
+    def to_arrow(self):
+        # TODO
+        raise NotImplementedError
+
     def __repr__(self):
-        return f"DataBuffer(max_size={self.max_size}, data={self.data})"
+        data_str = "\n".join(f"{k}: {v.shape}" for k, v in self.data.items())
+        return f"DataBuffer(max_size={self.max_size}, data={data_str})"
 
 
 class Buffer(ABC):
@@ -339,10 +359,20 @@ class NumpyBuffer(Buffer):
         return np.empty((*self.cols, 0))
 
     def _validate(self, data):
-        assert data.shape[:-1] == self.cols, "Expected a fixed number of cols to be able to concatenate"
+        assert data.shape[:-1] == self.cols, ("Expected a fixed number of cols to be able to concatenate "
+                                              f"got {data.shape=} with {self.cols=}")
 
     def _slice(self, data, n, end=False):
         return data[..., -n:] if end else data[..., :n]
 
     def _concat(self, data_list):
         return np.concatenate([d for d in data_list if d.size != 0], axis=-1)
+
+    def append(self, pt):
+        """Append a single point to the buffer"""
+        pt = np.asarray(pt)
+        self.extend(pt[..., None])
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.maxlen, self._data.shape})"
+

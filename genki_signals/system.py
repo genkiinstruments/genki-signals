@@ -41,7 +41,6 @@ class System:
             #       * If the signal throws an exception, this context is useful
             #       * the output should have the same length as the input
             output = signal(*inputs)
-            assert output.shape[-1] == len(data), f"Expected output of length {len(data)=}, got {output.shape[-1]=}"
             data[signal.name] = output
 
     def read(self):
@@ -52,3 +51,6 @@ class System:
         if len(data) > 0:
             self._compute_derived(data)
         return data
+
+    def add_derived_signal(self, signal):
+        self.derived_signals.append(signal)

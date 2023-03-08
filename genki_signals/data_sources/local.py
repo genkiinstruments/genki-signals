@@ -126,7 +126,7 @@ class MicDataSource(SamplerBase):
         from pyaudio import paContinue
 
         data = np.frombuffer(in_data, dtype=np.int16)
-        self.buffer.extend({"audio": data[:, None]})
+        self.buffer.extend({"audio": data})
         return in_data, paContinue
 
     def read(self):
