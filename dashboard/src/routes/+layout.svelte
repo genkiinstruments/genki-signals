@@ -17,7 +17,7 @@
 		justify-content: center;
 		align-items: center;
 		margin-bottom: 3rem;
-		border-bottom: 1px solid grey;
+		border-bottom: 1px solid #A5A6A5;
 	}
 
 	.navbar nav {
@@ -33,7 +33,7 @@
 	}
 
 	.navbar nav a {
-		color: black;
+		color: #191A18;
 		text-decoration: none;
 		font-size: 1.5rem;
 	}

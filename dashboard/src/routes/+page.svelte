@@ -14,6 +14,6 @@
     p {
         font-family: 'Comic Sans MS';
         font-size: 2rem;
-        color: red;
+        color: #FF5F49;
     }
 </style>

@@ -129,23 +129,4 @@
 		border-radius: 4px;
 		box-sizing: border-box;
 	}
-
-	input[type='checkbox'] {
-		margin-right: 10px;
-	}
-
-	button {
-		margin-bottom: 20px;
-		padding: 10px;
-		background-color: #24dff3;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		font-size: 16px;
-	}
-
-	button:hover {
-		background-color: #0073ff;
-	}
 </style>

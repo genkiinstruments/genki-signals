@@ -26,8 +26,8 @@
 
 
 	:global(button) {
-		background-color: #24dff3;
-		color: #fff;
+		background-color: #A5A6A5;
+		color: white;
 		border: none;
 		border-radius: 5px;
 		padding: 10px;
@@ -36,7 +36,35 @@
 	}
 
     :global(button:hover) {
-        background-color: #0073ff;
+        background-color: #FF5F49;
     }
+
+	:global(input) {
+		background-color: #F0F0F0;
+		color: black;
+		border: none;
+		border-radius: 5px;
+		padding: 10px;
+		cursor: pointer;
+		transition: background-color 0.2s ease-in-out;
+	}
+
+	:global(input:hover) {
+		background-color: #FF5F49;
+	}
+
+	:global(select) {
+		background-color: #F0F0F0;
+		color: black;
+		border: none;
+		border-radius: 5px;
+		padding: 10px;
+		cursor: pointer;
+		transition: background-color 0.2s ease-in-out;
+	}
+
+	:global(select:hover) {
+		background-color: #FF5F49;
+	}
 </style>
 

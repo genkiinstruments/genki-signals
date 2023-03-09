@@ -55,8 +55,9 @@
             new_options.description = 'New spectrogram';
             if (demo) {
                 new_options.sig_y = [{sig_name: 'fourier', sig_idx: 0}];
-                new_options.bin_count = 32;
                 new_options.n_visible_windows = 1000;
+                new_options.sampling_rate = 100;
+                new_options.window_size = 32;
             }
         }
         else {
@@ -107,7 +108,7 @@
     }
 
     .add_option_buttons {
-        background-color: #24dff3;
+        background-color: #F0F0F0;
         width: 100%;
     }
 
