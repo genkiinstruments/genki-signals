@@ -65,6 +65,10 @@ export class Line extends BasePlot {
 		// sig_y implicitly defines the number of plots
 		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
 
+		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
+        this.surface.chartModifiers.add(new ZoomPanModifier());
+        this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false}));
+
 		this.update_y_domain();
 		this.update_axes_alignment();
 		this.update_axes_flipping();
