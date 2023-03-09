@@ -34,8 +34,8 @@ export function get_default_plot_options(): PlotOptions {
 	return {
 		type: 'no_type',
 		description: 'no_description',
-		sig_x: [{sig_name: "timestamp_us", sig_idx: 0}],
-		sig_y: [{sig_name: "random", sig_idx: 0}],
+		sig_x: [],
+		sig_y: [],
 		x_axis_align: 'bottom',
 		y_axis_align: 'left',
 		x_axis_flipped: false,

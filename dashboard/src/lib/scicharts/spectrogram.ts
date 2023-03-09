@@ -26,7 +26,7 @@ export function get_default_spectrogram_plot_options(): SpectrogramPlotOptions {
 		...get_default_plot_options(),
 		type: 'spectrogram', // overrides default_plot_options.type
         bin_count: 128,
-		n_visible_windows: 1,
+		n_visible_windows: 100,
         colormap_min: 0,
         colormap_max: 1,
 	};
@@ -36,7 +36,9 @@ export class Spectrogram extends BasePlot {
 	x_axis: NumericAxis;
 	y_axis: NumericAxis;
 	options: SpectrogramPlotOptions;
+
     n_visible_windows: number;
+    bin_count: number;
 
     zValues: number[][];
 
@@ -68,6 +70,7 @@ export class Spectrogram extends BasePlot {
 
 		this.options = plot_options;
         this.n_visible_windows = this.options.n_visible_windows;
+        this.bin_count = this.options.bin_count;
 
 		if (this.options.sig_y.length > 1 ) {
 			throw new Error('Spectrogram only support one y signal');
@@ -140,17 +143,34 @@ export class Spectrogram extends BasePlot {
         );
 	}
 
+    private update_color_gradient(){
+        this.renderable_series[0].colorMap = new HeatmapColorMap({
+            minimum: this.options.colormap_min,
+            maximum: this.options.colormap_max,
+            gradientStops: [
+                {offset: 0, color: "#000000"},
+                {offset: 0.05, color: "#800080"},
+                {offset: 0.2, color: "#FF0000"},
+                {offset: 0.5, color: "#FFFF00"},
+                {offset: 1, color: "#FFFFFF"}
+            ]
+        })
+    }
+
     public update_all_options(options: SpectrogramPlotOptions): void {
-        let reinit = options.n_visible_windows != this.n_visible_windows;
+        const new_bin_count = options.bin_count != this.bin_count;
+        const new_n_visible_points = options.n_visible_windows != this.n_visible_windows;
         this.options = options;
-        if(reinit){
+        if(new_bin_count || new_n_visible_points){
             this.data_series[0].delete();
             this.renderable_series[0].delete();
             this.data_series = [];
             this.renderable_series = [];
-            this.create_plot()
             this.n_visible_windows = this.options.n_visible_windows;
+            this.bin_count = this.options.bin_count;
+            this.create_plot()
         }
+        this.update_color_gradient();
         this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
