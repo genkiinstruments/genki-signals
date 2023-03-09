@@ -18,15 +18,6 @@
 	let el: HTMLDivElement;
 	let subcharts: SubChart[] = [];
 
-	// export let num_charts = 4;
-	// let num_columns = 1;
-	// const rects = getSubChartRects(
-	// 	num_charts,
-	// 	1 / (num_charts / num_columns),
-	// 	1 / num_columns,
-	// 	num_columns
-	// );
-
 	export function remove_chart(idx: number): void {
 		subcharts[idx]?.delete();
 		subcharts.splice(idx, 1);
@@ -50,12 +41,11 @@
 			while(num_charts > num_columns**2) num_columns += 1;
 
 			const rects = getSubChartRects(num_charts,
-					1 / (num_charts / num_columns),
+					1 / Math.ceil(num_charts / num_columns),
 					1 / num_columns,
 					num_columns);
 
 			subcharts.forEach((subchart, i) => {
-				console.log(rects[i])
 				subchart.set_position(rects[i])
 			});
 
