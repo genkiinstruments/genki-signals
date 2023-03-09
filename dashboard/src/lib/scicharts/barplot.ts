@@ -35,7 +35,7 @@ export function get_default_bar_plot_options(): BarPlotOptions {
 		type: 'bar', // overrides default_plot_options.type
         auto_range: true,
 		y_domain_max: 1,
-		y_domain_min: 0,
+		y_domain_min: 0
 	};
 }
 
@@ -94,11 +94,23 @@ export class Bar extends BasePlot {
 		this.update_label_format();
 	}
 
-    private update_label_format(){
-        this.x_axis.labelProvider = new TextLabelProvider({
-            labels: this.options.sig_y.map((sig_config) => sig_config.sig_name + "_" + sig_config.sig_idx)
-        });
+	private update_label_format(){
+		const labels = this.options.sig_y.map((s) => s.name);
+		
+		const valid = labels.every((l) => l !== undefined);
+
+		if (valid) {
+			this.x_axis.labelProvider = new TextLabelProvider({
+				labels: labels
+			});
+		}
+		else {
+			this.x_axis.labelProvider = new TextLabelProvider({
+				labels: this.options.sig_y.map((sig_config) => sig_config.sig_name + "_" + sig_config.sig_idx)
+			});
+		}
     }
+
 
 	private create_plot(): void {
 		const renderable_series = new FastColumnRenderableSeries(this.wasm_context, {
@@ -171,5 +183,6 @@ export class Bar extends BasePlot {
 		this.update_axes_visibility();
 		this.update_axes_visibility();
 		this.update_data_optimizations();
+		this.update_label_format();
 	}
 }

@@ -25,15 +25,16 @@ from genki_signals.data_sources import (
     Sampler
 )
 from genki_signals.system import System  # noqa: E402
+from genki_signals.models.letter_detection_model import SimpleGruModel  # noqa: E402
 
 import numpy as np
 
-eventlet.monkey_patch()
+# eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-SAMPLING_RATE = 1000
+SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 
 
@@ -45,8 +46,22 @@ def generate_data(ble_address=None):
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
+
+    model = SimpleGruModel.load_from_checkpoint("genki_signals/models/stc_detector_final-epoch=15-val_loss=0.53.ckpt")
+
+    derived_signals = [
+        s.SampleRate(input_name="timestamp_us"),
+        s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
+        s.Differentiate(name="mouse_velocity", sig_a="mouse_position", sig_b="timestamp_us"),
+        s.Inference(
+            name="stc",
+            model=model,
+            input_signals=["mouse_velocity"],
+            stateful=True
+        )
+    ]
         
-    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=256, window_overlap=128)]) as system:
+    with System(source, derived_signals=derived_signals) as system:
         while True:
             data = system.read()
             data_dict = {}

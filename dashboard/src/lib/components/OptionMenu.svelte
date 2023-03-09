@@ -8,10 +8,8 @@
     import { get_default_spectrogram_plot_options } from '$lib/scicharts/spectrogram';
     import { option_store, selected_index_store } from '$lib/stores/chart_stores';
 
-	import OptionWindow from './OptionWindow.svelte';
 
-    export let selected_store: Writable<PlotOptions>;
-
+    const demo: boolean = true;
 
     function change_selected(idx: number) {
         selected_index_store.set(idx);
@@ -22,18 +20,44 @@
         if (type === 'line') {
             new_options = get_default_line_plot_options();
             new_options.description = 'New line plot';
+            if (demo) {
+                new_options.sig_x = [{sig_name: 'timestamp_us', sig_idx: 0}];
+                new_options.sig_y = [{sig_name: 'random', sig_idx: 0}];
+                new_options.x_axis_visible = false;
+                new_options.n_visible_points = 200;
+            }
         }
         else if (type === 'trace') {
             new_options = get_default_trace_plot_options();
             new_options.description = 'New trace plot';
+            if (demo) {
+                new_options.sig_x = [{sig_name: 'mouse_position', sig_idx: 0}];
+                new_options.sig_y = [{sig_name: 'mouse_position', sig_idx: 1}];
+                new_options.y_axis_flipped = true;
+                new_options.n_visible_points = 150;
+            }
         } 
         else if (type === 'bar') {
             new_options = get_default_bar_plot_options();
             new_options.description = 'New bar plot';
+            if (demo) {
+                new_options.sig_y = [
+                    {sig_name: 'stc', sig_idx: 0, name: '❌'},
+                    {sig_name: 'stc', sig_idx: 1, name: '🟥'},
+                    {sig_name: 'stc', sig_idx: 2, name: '🔺'},
+                    {sig_name: 'stc', sig_idx: 3, name: '🔴'}
+                ];
+                new_options.auto_range = false;
+            }
         }
         else if (type === 'spectrogram') {
             new_options = get_default_spectrogram_plot_options();
             new_options.description = 'New spectrogram';
+            if (demo) {
+                new_options.sig_y = [{sig_name: 'fourier', sig_idx: 0}];
+                new_options.bin_count = 32;
+                new_options.n_visible_windows = 1000;
+            }
         }
         else {
             throw new Error('Invalid option type');
@@ -48,7 +72,7 @@
 </script>
 
 <div class="option_menu">
-	<div class="options_list">
+    <div class="add_option_buttons">
         <button on:click={add_option('line')}>
             Add line plot
         </button>
@@ -61,68 +85,51 @@
         <button on:click={add_option('spectrogram')}>
             Add spectrogram
         </button>
-
-		<ul>
-			{#each $option_store as store, idx}
-				<li>
-					<button on:click={() => change_selected(idx)}>
-						{idx}: {get(store).description}
-					</button>
-				</li>
-			{/each}
-		</ul>
-	</div>
-    <OptionWindow selected_store={selected_store}/>
+    </div>
+    <div class="option_list">
+        {#each $option_store as store, idx}
+            <button on:click={() => change_selected(idx)}>
+                {idx}: {get(store).description}
+            </button>
+        {/each}
+    </div>
 </div>
 
 <style>
-	.option_menu {
-		display: flex;
-        justify-content: space-evenly;
-		width: 20%;
-		height: 100%;
-		box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-        margin-left: 10px;
-	}
-
-    .options_list {
+    .option_menu {
         display: flex;
         flex-direction: column;
         align-items: center;
-        overflow: scroll;
+        max-width: 10%;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        margin-left: 10px;
     }
 
-	.options_list ul {
-		list-style-type: none;
-		padding: 0;
-	}
+    .add_option_buttons {
+        background-color: #24dff3;
+        width: 100%;
+    }
 
-	.options_list li {
+    .option_list {
+        width: 100%;
+        padding: 10px;
+		list-style-type: none;
         display: flex;
         justify-content: center;
-		padding: 10px;
-        margin: 5px;
-		background-color: #fff;
-		border-radius: 10px;
-		transition: background-color 0.2s ease-in-out;
-	}
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
 
-	.options_list li:hover {
-		background-color: #f9f9f9;
-	}
-
-	.options_list button {
+    .add_option_buttons button {
         width: 100%;
-		background-color: #24dff3;
-		color: #fff;
-		border: none;
-		border-radius: 5px;
-		padding: 10px 15px;
-		cursor: pointer;
-		transition: background-color 0.2s ease-in-out;
-	}
+    }
 
-	.options_list button:hover {
-		background-color: #0073ff;
-	}
+    .option_list button {
+        height: 3rem;
+        width: 40%;
+        margin: 5px 1px;
+    }
+
+
 </style>
