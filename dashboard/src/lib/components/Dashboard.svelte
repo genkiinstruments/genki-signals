@@ -14,7 +14,10 @@
 	import type { PlotOptions } from '$lib/scicharts/baseplot';
 
 
-	const socket = io('http://localhost:5000');
+	const socket = io('http://localhost:5000/', {
+		transports: ["websocket"],
+	});
+
 	let el: HTMLDivElement;
 	let subcharts: SubChart[] = [];
 
