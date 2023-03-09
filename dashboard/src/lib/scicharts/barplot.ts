@@ -91,7 +91,6 @@ export class Bar extends BasePlot {
 			const y = this.fetch_and_check(data, sig_y);
 			this.data_series[0]?.append(i, y[y.length-1]);
 		});
-		this.update_label_format();
 	}
 
 	private update_label_format(){

@@ -6,6 +6,9 @@ import {
 	SciChartSubSurface,
 	SciChartSurface,
 	XyDataSeries,
+	MouseWheelZoomModifier,
+	ZoomExtentsModifier,
+	ZoomPanModifier,
 	type TSciChart
 } from 'scichart';
 
@@ -69,6 +72,18 @@ export class Trace extends BasePlot {
 
 		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
 
+		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
+        this.surface.chartModifiers.add(new ZoomPanModifier());
+        this.surface.chartModifiers.add(new ZoomExtentsModifier({onZoomExtents: () => {
+			if(!this.options.auto_range_x){
+				this.x_axis.visibleRange = new NumberRange(this.options.x_domain_min, this.options.x_domain_max);
+			}
+			if(!this.options.auto_range_y){
+				this.y_axis.visibleRange = new NumberRange(this.options.y_domain_min, this.options.y_domain_max);
+			}
+			return false
+		}}));
+
 		this.update_axes_alignment();
 		this.update_axes_flipping();
 		this.update_axes_visibility();
@@ -114,9 +129,6 @@ export class Trace extends BasePlot {
 				this.data_series[i].removeRange(0, this.data_series[i].count() - this.options.n_visible_points);
 			}
         }
-
-		this.update_x_domains();
-		this.update_y_domains();
 	}
 
 	private create_plot(): void {
