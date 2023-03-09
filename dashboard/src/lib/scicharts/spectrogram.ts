@@ -9,6 +9,10 @@ import {
 	type TSciChart,
     ENumericFormat,
     zeroArray2D,
+    MouseWheelZoomModifier,
+    ZoomPanModifier,
+    ZoomExtentsModifier,
+    NumberRange,
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
@@ -55,13 +59,13 @@ export class Spectrogram extends BasePlot {
 		super(wasm_context, surface);
 
 		this.x_axis = new NumericAxis(this.wasm_context, {
-            autoRange: EAutoRange.Always,
+            autoRange: EAutoRange.Never,
             drawLabels: false,
             drawMinorTickLines: false,
             drawMajorTickLines: false,
         });
 		this.y_axis = new NumericAxis(this.wasm_context, {
-            autoRange: EAutoRange.Always,
+            autoRange: EAutoRange.Never,
             drawMinorTickLines: false,
             drawMajorTickLines: false,
         });
@@ -79,6 +83,10 @@ export class Spectrogram extends BasePlot {
         if (this.options.sig_x.length > 0 ) {
 			throw new Error('Spectrogram does not support x signals');
 		}
+
+        this.surface.chartModifiers.add(new MouseWheelZoomModifier());
+        this.surface.chartModifiers.add(new ZoomPanModifier());
+        this.surface.chartModifiers.add(new ZoomExtentsModifier());
 
 		this.create_plot();
 
@@ -101,6 +109,10 @@ export class Spectrogram extends BasePlot {
 	}
 
 	private create_plot(): void {
+        this.data_series[0]?.delete();
+        this.renderable_series[0]?.delete();
+        this.data_series = [];
+        this.renderable_series = [];
 		const renderable_series = new UniformHeatmapRenderableSeries(this.wasm_context, {
             colorMap: new HeatmapColorMap({
                 minimum: this.options.colormap_min,
@@ -133,6 +145,11 @@ export class Spectrogram extends BasePlot {
 		this.surface.renderableSeries.add(renderable_series);
 		this.renderable_series.push(renderable_series);
 		this.data_series.push(data_series);
+
+        this.x_axis.visibleRange = new NumberRange(0, this.options.n_visible_windows);
+        this.y_axis.visibleRange = new NumberRange(0, (bin_count-1) * this.options.sampling_rate/this.options.window_size);
+        this.x_axis.visibleRangeLimit = this.x_axis.visibleRange;
+        this.y_axis.visibleRangeLimit = this.y_axis.visibleRange;
 	}
 
 	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
@@ -168,13 +185,9 @@ export class Spectrogram extends BasePlot {
         const new_n_visible_windows = options.n_visible_windows != this.zValues[0]?.length;
         this.options = options;
         if(new_window_size || new_n_visible_windows || new_sampling_rate){
-            this.data_series[0].delete();
-            this.renderable_series[0].delete();
-            this.data_series = [];
-            this.renderable_series = [];
             this.window_size = this.options.window_size;
             this.sampling_rate = this.options.sampling_rate;
-            this.create_plot()
+            this.create_plot();
         }
         this.update_color_gradient();
         this.update_axes_alignment();
