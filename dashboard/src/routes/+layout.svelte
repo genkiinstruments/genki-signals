@@ -1,9 +1,13 @@
 
 <div class='navbar'>
 	<nav>
-		<a href="/">Home</a>
+		<div class="box">
+			<a href="/">Home</a>
+		</div>
 		<img src="static/favicon.png" alt="logo" class="logo" />
-		<a href="/plots">Plots</a>
+		<div class="box">
+			<a href="/plots">Plots</a>
+		</div>
 	</nav>
 </div>
 
@@ -36,5 +40,18 @@
 		color: #191A18;
 		text-decoration: none;
 		font-size: 1.5rem;
+	}
+
+	.box {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 5rem;
+		width: 7rem;
+	}
+
+	.box:hover {
+		transition: background-color 0.2s ease-in-out;
+		background-color: #FF5F49;
 	}
 </style>

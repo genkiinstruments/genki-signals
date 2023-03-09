@@ -58,6 +58,7 @@
                 new_options.n_visible_windows = 1000;
                 new_options.sampling_rate = 100;
                 new_options.window_size = 32;
+                new_options.colormap_max = 15;
             }
         }
         else {

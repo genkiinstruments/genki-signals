@@ -66,5 +66,9 @@
 	:global(select:hover) {
 		background-color: #FF5F49;
 	}
+
+	:global(input[type="checkbox"]:checked) {
+		accent-color: #FF5F49;
+	}
 </style>
 
