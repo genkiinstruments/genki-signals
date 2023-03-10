@@ -22,6 +22,7 @@ from genki_signals.data_sources import (  # noqa: E402
 from genki_signals.data_sources import (
     MouseDataSource,
     RandomNoise,
+    MicDataSource,
     Sampler
 )
 from genki_signals.system import System  # noqa: E402
@@ -31,34 +32,56 @@ import numpy as np
 eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
+# CORS(app, resources={r"/*":{"origins":"*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-SAMPLING_RATE = 1000
+SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
+DATA_SOURCE = 'Mic'
+# DATA_SOURCE = 'Sampler'
 
 
 def generate_data(ble_address=None):
     if ble_address is not None:
         source = WaveDataSource(ble_address)
-    else:
+    if DATA_SOURCE == 'Mic':
+        source = MicDataSource()
+    elif DATA_SOURCE == 'Sampler':
         source = Sampler({
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
-        
-    with System(source, [s.SampleRate(input_name="timestamp_us"), s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=256, window_overlap=128)]) as system:
-        while True:
-            data = system.read()
-            data_dict = {}
-            for key in data:
-                if data[key].ndim == 1:
-                    data_dict[key] = data[key][None, :].tolist()
-                else:
-                    data_dict[key] = data[key].tolist()
-            if("fourier" in data):
-                data_dict["fourier"] = np.abs(data_dict["fourier"]).tolist()
-            socketio.emit("data", data_dict, broadcast=True)
-            socketio.sleep(1 / GUI_UPDATE_RATE)
+
+    if DATA_SOURCE == 'Mic':
+        print(source.sample_rate)
+        with System(source, [s.FourierTransform(name="fourier", input_name="audio", window_size=1024, window_overlap=0, upsample=False)]) as system:
+            while True:
+                data = system.read()
+                data_dict = {}
+                for key in data:
+                    if data[key].ndim == 1:
+                        data_dict[key] = data[key][None, :].tolist()
+                    else:
+                        data_dict[key] = data[key].tolist()
+                if("fourier" in data):
+                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
+                socketio.emit("data", data_dict, broadcast=True)
+                socketio.sleep(1 / GUI_UPDATE_RATE)
+
+    else:
+        with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
+            while True:
+                data = system.read()
+                data_dict = {}
+                for key in data:
+                    if data[key].ndim == 1:
+                        data_dict[key] = data[key][None, :].tolist()
+                    else:
+                        data_dict[key] = data[key].tolist()
+                if("fourier" in data):
+                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
+                socketio.emit("data", data_dict, broadcast=True)
+                socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
 if __name__ == "__main__":

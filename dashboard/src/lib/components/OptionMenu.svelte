@@ -29,10 +29,18 @@
         } 
         else if (type === 'bar') {
             new_options = get_default_bar_plot_options();
+            new_options.sig_y = [{sig_name: "mouse_position", sig_idx: 0}, {sig_name: "mouse_position", sig_idx: 1}];
+            new_options.auto_range = false;
+            new_options.y_domain_max = 3000
             new_options.description = 'New bar plot';
         }
         else if (type === 'spectrogram') {
             new_options = get_default_spectrogram_plot_options();
+            new_options.sig_y = [{sig_name: "fourier", sig_idx: 0}];
+            new_options.window_size = 1024;
+            new_options.sampling_rate = 48000;
+            new_options.colormap_max = 4;
+            new_options.n_visible_windows = 300;
             new_options.description = 'New spectrogram';
         }
         else {
