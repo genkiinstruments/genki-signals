@@ -94,7 +94,7 @@ export class Bar extends BasePlot {
 	}
 
 	private update_label_format(){
-		const labels = this.options.sig_y.map((s) => s.name);
+		const labels = this.options.sig_y.map((s) => s.sig_name);
 		
 		const valid = labels.every((l) => l !== undefined);
 

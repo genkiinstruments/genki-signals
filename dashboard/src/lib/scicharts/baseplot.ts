@@ -129,15 +129,15 @@ export abstract class BasePlot implements Updatable, Deletable {
 	 * Access the data with the given signal config and throws errors.
 	 * @param data - The data to access
 	 * @param sig - The signal config to access
-	 * @returns the data at signal_config.name and signal_config.idx
+	 * @returns data[sig.sig_key][sig.sig_idx]
 	 */
 	protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
-		const sig_name = sig.sig_name;
+		const sig_key = sig.sig_key;
 		const sig_idx = sig.sig_idx;
-		if (!(sig_name in data)) return []; //throw new Error(`sig_name ${sig_name} not in data`);
-		if (sig_idx >= data[sig_name].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
+		if (!(sig_key in data)) return []; //throw new Error(`sig_key ${sig_key} not in data`);
+		if (sig_idx >= data[sig_key].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
 
-		return data[sig_name][sig_idx] as NumberArray;
+		return data[sig_key][sig_idx] as NumberArray;
 	}
 
 	public delete(): void {

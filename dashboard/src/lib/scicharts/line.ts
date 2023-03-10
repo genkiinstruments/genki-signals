@@ -10,7 +10,7 @@ import {
 	ZoomExtentsModifier,
 	ZoomPanModifier,
 	EZoomState,
-	type TSciChart
+	type TSciChart,
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
@@ -68,6 +68,7 @@ export class Line extends BasePlot {
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
         this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false}));
+		// this.surface.chartModifiers.add(new LegendModifier({showCheckBoxes: false, showSeriesMarkers: true}));
 
 		this.update_y_domain();
 		this.update_axes_alignment();
@@ -111,10 +112,11 @@ export class Line extends BasePlot {
 	}
 
 	private create_plot(): void {
-		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
 		const data_series = new XyDataSeries(this.wasm_context);
-		data_series.containsNaN = this.options.data_contains_nan;
 		data_series.isSorted = this.options.data_is_sorted;
+		data_series.containsNaN = this.options.data_contains_nan;
+
+		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
 		renderable_series.dataSeries = data_series;
 
 		this.surface.renderableSeries.add(renderable_series);

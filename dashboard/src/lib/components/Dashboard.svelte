@@ -102,8 +102,9 @@
 
 <div class='container'>
 	<div class='remove_option_buttons'>
-		{#each $option_store as _, i}
-			<button on:click={() => remove_chart(i)}>Remove chart {i}</button>
+		<p> Remove </p>
+		{#each $option_store as option, i}
+			<button on:click={() => remove_chart(i)}> {i}: {get(option).description} </button>
 		{/each}
 	</div>
 
@@ -125,6 +126,12 @@
 		width: 6%;
 		display: flex;
 		flex-direction: column;
-		overflow: scroll;
+		align-items: center;
+		overflow-x: hidden;
+		overflow-y: scroll;
+	}
+
+	.remove_option_buttons button {
+		width: 100%;
 	}
 </style>

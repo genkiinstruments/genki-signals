@@ -21,8 +21,8 @@
             new_options = get_default_line_plot_options();
             new_options.description = 'New line plot';
             if (demo) {
-                new_options.sig_x = [{sig_name: 'timestamp_us', sig_idx: 0}];
-                new_options.sig_y = [{sig_name: 'random', sig_idx: 0}];
+                new_options.sig_x = [{sig_key: 'timestamp_us', sig_idx: 0}];
+                new_options.sig_y = [{sig_key: 'random', sig_idx: 0}];
                 new_options.x_axis_visible = false;
                 new_options.n_visible_points = 200;
             }
@@ -31,8 +31,8 @@
             new_options = get_default_trace_plot_options();
             new_options.description = 'New trace plot';
             if (demo) {
-                new_options.sig_x = [{sig_name: 'mouse_position', sig_idx: 0}];
-                new_options.sig_y = [{sig_name: 'mouse_position', sig_idx: 1}];
+                new_options.sig_x = [{sig_key: 'mouse_position', sig_idx: 0}];
+                new_options.sig_y = [{sig_key: 'mouse_position', sig_idx: 1}];
                 new_options.y_axis_flipped = true;
                 new_options.n_visible_points = 150;
             }
@@ -42,10 +42,10 @@
             new_options.description = 'New bar plot';
             if (demo) {
                 new_options.sig_y = [
-                    {sig_name: 'stc', sig_idx: 0, name: '❌'},
-                    {sig_name: 'stc', sig_idx: 1, name: '🟥'},
-                    {sig_name: 'stc', sig_idx: 2, name: '🔺'},
-                    {sig_name: 'stc', sig_idx: 3, name: '🔴'}
+                    {sig_key: 'stc', sig_idx: 0, sig_name: '❌'},
+                    {sig_key: 'stc', sig_idx: 1, sig_name: '🟥'},
+                    {sig_key: 'stc', sig_idx: 2, sig_name: '🔺'},
+                    {sig_key: 'stc', sig_idx: 3, sig_name: '🔴'}
                 ];
                 new_options.auto_range = false;
             }
@@ -54,7 +54,7 @@
             new_options = get_default_spectrogram_plot_options();
             new_options.description = 'New spectrogram';
             if (demo) {
-                new_options.sig_y = [{sig_name: 'fourier', sig_idx: 0}];
+                new_options.sig_y = [{sig_key: 'fourier', sig_idx: 0}];
                 new_options.n_visible_windows = 1000;
                 new_options.sampling_rate = 100;
                 new_options.window_size = 32;
@@ -90,7 +90,7 @@
     </div>
     <div class="option_list">
         {#each $option_store as store, idx}
-            <button on:click={() => change_selected(idx)}>
+            <button on:click={() => change_selected(idx)} style='background-color: {idx===$selected_index_store? '#FF5F49': '#A5A6A5'}'>
                 {idx}: {get(store).description}
             </button>
         {/each}

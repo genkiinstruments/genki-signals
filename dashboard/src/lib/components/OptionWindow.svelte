@@ -34,7 +34,7 @@
 			{:else if key === 'description'}
 				<label>
 					{key}:
-					<input type="text" bind:value={$selected_store[key]} />
+					<input type="text" bind:value={$selected_store[key]} on:change={option_store.update_all_subscribers}/>
 				</label>
 			{:else}
 				{#if typeof value === 'number'}
@@ -64,9 +64,9 @@
 							{#each value as item, idx}
 								<div>
 									<label>
-										sig_name: 
+										sig_key: 
 										<br>
-										<select bind:value={$selected_store[key][idx].sig_name}>
+										<select bind:value={$selected_store[key][idx].sig_key} >
 											{#each dropdown_values['sig_x'] as item}
 												<option value={item}>{item}</option>
 											{/each}
@@ -77,8 +77,8 @@
 										<input type="number" bind:value={$selected_store[key][idx].sig_idx} />
 									</label>
 									<label>
-										name:
-										<input type="text" bind:value={$selected_store[key][idx].name} />
+										sig_name:
+										<input type="text" bind:value={$selected_store[key][idx].sig_name} />
 									</label>
 								</div>
 							{/each}
