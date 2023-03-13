@@ -67,6 +67,7 @@
 										sig_key: 
 										<br>
 										<select bind:value={$selected_store[key][idx].sig_key} >
+											<option value="" selected disabled hidden>Choose here</option>
 											{#each dropdown_values['sig_x'] as item}
 												<option value={item}>{item}</option>
 											{/each}
@@ -128,5 +129,9 @@
 		border: 1px solid #ccc;
 		border-radius: 4px;
 		box-sizing: border-box;
+	}
+
+	button {
+		margin-bottom: 5px;
 	}
 </style>

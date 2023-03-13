@@ -15,6 +15,7 @@
 
 	const socket = io('http://localhost:5000/');
 
+
 	let el: HTMLDivElement;
 	let subcharts: SubChart[] = [];
 
