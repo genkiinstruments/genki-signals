@@ -306,7 +306,7 @@ class AngleBetween(Signal):
     Signal to compute the angle between two 2D vector signals
     """
 
-    def __init__(self, signal_1, signal_2, name=None):
+    def __init__(self, signal_1: str, signal_2: str, name: str = None):
         self.name = name if name is not None else f"angle_{signal_1}_{signal_2}"
         self.input_names = [self.signal_1, self.signal_2]
 
@@ -322,17 +322,17 @@ class DeadReckoning(Signal):
 
     def __init__(
             self,
-            len_sec,
-            fs,
-            bias=0.11,
-            c_acc=1.0,
-            c_gyro=1 / 300,
-            beta=50.0,
-            prefix_gyro="gyro",
-            prefix_acc="linacc_glob",
-            threshold=0.5,
-            half=True,
-            name="DeadReckoning",
+            len_sec: float,
+            fs: int,
+            bias: float = 0.11,
+            c_acc: float = 1.0,
+            c_gyro: float = 1 / 300,
+            beta: float = 50.0,
+            prefix_gyro: str = "gyro",
+            prefix_acc: str = "linacc_glob",
+            threshold: float = 0.5,
+            half: bool = True,
+            name: str = "DeadReckoning",
     ):
         self.name = name
         self.filter_gyro = (
@@ -375,7 +375,7 @@ class ExtractDimension(Signal):
     Signal to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
     """
 
-    def __init__(self, signal, dim, name=None):
+    def __init__(self, signal: str, dim: int, name: str = None):
         self.name = name if name is not None else f"{signal}_{dim}"
         self.dim = dim
 
@@ -389,7 +389,7 @@ class ExtractDimension(Signal):
 class ZeroCrossing(Signal):
     """Returns the zero crossing of signals as 1 and otherwise 0"""
 
-    def __init__(self, sig_a, name=None):
+    def __init__(self, sig_a: str, name: str = None):
         self.name = name if name is not None else "ZeroCrossing"
         self.state = None
         self.input_names = [sig_a]
