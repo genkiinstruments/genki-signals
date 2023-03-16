@@ -1,54 +1,55 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import type { PlotOptions } from '../scicharts/baseplot';
+import type { SubChart } from '$lib/scicharts/subchart';
 
 
-const option_store_inner: Writable<Writable<PlotOptions>[]> = writable([]);
+const inner_subchart_store: Writable<SubChart[]> = writable([]);
 
-export const option_store = Object.assign(option_store_inner, {
-    add_option: ((option: PlotOptions) => {
-        option_store_inner.update((option_store_list) => {
-            option_store_list.push(writable(option));
-            return option_store_list;
+export const chart_store = Object.assign(inner_subchart_store, {
+    add_chart: ((chart: SubChart) => {
+        inner_subchart_store.update((subcharts) => {
+            subcharts.push(chart);
+            return subcharts;
         });
     }),
-    remove_option_at: ((idx: number) => {
-        option_store_inner.update((option_store_list) => {
-            if (idx < 0 || idx >= option_store_list.length) {
+    remove_chart: ((chart: SubChart) => {
+        inner_subchart_store.update((subcharts) => {
+            const idx = subcharts.indexOf(chart);
+            if (idx < 0) {
+                throw new Error(`Chart not found`);
+            }
+            subcharts.splice(idx, 1);
+            return subcharts;
+        });
+    }), 
+    remove_chart_at: ((idx: number) => {
+        inner_subchart_store.update((subcharts) => {
+            if (idx < 0 || idx >= subcharts.length) {
                 throw new Error(`Index ${idx} out of range`);
             }
-            option_store_list.splice(idx, 1);
-            return option_store_list;
+            subcharts.splice(idx, 1);
+            return subcharts;
         });  
     }),
-    update_option_at: ((idx: number, option: PlotOptions) => {
-        option_store_inner.update((option_store_list) => {
-            if (idx < 0 || idx >= option_store_list.length) {
-                throw new Error(`Index ${idx} out of range`);
-            }
-            option_store_list[idx]?.set(option);
-            return option_store_list;
-        });
-    }),
-    count: (() => get(option_store_inner).length),
-    get_store_at: ((idx: number) => {
-        if (idx < 0 || idx >= get(option_store_inner).length) {
+    count: (() => get(inner_subchart_store).length),
+    get_subchart_at: ((idx: number) => {
+        if (idx < 0 || idx >= get(inner_subchart_store).length) {
             throw new Error(`Index ${idx} out of range`);
         }
-        return get(option_store_inner)[idx];
+        return get(inner_subchart_store)[idx];
     }),
     /**
      * This is a hack to force all subscribers to update.
      */
     update_all_subscribers: (() => {
-        option_store_inner.update((option_store_list) => {
-            option_store_list.forEach((option_store) => {
+        inner_subchart_store.update((subcharts) => {
+            subcharts.forEach((option_store) => {
                 option_store.update((option) => option);
             });
-            return option_store_list;
+            return subcharts;
         });
     })
 });
 
 
-export const selected_index_store = writable(-1);
+export const selected_subchart_store = writable(-1);
