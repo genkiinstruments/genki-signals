@@ -13,7 +13,6 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import { compare_signals } from './types';
 import type { ArrayDict, SignalConfig } from './types';
 
 export interface TracePlotOptions extends PlotOptions {
@@ -70,7 +69,7 @@ export class Trace extends BasePlot {
             throw new Error('sig_x and sig_y must have the same length');
         }
 
-		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
+		this.options.sig_y.forEach(() => this.add_plot()); // one to one mapping of data series to renderable series
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -121,8 +120,8 @@ export class Trace extends BasePlot {
         const n = this.options.sig_x.length; // we maintain sig_x and sig_y so that they have the same length
 
         for (let i = 0; i < n; i++) {
-            const x = this.fetch_and_check(data, this.options.sig_x[i]);
-            const y = this.fetch_and_check(data, this.options.sig_y[i]);
+            const x = this.check_and_fetch(data, this.options.sig_x[i]);
+            const y = this.check_and_fetch(data, this.options.sig_y[i]);
             this.data_series[i].appendRange(x, y);
 
 			if (this.data_series[i].count() > this.options.n_visible_points) {
@@ -131,7 +130,7 @@ export class Trace extends BasePlot {
         }
 	}
 
-	private create_plot(): void {
+	private add_plot(): void {
 		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
 		const data_series = new XyDataSeries(this.wasm_context);
 		data_series.containsNaN = this.options.data_contains_nan;
@@ -143,54 +142,13 @@ export class Trace extends BasePlot {
 		this.data_series.push(data_series);
 	}
 
-	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
-		if (this.options.sig_x.length === 0 && sig_x !== null) {
-			this.options.sig_x.push(sig_x);
-		} else throw new Error('only one sig_x supported for trace plots');
-
-
-		this.options.sig_y.forEach((sig) => {
-			if (compare_signals(sig, sig_y)) {
-				throw new Error('Signal already exists in plot');
-			}
-		});
-
-		this.create_plot();
-		this.options.sig_y.push(sig_y);		
-	}
-
-	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
-		if (
-			sig_x !== null &&
-			(this.options.sig_x.length == 0 || !compare_signals(this.options.sig_x[0], sig_x))
-		) {
-			throw new Error('x signal does not exist on this plot');
-		}
-
-		let deleted = false;
-
-		this.options.sig_y.forEach((sig, idx) => {
-			if (compare_signals(sig, sig_y)) {
-				this.options.sig_y.splice(idx, 1);
-				this.surface.renderableSeries.remove(this.renderable_series[idx]);
-				this.renderable_series.splice(idx, 1);
-				this.data_series.splice(idx, 1);
-				deleted = true;
-			}
-		});
-
-		if (!deleted) {
-			throw new Error('Signal does not exist on this plot');
-		}
-	}
-
 	public update_all_options(options: TracePlotOptions): void {
 		this.options = options;
 
 		const n = this.options.sig_y.length;
 		if (n > this.renderable_series.length) {
 			for (let i = this.renderable_series.length; i < n; i++) {
-				this.create_plot();
+				this.add_plot();
 			}
 		}
 
@@ -198,6 +156,6 @@ export class Trace extends BasePlot {
 		this.update_axes_flipping();
 		this.update_axes_visibility();
 		this.update_x_domains();
-		this.update_y_domains(); // TODO: split?
+		this.update_y_domains();
 	}
 }

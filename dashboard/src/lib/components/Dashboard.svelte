@@ -60,17 +60,13 @@
 			if (n_subcharts >= options.length) return;
 
 			for (let i = n_subcharts; i < options.length; i++) {
-				const new_subchart = new SubChart('bla', main_surface, wasm_context, rects[i], get(options[i]));
+				const new_subchart = new SubChart('bla', main_surface, wasm_context, rects[i], structuredClone(get(options[i])));
 				subcharts.push(new_subchart);
 
 				options[i].subscribe((option) => {
-					new_subchart.update_all_options(option);
+					new_subchart.update_all_options(structuredClone(option));
 				});
 			}
-
-			subcharts.forEach((subchart, i) => {
-				subchart.update_all_options(get(options[i]));
-			});
 		});
 
 		socket.on('data', (response) => {

@@ -88,7 +88,8 @@ export class Spectrogram extends BasePlot {
         this.surface.chartModifiers.add(new ZoomPanModifier());
         this.surface.chartModifiers.add(new ZoomExtentsModifier());
 
-		this.create_plot();
+
+		this.add_plot();
 
 		this.update_axes_alignment();
 		this.update_axes_flipping();
@@ -108,7 +109,7 @@ export class Spectrogram extends BasePlot {
         this.data_series[0].setZValues(this.zValues);
 	}
 
-	private create_plot(): void {
+	private add_plot(): void {
         this.data_series[0]?.delete();
         this.renderable_series[0]?.delete();
         this.data_series = [];
@@ -152,18 +153,6 @@ export class Spectrogram extends BasePlot {
         this.y_axis.visibleRangeLimit = this.y_axis.visibleRange;
 	}
 
-	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
-        throw new Error(
-            'This method is not supported for Spectrogram'
-        );
-	}
-
-	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
-        throw new Error(
-            'This method is not supported for Spectrogram'
-        );
-	}
-
     private update_color_gradient(){
         this.renderable_series[0].colorMap = new HeatmapColorMap({
             minimum: this.options.colormap_min,
@@ -178,7 +167,6 @@ export class Spectrogram extends BasePlot {
         })
     }
 
-
     public update_all_options(options: SpectrogramPlotOptions): void {
         const new_window_size = options.window_size != this.window_size;
         const new_sampling_rate = options.sampling_rate != this.sampling_rate;
@@ -187,7 +175,7 @@ export class Spectrogram extends BasePlot {
         if(new_window_size || new_n_visible_windows || new_sampling_rate){
             this.window_size = this.options.window_size;
             this.sampling_rate = this.options.sampling_rate;
-            this.create_plot();
+            this.add_plot();
         }
         this.update_color_gradient();
         this.update_axes_alignment();

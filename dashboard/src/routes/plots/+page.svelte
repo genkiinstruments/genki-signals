@@ -12,11 +12,6 @@
 </div>
 
 <style>
-	:global(body) {
-		/* background: radial-gradient(circle, rgb(60, 60, 63) 0%, rgb(28, 28, 30) 100%); */
-		/* background-color: black; */
-	}
-
 	.dashboard_layout {
 		width: 100%;
 		height: 1000px;

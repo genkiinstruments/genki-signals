@@ -5,15 +5,16 @@
 
 	import { option_store, selected_index_store } from '$lib/stores/chart_stores';
 	import { data_keys_store } from '$lib/stores/data_stores';
+	import { SignalConfig } from '$lib/scicharts/types';
 
 
 	function appendSig(key: string) {
 		return () => {
-			const new_sig = {'sig_name': '', 'sig_idx': 0};
+			const new_sig = new SignalConfig('', 0);
 			selected_store.update((store) => {
 				store[key].push(new_sig);
 				return store;
-			});
+			});	
 		};
 	}
 	$: dropdown_values = {
@@ -67,7 +68,7 @@
 										sig_key: 
 										<br>
 										<select bind:value={$selected_store[key][idx].sig_key} >
-											<option value="" selected disabled hidden>Choose here</option>
+											<option value='random' selected disabled hidden>random</option>
 											{#each dropdown_values['sig_x'] as item}
 												<option value={item}>{item}</option>
 											{/each}
@@ -76,10 +77,6 @@
 									<label>
 										sig_idx:
 										<input type="number" bind:value={$selected_store[key][idx].sig_idx} />
-									</label>
-									<label>
-										sig_name:
-										<input type="text" bind:value={$selected_store[key][idx].sig_name} />
 									</label>
 								</div>
 							{/each}

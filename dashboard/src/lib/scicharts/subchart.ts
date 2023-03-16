@@ -24,7 +24,7 @@ export class SubChart implements Updatable, Deletable {
 	wasm_context: TSciChart;
 	rect: Rect;
 	sub_chart_surface: SciChartSubSurface;
-	plot: BasePlot; // TODO: Array of BasePlot
+	plot: BasePlot;
 
 	constructor(
 		id: string,
@@ -45,19 +45,20 @@ export class SubChart implements Updatable, Deletable {
 	}
 
 	private create_plot(plot_options: PlotOptions): BasePlot {
-		switch (plot_options.type) {
+		const options = structuredClone(plot_options);
+		switch (options.type) {
 			case 'line':
-				return new Line(this.wasm_context, this.sub_chart_surface, plot_options as LinePlotOptions);
+				return new Line(this.wasm_context, this.sub_chart_surface, options as LinePlotOptions);
 			case 'bar':
-				return new Bar(this.wasm_context, this.sub_chart_surface, plot_options as BarPlotOptions);
+				return new Bar(this.wasm_context, this.sub_chart_surface, options as BarPlotOptions);
 			case 'trace':
-				return new Trace(this.wasm_context, this.sub_chart_surface, plot_options as TracePlotOptions);
+				return new Trace(this.wasm_context, this.sub_chart_surface, options as TracePlotOptions);
 			case 'spectrogram':
-				return new Spectrogram(this.wasm_context, this.sub_chart_surface, plot_options as SpectrogramPlotOptions);
+				return new Spectrogram(this.wasm_context, this.sub_chart_surface, options as SpectrogramPlotOptions);
 			case 'no_type':
 				throw new Error('No plot type specified');
 			default:
-				throw new Error(`Unknown plot type: ${plot_options.type}`);
+				throw new Error(`Unknown plot type: ${options.type}`);
 		}
 	}
 
@@ -74,9 +75,5 @@ export class SubChart implements Updatable, Deletable {
 		// call delete on each plot
 		this.sub_chart_surface.delete();
 		this.plot.delete();
-	}
-
-	public update_all_options(plot_options: PlotOptions): void {
-		this.plot.update_all_options(plot_options);
 	}
 }

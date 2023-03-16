@@ -19,7 +19,6 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import { compare_signals } from './types';
 import type { ArrayDict, SignalConfig } from './types';
 
 export interface BarPlotOptions extends PlotOptions {
@@ -61,11 +60,7 @@ export class Bar extends BasePlot {
 
 		this.options = plot_options;
 
-		if (this.options.sig_x.length != 0) {
-			throw new Error('Bar plot does not support x signals');
-		}
-
-		this.create_plot();
+		this.add_plot();
 
 		this.update_y_domain();
 		this.update_axes_alignment();
@@ -88,7 +83,7 @@ export class Bar extends BasePlot {
 	public update(data: ArrayDict): void {
         this.data_series[0]?.clear()
 		this.options.sig_y.forEach((sig_y, i) => {
-			const y = this.fetch_and_check(data, sig_y);
+			const y = this.check_and_fetch(data, sig_y);
 			this.data_series[0]?.append(i, y[y.length-1]);
 		});
 	}
@@ -111,7 +106,7 @@ export class Bar extends BasePlot {
     }
 
 
-	private create_plot(): void {
+	private add_plot(): void {
 		const renderable_series = new FastColumnRenderableSeries(this.wasm_context, {
             dataLabels: {
                 horizontalTextPosition: EHorizontalTextPosition.Center,
@@ -132,46 +127,6 @@ export class Bar extends BasePlot {
         this.update_label_format();
 	}
 
-	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
-		if (sig_x !== null) {
-			throw new Error(
-				'x signal is not supported for bar plots'
-			);
-		}
-
-		this.options.sig_y.forEach((sig) => {
-			if (compare_signals(sig, sig_y)) {
-				throw new Error('Signal already exists in plot');
-			}
-		});
-
-		this.options.sig_y.push(sig_y);
-
-        this.update_label_format();
-	}
-
-	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
-		if (sig_x !== null) {
-			throw new Error(
-				'x signal is not supported for bar plots'
-			);
-		}
-
-		let deleted = false;
-
-		this.options.sig_y.forEach((sig, idx) => {
-			if (compare_signals(sig, sig_y)) {
-				this.options.sig_y.splice(idx, 1);
-				deleted = true;
-			}
-		});
-
-		if (!deleted) {
-			throw new Error('Signal does not exist on this plot');
-		}
-
-        this.update_label_format();
-	}
 
 	public update_all_options(options: BarPlotOptions): void {
 		this.options = options

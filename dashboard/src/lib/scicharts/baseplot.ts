@@ -1,4 +1,4 @@
-import { EAxisAlignment, type NumberArray } from 'scichart';
+import { BaseHeatmapDataSeries, EAxisAlignment, type NumberArray } from 'scichart';
 import type {
 	TSciChart,
 	AxisBase2D,
@@ -9,7 +9,7 @@ import type {
 } from 'scichart';
 
 import type { Deletable, Updatable } from './interfaces';
-import type { SignalConfig, ArrayDict } from './types';
+import { SignalConfig, type ArrayDict } from './types';
 
 export interface PlotOptions {
 	type: string;
@@ -19,8 +19,6 @@ export interface PlotOptions {
 	 * In the former case, sig_x.length is maintained at 1.
 	 * In the latter case, sig_x.length === sig_y.length is maintained.
 	 */
-	sig_x: SignalConfig[];
-	sig_y: SignalConfig[];
 	x_axis_align: 'top' | 'bottom';
 	y_axis_align: 'left' | 'right';
 	x_axis_flipped: boolean;
@@ -34,8 +32,6 @@ export function get_default_plot_options(): PlotOptions {
 	return {
 		type: 'no_type',
 		description: 'no_description',
-		sig_x: [],
-		sig_y: [],
 		x_axis_align: 'bottom',
 		y_axis_align: 'left',
 		x_axis_flipped: false,
@@ -55,8 +51,13 @@ export abstract class BasePlot implements Updatable, Deletable {
 
 	protected abstract x_axis: AxisBase2D;
 	protected abstract y_axis: AxisBase2D;
+
+	protected abstract sig_x: SignalConfig;
+
+	// These lists should have the same length
+	protected abstract sig_y: SignalConfig[];
 	protected abstract renderable_series: BaseRenderableSeries[];
-	protected abstract data_series: BaseDataSeries[];
+	protected abstract data_series: BaseDataSeries[] | BaseHeatmapDataSeries[];
 
 	constructor(wasm_context: TSciChart, surface: SciChartSubSurface | SciChartSurface) {
 		this.wasm_context = wasm_context;
@@ -126,12 +127,53 @@ export abstract class BasePlot implements Updatable, Deletable {
 	}
 
 	/**
+	 * Updates the signal config for the x-axis. If the new signal config is different from the old one,
+	 * then all data series are cleared.
+	 * @param sig_x - The new signal config for the x-axis.
+	 */
+	protected change_sig_x(sig_x: SignalConfig): void {
+		console.log('sig_x', sig_x.hasOwnProperty('compare_to'));
+		if (!(sig_x.compare_to(this.options.sig_x))) {
+			this.data_series.forEach((ds) => ds.clear());
+		}
+	}
+
+	/**
+	 * Updates the signal configs for the y-axis.
+	 * If old signals are no longer present in the new list, then the corresponding plots are removed.
+	 * If new signals are present in the new list, then new plots are created.
+	 * @param sig_y - The new signal configs for the y-axis.
+	 */
+	protected update_sig_y(sig_y: SignalConfig[]): void {
+		const new_set = new Set(sig_y.map((sig) => sig.get_id()));
+		const old_set = new Set(this.options.sig_y.map((sig) => sig.get_id()));
+
+		const new_list = sig_y.filter((sig) => new_set.has(sig.get_id()));
+		const old_list = this.options.sig_y.filter((sig) => old_set.has(sig.get_id()));
+
+		old_list.forEach((sig, i) => {
+			if (!new_set.has(sig.get_id())) {
+				this.remove_plot_at(i);
+			}
+		});
+
+		new_list.forEach((sig) => {
+			if (!old_set.has(sig.get_id())) {
+				this.add_plot();
+			}
+		});
+
+		this.options.sig_y = new_list;
+    }
+
+	/**
 	 * Access the data with the given signal config and throws errors.
 	 * @param data - The data to access
 	 * @param sig - The signal config to access
 	 * @returns data[sig.sig_key][sig.sig_idx]
 	 */
-	protected fetch_and_check(data: ArrayDict, sig: SignalConfig): NumberArray {
+	protected check_and_fetch(data: ArrayDict, sig: SignalConfig | undefined): NumberArray {
+		if (sig === undefined) return [];
 		const sig_key = sig.sig_key;
 		const sig_idx = sig.sig_idx;
 		if (!(sig_key in data)) return []; //throw new Error(`sig_key ${sig_key} not in data`);
@@ -153,24 +195,20 @@ export abstract class BasePlot implements Updatable, Deletable {
 
 	public abstract update(data: ArrayDict): void;
 
+	protected remove_plot_at(i: number): void {
+		this.surface.renderableSeries.remove(this.renderable_series[i]);
+		this.renderable_series[i]?.delete();
+		this.renderable_series.splice(i, 1);
+
+		this.data_series[i]?.delete();
+		this.data_series.splice(i, 1);
+	}
+
+
 	/**
-     * Creates a new renderable series / data series and adds it to the plot if it does not exist yet.
-
-     * The x component for each plot is predefined and cannot be changed.
-     * @param sig_y - The y component signal config to add
-     * @param sig_x - The x component signal config to add. Can be null.
-     */
-	public abstract add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
-
-	/**
-     * Removes a renderable series / data series from the plot if it exists.
-
-     * The x component for each plot is predefined and cannot be changed.
-     * @param sig_y - The y component signal config to remove
-     * @param sig_x - The x component signal config to remove. Can be null.
-     */
-	public abstract remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null): void;
-
+	 * A function that specifies how to create the renderable series, dataseries etc. for each subclass.
+	 */
+	protected abstract add_plot(): void;
 
 	/**
 	 * Calls each update option functions.

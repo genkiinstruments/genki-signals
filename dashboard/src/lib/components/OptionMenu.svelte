@@ -7,6 +7,7 @@
     import { get_default_bar_plot_options } from '$lib/scicharts/barplot';
     import { get_default_spectrogram_plot_options } from '$lib/scicharts/spectrogram';
     import { option_store, selected_index_store } from '$lib/stores/chart_stores';
+	import { SignalConfig } from '$lib/scicharts/types';
 
 
     const demo: boolean = true;
@@ -21,8 +22,8 @@
             new_options = get_default_line_plot_options();
             new_options.description = 'New line plot';
             if (demo) {
-                new_options.sig_x = [{sig_key: 'timestamp_us', sig_idx: 0}];
-                new_options.sig_y = [{sig_key: 'random', sig_idx: 0}];
+                new_options.sig_x = new SignalConfig('timestamp_us', 0);
+                new_options.sig_y = [new SignalConfig('random', 0)];
                 new_options.x_axis_visible = false;
                 new_options.n_visible_points = 200;
             }
@@ -31,9 +32,8 @@
             new_options = get_default_trace_plot_options();
             new_options.description = 'New trace plot';
             if (demo) {
-                new_options.sig_x = [{sig_key: 'mouse_position', sig_idx: 0}];
-                new_options.sig_y = [{sig_key: 'mouse_position', sig_idx: 1}];
-                new_options.y_axis_flipped = true;
+                new_options.sig_x = new SignalConfig('mouse_position', 0);
+                new_options.sig_y = [new SignalConfig('mouse_position', 1)];
                 new_options.n_visible_points = 150;
             }
         } 
@@ -42,10 +42,10 @@
             new_options.description = 'New bar plot';
             if (demo) {
                 new_options.sig_y = [
-                    {sig_key: 'stc', sig_idx: 0, sig_name: '❌'},
-                    {sig_key: 'stc', sig_idx: 1, sig_name: '🟥'},
-                    {sig_key: 'stc', sig_idx: 2, sig_name: '🔺'},
-                    {sig_key: 'stc', sig_idx: 3, sig_name: '🔴'}
+                    new SignalConfig('stc', 0, '❌'),
+                    new SignalConfig('stc', 1, '🟥'),
+                    new SignalConfig('stc', 2, '🔺'),
+                    new SignalConfig('stc', 3, '🔴')
                 ];
                 new_options.auto_range = false;
             }
@@ -54,7 +54,7 @@
             new_options = get_default_spectrogram_plot_options();
             new_options.description = 'New spectrogram';
             if (demo) {
-                new_options.sig_y = [{sig_key: 'fourier', sig_idx: 0}];
+                new_options.sig_y = [new SignalConfig('fourier', 0)];
                 new_options.n_visible_windows = 1000;
                 new_options.sampling_rate = 100;
                 new_options.window_size = 32;
@@ -66,6 +66,10 @@
         }
 
         return () => {
+            console.log('before cloning');
+            new_options.sig_x.compare_to(0)
+            console.log('after cloning');
+            structuredClone(new_options).sig_x.compare_to(0);
             option_store.add_option(structuredClone(new_options)); // Not enough to spread the object
             const idx = option_store.count()-1;
             change_selected(idx);
