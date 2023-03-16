@@ -3,8 +3,9 @@ export interface ArrayDict {
 }
 
 export interface SignalConfig {
-	sig_name: string;
+	sig_key: string;
 	sig_idx: number;
+	sig_name?: string;
 }
 
 export function compare_signals(a: SignalConfig, b: SignalConfig): boolean {

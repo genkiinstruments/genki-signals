@@ -26,10 +26,11 @@ from genki_signals.data_sources import (
     Sampler
 )
 from genki_signals.system import System  # noqa: E402
+from genki_signals.models.letter_detection_model import SimpleGruModel  # noqa: E402
 
 import numpy as np
 
-eventlet.monkey_patch()
+# eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 # CORS(app, resources={r"/*":{"origins":"*"}})
@@ -52,36 +53,33 @@ def generate_data(ble_address=None):
             "mouse_position": MouseDataSource()
         }, SAMPLING_RATE, timestamp_key="timestamp_us")
 
-    if DATA_SOURCE == 'Mic':
-        print(source.sample_rate)
-        with System(source, [s.FourierTransform(name="fourier", input_name="audio", window_size=1024, window_overlap=0, upsample=False)]) as system:
-            while True:
-                data = system.read()
-                data_dict = {}
-                for key in data:
-                    if data[key].ndim == 1:
-                        data_dict[key] = data[key][None, :].tolist()
-                    else:
-                        data_dict[key] = data[key].tolist()
-                if("fourier" in data):
-                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
-                socketio.emit("data", data_dict, broadcast=True)
-                socketio.sleep(1 / GUI_UPDATE_RATE)
+    model = SimpleGruModel.load_from_checkpoint("genki_signals/models/stc_detector_final-epoch=15-val_loss=0.53.ckpt")
 
-    else:
-        with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
-            while True:
-                data = system.read()
-                data_dict = {}
-                for key in data:
-                    if data[key].ndim == 1:
-                        data_dict[key] = data[key][None, :].tolist()
-                    else:
-                        data_dict[key] = data[key].tolist()
-                if("fourier" in data):
-                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
-                socketio.emit("data", data_dict, broadcast=True)
-                socketio.sleep(1 / GUI_UPDATE_RATE)
+    derived_signals = [
+        s.SampleRate(input_name="timestamp_us"),
+        s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
+        s.Differentiate(name="mouse_velocity", sig_a="mouse_position", sig_b="timestamp_us"),
+        s.Inference(
+            name="stc",
+            model=model,
+            input_signals=["mouse_velocity"],
+            stateful=True
+        )
+    ]
+        
+    with System(source, derived_signals=derived_signals) as system:
+        while True:
+            data = system.read()
+            data_dict = {}
+            for key in data:
+                if data[key].ndim == 1:
+                    data_dict[key] = data[key][None, :].tolist()
+                else:
+                    data_dict[key] = data[key].tolist()
+            if("fourier" in data):
+                data_dict["fourier"] = np.abs(data_dict["fourier"]).tolist()
+            socketio.emit("data", data_dict, broadcast=True)
+            socketio.sleep(1 / GUI_UPDATE_RATE)
 
 
 if __name__ == "__main__":
