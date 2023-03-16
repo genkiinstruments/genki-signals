@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from scipy import integrate
 
@@ -6,7 +8,7 @@ from genki_signals.signals.base import Signal
 
 
 class Scale(Signal):
-    def __init__(self, input_name, scale_factor, name):
+    def __init__(self, input_name: str, scale_factor: float, name: str):
         self.name = name
         self.scale_factor = scale_factor
         self.input_names = [input_name]
@@ -16,7 +18,7 @@ class Scale(Signal):
 
 
 class Sum(Signal):
-    def __init__(self, input_a, input_b, name):
+    def __init__(self, input_a: str, input_b: str, name: str):
         self.name = name
         self.input_names = [input_a, input_b]
 
@@ -27,7 +29,7 @@ class Sum(Signal):
 class Difference(Signal):
     """Find the difference between 2 signals"""
 
-    def __init__(self, input_a, input_b, name=None):
+    def __init__(self, input_a: str, input_b: str, name:str=None):
         self.name = name
         self.input_names = [input_a, input_b]
 
@@ -35,8 +37,10 @@ class Difference(Signal):
         return a - b
 
 
+
+
 class Multiply(Signal):
-    def __init__(self, sig_a, sig_b, name):
+    def __init__(self, sig_a:str, sig_b:str, name:str):
         self.name = name
         self.input_names = [sig_a, sig_b]
 
@@ -47,7 +51,7 @@ class Multiply(Signal):
 class Integrate(Signal):
     """Integrates a signal with respect to another signal (usually time)"""
 
-    def __init__(self, sig_a, sig_b="timestamp", use_trapz=True, name=None):
+    def __init__(self, sig_a:str, sig_b:str="timestamp", use_trapz:bool=True, name:str=None):
         self.name = f"Int({sig_a} w.r.t. {sig_b})" if name is None else name
         self.state = 0.0
         self.trapezoid = use_trapz
@@ -77,7 +81,7 @@ class Differentiate(Signal):
     If sig_b is None, the discrete difference of sig_a is used.
     """
 
-    def __init__(self, sig_a, sig_b="timestamp", name=None):
+    def __init__(self, sig_a:str, sig_b:str="timestamp", name:str=None):
         self.name = (
             f"Diff({sig_a})" if sig_b is None else f"Diff({sig_a} w.r.t. {sig_b})"
         )
@@ -109,7 +113,7 @@ class Differentiate(Signal):
 class MovingAverage(Signal):
     """Returns the moving average of a signal"""
 
-    def __init__(self, input_name, length, name):
+    def __init__(self, input_name:str, length:int, name:str):
         self.name = name
         self.buffer = NumpyBuffer(maxlen=length)
         self.input_names = [input_name]
@@ -121,3 +125,12 @@ class MovingAverage(Signal):
             output[i] = np.mean(self.buffer.view(), axis=-1)
         return output
 
+__all__ = [
+    "Scale",
+    "Sum",
+    "Difference",
+    "Multiply",
+    "Integrate",
+    "Differentiate",
+    "MovingAverage",
+    ]

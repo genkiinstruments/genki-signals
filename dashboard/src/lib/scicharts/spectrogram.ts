@@ -98,12 +98,12 @@ export class Spectrogram extends BasePlot {
 	public update(data: ArrayDict): void {
 		if (this.options.sig_y.length !== 1) return; // if no x signal is defined, then we can't update the plot
 
-        const sig_name = this.options.sig_y[0].sig_name;
-		if (!(sig_name in data)) throw new Error(`sig_name ${sig_name} not in data`);
+        const sig_key = this.options.sig_y[0].sig_key;
+		if (!(sig_key in data)) throw new Error(`sig_key ${sig_key} not in data`);
 
-        if(data[sig_name][0].length == 0) return; // no new data
+        if(data[sig_key][0].length == 0) return; // no new data
 
-        this.zValues = this.zValues.map((row, i) => row.concat(data[sig_name][i]).slice(-this.options.n_visible_windows))
+        this.zValues = this.zValues.map((row, i) => row.concat(data[sig_key][i]).slice(-this.options.n_visible_windows))
 
         this.data_series[0].setZValues(this.zValues);
 	}

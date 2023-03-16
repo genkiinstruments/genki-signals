@@ -8,7 +8,7 @@ import logging
 
 from genki_signals.dead_reckoning import calc_per_t_power, combine_power
 from genki_signals.filters import FirFilter
-from genki_signals.signals import Signal
+from genki_signals.signals.base import Signal
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class Norm(Signal):
     Euclidian norm of a vector signal
     """
 
-    def __init__(self, input_names, name):
+    def __init__(self, input_names: str, name: str):
         # TODO: Can we abstract this away?
         self.name = name
         self.input_names = input_names
@@ -33,7 +33,7 @@ class EulerOrientation(Signal):
     Convert quaternion representation to Euler axis/angle representation
     """
 
-    def __init__(self, input_signal="current_pose", name="orientation"):
+    def __init__(self, input_signal: str = "current_pose", name: str = "orientation"):
         self.name = name
         self.input_names = [input_signal]
 
@@ -50,7 +50,7 @@ class EulerAngle(Signal):
     Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
     """
 
-    def __init__(self, input_signal, name="euler_angle"):
+    def __init__(self, input_signal: str, name: str = "euler_angle"):
         self.name = name
         self.input_names = [input_signal]
 
@@ -78,7 +78,7 @@ class Gravity(Signal):
     Compute gravity vector from a quaternion orientation signal
     """
 
-    def __init__(self, input_signal="current_pose", name=None):
+    def __init__(self, input_signal: str = "current_pose", name: str = None):
         self.name = f"grav({input_signal})" if name is None else name
         self.input_names = [input_signal]
 
@@ -96,7 +96,7 @@ class Rotate(Signal):
     Compute a rotated version of a 3D signal with a quaternion input signal
     """
 
-    def __init__(self, signal, orientation_signal="current_pose", name=None):
+    def __init__(self, signal: str, orientation_signal: str = "current_pose", name: str = None):
         self.name = f"rotate({signal}, {orientation_signal})" if name is None else name
         self.orientation_signal = orientation_signal
         self.signal = signal
@@ -157,7 +157,7 @@ class OrientationXy(Signal):
         - Rotating using the conjugate quaternion is a rotation: global coordinate system -> local coordinate system
     """
 
-    def __init__(self, orientation_signal="current_pose", name=None):
+    def __init__(self, orientation_signal: str = "current_pose", name: str = None):
         self.name = f"XyOrientation({orientation_signal})" if name is None else name
         self.orientatation = orientation_signal
 
@@ -184,14 +184,14 @@ class MadgwickOrientation(Signal):
 
     def __init__(
             self,
-            fs=100.0,
-            q0=np.array([1.0, 0.0, 0.0, 0.0]),
-            gyro_cols="gyro",
-            acc_cols="acc",
-            name="madgwick",
+            fs: float = 100.0,
+            q0: list[int] = [1.0, 0.0, 0.0, 0.0],
+            gyro_cols: str = "gyro",
+            acc_cols: str = "acc",
+            name: str = "madgwick",
     ):
-        self.Q = q0
-        self.madgwick = Madgwick(gain=0.033, frequency=fs, q0=q0)
+        self.Q = np.array(q0)
+        self.madgwick = Madgwick(gain=0.033, frequency=fs, q0=self.Q)
         self.offset = imufusion.Offset(int(fs))  # gyro debiasing
         self.name = name
         self.synced = False
@@ -234,12 +234,12 @@ class FusionOrientation(Signal):
 
     def __init__(
             self,
-            fs=100,
-            gyro_cols="gyro",
-            acc_cols="acc",
-            gain=0.5,
-            use_offset=True,
-            name="fusion",
+            fs: float = 100,
+            gyro_cols: str = "gyro",
+            acc_cols: str = "acc",
+            gain: float = 0.5,
+            use_offset: bool = True,
+            name: str = "fusion",
     ):
         self.ahrs = ahrs(
             gain, fs, mag_rejection=90.0, acc_rejection=90.0, rejection_timeout_sec=3
@@ -269,7 +269,7 @@ class GravityProjection(Signal):
     """
 
     def __init__(
-            self, signal_to_project, gravity_signal="grav", name="grav_projection"
+            self, signal_to_project: str, gravity_signal: str = "grav", name: str = "grav_projection"
     ):
         self.qr_fact = np.vectorize(
             np.linalg.qr, signature="(n, m, r)->(n, m, r),(n, r, r)"
@@ -408,3 +408,19 @@ class ZeroCrossing(Signal):
             self.state = curr_state
         return out
 
+
+__all__ = [
+    "Norm",
+    "EulerOrientation",
+    "EulerAngle",
+    "Gravity",
+    "Rotate",
+    "OrientationXy",
+    "MadgwickOrientation",
+    "FusionOrientation",
+    "GravityProjection",
+    "AngleBetween",
+    "DeadReckoning",
+    "ExtractDimension",
+    "ZeroCrossing",
+]

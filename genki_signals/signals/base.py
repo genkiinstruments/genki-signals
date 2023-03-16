@@ -15,3 +15,4 @@ class Signal(abc.ABC):
     @property
     def frequency_ratio(self):
         return 1
+

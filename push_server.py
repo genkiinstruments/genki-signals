@@ -26,6 +26,7 @@ from genki_signals.data_sources import (
     Sampler
 )
 from genki_signals.system import System  # noqa: E402
+from genki_signals.models.letter_detection_model import SimpleGruModel  # noqa: E402
 
 import numpy as np
 
@@ -33,6 +34,7 @@ eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
 # CORS(app, resources={r"/*":{"origins":"*"}})
+# socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
@@ -40,49 +42,54 @@ GUI_UPDATE_RATE = 50
 DATA_SOURCE = 'Mic'
 # DATA_SOURCE = 'Sampler'
 
+from inspect import signature, getmembers, isclass
+
+derived_signals = {}
+name_to_signal = {}
+for sig_name, sig in getmembers(s,isclass):
+    name_to_signal[sig_name] = sig
+    derived_signals[sig_name] = {}
+    for arg in signature(sig, follow_wrapped=True).parameters.values():
+        derived_signals[sig_name][arg.name] = {
+            "type": str(arg.annotation),
+            "default": arg.default if arg.default is not arg.empty else "",
+        }
 
 def generate_data(ble_address=None):
     if ble_address is not None:
         source = WaveDataSource(ble_address)
     if DATA_SOURCE == 'Mic':
         source = MicDataSource()
+        print(source.sample_rate)
     elif DATA_SOURCE == 'Sampler':
         source = Sampler({
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
-        }, SAMPLING_RATE, timestamp_key="timestamp_us")
+        }, SAMPLING_RATE, timestamp_key="timestamp")
 
-    if DATA_SOURCE == 'Mic':
-        print(source.sample_rate)
-        with System(source, [s.FourierTransform(name="fourier", input_name="audio", window_size=1024, window_overlap=0, upsample=False)]) as system:
-            while True:
-                data = system.read()
-                data_dict = {}
-                for key in data:
-                    if data[key].ndim == 1:
-                        data_dict[key] = data[key][None, :].tolist()
-                    else:
-                        data_dict[key] = data[key].tolist()
-                if("fourier" in data):
-                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
-                socketio.emit("data", data_dict, broadcast=True)
-                socketio.sleep(1 / GUI_UPDATE_RATE)
+    with System(source) as system:
+        @socketio.on("derived_signal")
+        def add_derived_signal(response):
+            arg_dict = {arg["name"]:arg["value"] for arg in response["args"]}
+            system.add_derived_signal(name_to_signal[response["sig_name"]](**arg_dict))
 
-    else:
-        with System(source, [s.SampleRate(input_name="timestamp_us")]) as system:
-            while True:
-                data = system.read()
-                data_dict = {}
-                for key in data:
-                    if data[key].ndim == 1:
-                        data_dict[key] = data[key][None, :].tolist()
-                    else:
-                        data_dict[key] = data[key].tolist()
-                if("fourier" in data):
-                    data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
-                socketio.emit("data", data_dict, broadcast=True)
-                socketio.sleep(1 / GUI_UPDATE_RATE)
+        while True:
+            data = system.read()
+            data_dict = {}
+            for key in data:
+                if data[key].ndim == 1:
+                    data_dict[key] = data[key][None, :].tolist()
+                else:
+                    data_dict[key] = data[key].tolist()
+            if("fourier" in data):
+                data_dict["fourier"] = np.log10(np.abs(data_dict["fourier"]) + 1).tolist()
+            socketio.emit("data", data_dict, broadcast=True)
+            socketio.sleep(1 / GUI_UPDATE_RATE)
 
+
+@socketio.on('connect')
+def send_derived_signals(response):
+    socketio.emit("derived_signals", derived_signals)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

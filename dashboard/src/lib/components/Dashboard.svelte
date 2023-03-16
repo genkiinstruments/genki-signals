@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 
-	import { io } from 'socket.io-client';
+	import type { Socket } from 'socket.io-client';
 	import { SciChartSurface } from 'scichart/Charting/Visuals/SciChartSurface';
 	import type { TSciChart } from 'scichart';
 
@@ -10,12 +10,24 @@
 	import { SubChart } from '../scicharts/subchart';
 	import { SCICHART_KEY } from '../utils/constants';
 	import { option_store, selected_index_store } from '../stores/chart_stores';
-	import { data_keys_store, data_idxs_store, type IndexRanges } from '../stores/data_stores';
-	import type { PlotOptions } from '$lib/scicharts/baseplot';
+	import { data_keys_store, data_idxs_store, derived_signal_store } from '../stores/data_stores';
+	import type {IndexRanges, DerivedSignal, Argument} from '../stores/data_stores'; 
 
+	export let socket: Socket;
 
-	const socket = io('http://localhost:5000/', {
-		transports: ["websocket"],
+	socket.on('derived_signals', (response: Record<string, Record<string, Record<string, string>>>) => {
+		let derived_signals: DerivedSignal[] = [];
+		Object.entries(response).forEach(([sig_name, args]) => {
+			let argList: Argument[] = [];
+			Object.entries(args).forEach(([arg_name, value]) => {
+				if(value.type){
+					argList.push({name: arg_name, type: value.type, value: value.default})
+				}
+				else {throw new Error("type missing for" + sig_name + "." + arg_name)}
+			});
+			derived_signals.push({sig_name: sig_name, args: argList});
+		});
+		derived_signal_store.set(derived_signals);
 	});
 
 	let el: HTMLDivElement;
@@ -28,6 +40,12 @@
 		selected_index_store.set(option_store.count() - 1); // Select the last option (-1 is a valid and handled as nothing).
 	}
 
+	// import {SciChartJSDarkTheme} from "scichart/Charting/Themes/SciChartJSDarkTheme";
+
+    // const theme = {... new SciChartJSDarkTheme()};
+    // // theme.sciChartBackground = "Transparent"
+    // // theme.loadingAnimationBackground = "Transparent";
+
 
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	onMount(async () => {
@@ -39,9 +57,8 @@
 		option_store.subscribe((options) => {
 			const n_subcharts = subcharts.length;
 
-			let num_columns = 1;
 			const num_charts = options.length
-			while(num_charts > num_columns**2) num_columns += 1;
+			const num_columns = Math.ceil(Math.sqrt(num_charts));
 
 			const rects = getSubChartRects(num_charts,
 					1 / Math.ceil(num_charts / num_columns),
@@ -70,6 +87,7 @@
 		});
 
 		socket.on('data', (response) => {
+
 			data_keys_store.set(Object.keys(response));
 
 			const idxs_ranges: IndexRanges = {};
@@ -88,6 +106,7 @@
 		// Very important to disconnect the socket, otherwise multiple different instances of the socket
 		// will be created (on open/close).
 		socket.off('data');
+		socket.off('derived_signals')
 
 		// Destroy the SciChartSurface
 		main_surface?.delete();
@@ -98,9 +117,10 @@
 </script>
 
 <div class='container'>
-	<div class='remove-buttons'>
-		{#each $option_store as _, i}
-			<button on:click={() => remove_chart(i)}>Remove chart {i}</button>
+	<div class='remove_option_buttons'>
+		<p> Remove </p>
+		{#each $option_store as option, i}
+			<button on:click={() => remove_chart(i)}> {i}: {get(option).description} </button>
 		{/each}
 	</div>
 
@@ -115,14 +135,19 @@
 
 	.container {
 		display: flex;
-		width: 60%;
+		width: 70%;
 	}
 
-	.remove-buttons {
+	.remove_option_buttons {
 		width: 6%;
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		overflow: scroll;
+		align-items: center;
+		overflow-x: hidden;
+		overflow-y: scroll;
+	}
+
+	.remove_option_buttons button {
+		width: 100%;
 	}
 </style>
