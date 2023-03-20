@@ -58,7 +58,7 @@ export class Line extends BasePlot {
 		this.options = plot_options;
 
 		// sig_y implicitly defines the number of plots
-		this.options.sig_y.forEach(() => this.add_plot()); // one to one mapping of data series to renderable series
+		this.options.sig_y.forEach(() =ublic.add_renderable()); // one to one mapping of data series to renderable series
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -105,7 +105,7 @@ export class Line extends BasePlot {
 		this.update_x_domain();
 	}
 
-	private add_plot(): void {
+	protected add_renderable(): void {
 		const data_series = new XyDataSeries(this.wasm_context);
 		data_series.isSorted = this.options.data_is_sorted;
 		data_series.containsNaN = this.options.data_contains_nan;

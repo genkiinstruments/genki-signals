@@ -6,7 +6,7 @@
 	import { SciChartSurface } from 'scichart/Charting/Visuals/SciChartSurface';
 	import type { TSciChart } from 'scichart';
 
-	import { getSubChartRects } from '../utils/subchart_helpers';
+	import { getSubChartRects } from '../utils/helpers';
 	import { SubChart } from '../scicharts/subchart';
 	import { SCICHART_KEY } from '../utils/constants';
 	import { option_store, selected_index_store } from '../stores/chart_stores';
@@ -64,7 +64,7 @@
 				subcharts.push(new_subchart);
 
 				options[i].subscribe((option) => {
-					new_subchart.update_all_options(structuredClone(option));
+					new_subchart.plot.update_all_options(structuredClone(option));
 				});
 			}
 		});

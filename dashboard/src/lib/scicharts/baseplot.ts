@@ -8,8 +8,8 @@ import type {
 	BaseDataSeries
 } from 'scichart';
 
-import type { Deletable, Updatable } from './interfaces';
 import { SignalConfig, type ArrayDict } from './types';
+import type { IDeletable, IUpdatable } from './interfaces';
 
 export interface PlotOptions {
 	type: string;
@@ -43,9 +43,9 @@ export function get_default_plot_options(): PlotOptions {
 	};
 }
 
-export abstract class BasePlot implements Updatable, Deletable {
-	protected wasm_context: TSciChart;
-	protected surface: SciChartSubSurface | SciChartSurface;
+export abstract class BasePlot implements IUpdatable, IDeletable {
+	public readonly wasm_context: TSciChart;
+	public readonly surface: SciChartSubSurface;
 
 	protected abstract options: PlotOptions;
 
@@ -59,16 +59,16 @@ export abstract class BasePlot implements Updatable, Deletable {
 	protected abstract renderable_series: BaseRenderableSeries[];
 	protected abstract data_series: BaseDataSeries[] | BaseHeatmapDataSeries[];
 
-	constructor(wasm_context: TSciChart, surface: SciChartSubSurface | SciChartSurface) {
+	constructor(wasm_context: TSciChart, surface: SciChartSubSurface) {
 		this.wasm_context = wasm_context;
 		this.surface = surface;
 	}
 
 	/**
-	 * @param i - The index of the data series. If i is negative, then the index is counted from the end.
-	 * @returns The x-value at index i.
+	 * @param at - The index of the data series. If at is negative, then the index is counted from the end.
+	 * @returns The x-value at index at.
 	 */
-	protected get_native_x(i: number): number {
+	protected get_native_x(at: number): number {
 		const data_series = this.data_series[0]; // All series have the same x-values
 
 		if (data_series === undefined) throw new Error('Data series is undefined');
@@ -76,13 +76,13 @@ export abstract class BasePlot implements Updatable, Deletable {
 		const count = data_series.count();
 		const x_values = data_series.getNativeXValues();
 
-		if (i < 0) {
-			return x_values.get(Math.max(count + i, 0));
+		if (at < 0) {
+			return x_values.get(Math.max(count + at, 0));
 		}
-		if (i >= count) {
-			throw new Error(`Index ${i} out of bounds`);
+		if (at >= count) {
+			throw new Error(`Index ${at} out of bounds`);
 		}
-		return x_values.get(i);
+		return x_values.get(at);
 	}
 
 	private axis_alignment(axis: AxisBase2D, axis_alignment: string): void {
@@ -151,9 +151,9 @@ export abstract class BasePlot implements Updatable, Deletable {
 		const new_list = sig_y.filter((sig) => new_set.has(sig.get_id()));
 		const old_list = this.options.sig_y.filter((sig) => old_set.has(sig.get_id()));
 
-		old_list.forEach((sig, i) => {
+		old_list.forEach((sig, at) => {
 			if (!new_set.has(sig.get_id())) {
-				this.remove_plot_at(i);
+				this.remove_renderable(at);
 			}
 		});
 
@@ -195,20 +195,20 @@ export abstract class BasePlot implements Updatable, Deletable {
 
 	public abstract update(data: ArrayDict): void;
 
-	protected remove_plot_at(i: number): void {
-		this.surface.renderableSeries.remove(this.renderable_series[i]);
-		this.renderable_series[i]?.delete();
-		this.renderable_series.splice(i, 1);
+	protected remove_renderable(at: number): void {
+		this.surface.renderableSeries.remove(this.renderable_series[at]);
+		this.renderable_series[at]?.delete();
+		this.renderable_series.splice(at, 1);
 
-		this.data_series[i]?.delete();
-		this.data_series.splice(i, 1);
+		this.data_series[at]?.delete();
+		this.data_series.splice(at, 1);
 	}
 
 
 	/**
 	 * A function that specifies how to create the renderable series, dataseries etc. for each subclass.
 	 */
-	protected abstract add_plot(): void;
+	protected abstract add_renderable(): void;
 
 	/**
 	 * Calls each update option functions.

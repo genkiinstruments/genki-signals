@@ -1,13 +1,13 @@
 import type { Rect, SciChartSubSurface, TSciChart, SciChartSurface } from 'scichart';
 
-import { createSubSurfaceOptions } from '../utils/subchart_helpers';
+import { sub_surface_options } from '../utils/helpers';
 
 import { Line, type LinePlotOptions } from './line';
 import { Trace, type TracePlotOptions } from './trace';
 import type { ArrayDict, SignalConfig } from './types';
 import type { Deletable, Updatable } from './interfaces';
 import type { BasePlot, PlotOptions } from './baseplot';
-import { Bar, type BarPlotOptions } from './barplot';
+import { Bar, type BarPlotOptions } from './bar';
 import { Spectrogram, type SpectrogramPlotOptions } from './spectrogram';
 
 /**
@@ -38,7 +38,7 @@ export class SubChart implements Updatable, Deletable {
 		this.rect = rect;
 
 		this.sub_chart_surface = parent_surface.addSubChart(
-			createSubSurfaceOptions(this.id, this.rect) // TODO: Improve this
+			sub_surface_options(this.id, this.rect) // TODO: Improve this
 		);
 
 		this.plot = this.create_plot(options);
