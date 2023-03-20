@@ -69,11 +69,11 @@
 				subchart.set_position(rects[i])
 			});
 
-
 			if (n_subcharts >= options.length) return;
 
 			for (let i = n_subcharts; i < options.length; i++) {
-				const new_subchart = new SubChart('bla', main_surface, wasm_context, rects[i], get(options[i]));
+				const id = String(i)
+				const new_subchart = new SubChart(id, main_surface, wasm_context, rects[i], get(options[i]));
 				subcharts.push(new_subchart);
 
 				options[i].subscribe((option) => {
@@ -112,7 +112,7 @@
 		main_surface?.delete();
 		subcharts.forEach((subchart) => subchart.delete());
 
-		// option_store.set([]);
+		for(let i = subcharts.length-1; i >= 0; i--) {remove_chart(i);}
 	});
 </script>
 

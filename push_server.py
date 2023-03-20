@@ -39,8 +39,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
-DATA_SOURCE = 'Mic'
-# DATA_SOURCE = 'Sampler'
+DATA_SOURCE = 'Sampler'
 
 from inspect import signature, getmembers, isclass
 
@@ -50,10 +49,9 @@ for sig_name, sig in getmembers(s,isclass):
     name_to_signal[sig_name] = sig
     derived_signals[sig_name] = {}
     for arg in signature(sig, follow_wrapped=True).parameters.values():
-        derived_signals[sig_name][arg.name] = {
-            "type": str(arg.annotation),
-            "default": arg.default if arg.default is not arg.empty else "",
-        }
+        derived_signals[sig_name][arg.name] = {"type": str(arg.annotation)}
+        if arg.default is not arg.empty:
+            derived_signals[sig_name][arg.name]["default"] = arg.default
 
 def generate_data(ble_address=None):
     if ble_address is not None:

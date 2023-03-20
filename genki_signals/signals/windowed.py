@@ -13,7 +13,7 @@ def upsample(signal, factor):
 
 
 class SampleRate(Signal):
-    def __init__(self, input_name: str = "timestamp", name: str = "sample_rate", unit_multiplier=1):
+    def __init__(self, input_name: str = "timestamp", name: str = "sample_rate", unit_multiplier: float=1):
         self.name = name
         self.input_names = [input_name]
         self.unit_multiplier = unit_multiplier
