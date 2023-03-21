@@ -57,7 +57,6 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 10%;
         overflow-y: scroll;
         overflow-x: hidden;
         margin-left: 10px;

@@ -1,3 +1,5 @@
+import { get, writable, type Writable } from 'svelte/store';
+
 import { Line, get_default_line_plot_options } from "./line";
 import { Trace, get_default_trace_plot_options } from "./trace";
 import { Bar, get_default_bar_plot_options } from "./bar";
@@ -18,17 +20,13 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     private wasm_context: TSciChart | null = null;
 
     private layout: Layout;
-    public plots: BasePlot[] = [];
+    public plot_store: Writable<BasePlot[]> = writable([]);
 
-    constructor(layout_mode: ELayoutMode = ELayoutMode.DynamicGrid) {
-        this.layout = layout_factory(layout_mode);
-    }
-
-    public link_scichart(scichart_surface: SciChartSurface, wasm_context: TSciChart) {
+    constructor(scichart_surface: SciChartSurface, wasm_context: TSciChart, layout_mode: ELayoutMode = ELayoutMode.DynamicGrid) {
         this.scichart_surface = scichart_surface;
         this.wasm_context = wasm_context;
+        this.layout = layout_factory(layout_mode);
     }
-
 
     /**
      * 
@@ -59,11 +57,14 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
                 throw new Error("Unknown plot type: " + type);
         }
 
-        if (at === -1) {
-            this.plots.push(plot);
-        } else {
-            this.plots.splice(at, 0, plot);
-        }
+        this.plot_store.update((plots) => {
+            if (at === -1) {
+                plots.push(plot);
+            } else {
+                plots.splice(at, 0, plot);
+            }
+            return plots;
+        });
 
         this.update_layout();
     }
@@ -78,7 +79,7 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     }
 
     private update_layout() {
-        this.layout.apply_layout(this.plots);
+        this.layout.apply_layout(get(this.plot_store));
     }
 
     // TODO: Make this use id instead of index
@@ -86,12 +87,15 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
      * @param at - The index of the plot to remove. If -1, the last plot is removed.
      */
     public remove_plot(at: number = -1) {
-        if (at === -1) at = this.plots.length - 1;
-        if (at < 0 || at >= this.plots.length) {
-            throw new Error(`Index ${at} not in range [0, ${this.plots.length})`);
-        }
-        this.plots[at]?.delete();
-        this.plots.splice(at, 1);
+        this.plot_store.update((plots) => {
+            if (at === -1) at = plots.length - 1;
+            if (at < 0 || at >= plots.length) {
+                throw new Error(`Index ${at} not in range [0, ${plots.length})`);
+            }
+            plots[at]?.delete();
+            plots.splice(at, 1);
+            return plots;
+        });
         this.update_layout();
     }
 
@@ -100,17 +104,17 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
 
 
     public update(data: ArrayDict): void {
-        this.plots.forEach((plot) => plot.update(data));
+        get(this.plot_store).forEach((plot) => plot.update(data));
     }
 
     public delete(): void {
-        this.plots.forEach((plot) => plot.delete());
+        get(this.plot_store).forEach((plot) => plot.delete());
         this.scichart_surface.delete();
     }
 
     [Symbol.iterator](): Iterator<BasePlot> {
         let index = 0;
-        const plots = this.plots;
+        const plots = get(this.plot_store);
 
         return {
             next: function (): IteratorResult<BasePlot> {
