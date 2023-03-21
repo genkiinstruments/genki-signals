@@ -4,12 +4,14 @@
 	import PlotSelector from "$lib/components/PlotSelector.svelte";
 
 	import { onDestroy, onMount } from "svelte";
+	import { writable } from 'svelte/store';
 
 	import { io } from 'socket.io-client';
 
 	import { Dashboard } from "$lib/scicharts/dashboard";
 
     import { Signal, type SignalConfig } from "$lib/scicharts/data";
+	import type {BasePlot} from "$lib/scicharts/baseplot"
 	import { SciChartSurface, type TSciChart } from "scichart";
 	import { SCICHART_KEY } from '$lib/utils/constants';
 
@@ -27,6 +29,8 @@
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 	let dashboard: Dashboard;
 
+	$: plots = [] as BasePlot[];
+
 	onMount(async () => {
 		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
 		const { sciChartSurface, wasmContext } = await SciChartSurface.createSingle(el);
@@ -34,6 +38,9 @@
 		main_surface = sciChartSurface;
 		wasm_context = wasmContext;
 		dashboard = new Dashboard(main_surface, wasm_context);
+		
+		console.log(dashboard.plots)
+		plots = dashboard.plots;
 
         dashboard.add_plot("line");
 
@@ -50,6 +57,7 @@
 			};
 		});
 	});
+
 	onDestroy(() => {
 		// Very important to disconnect the socket, otherwise multiple different instances of the socket
 		// will be created (on open/close).
@@ -62,7 +70,11 @@
 		};
 	});
 
-	// $: plotNames = dashboard.plots.forEach(plot => {plot.get_options().name})
+	// $: plotNames = plots.length == 0 ? [] as string[] : plots.forEach(plot => {plot.get_options().name}) as unknown as string[];
+	$: plotNames = plots.length == 0 ? [] as string[] : plots.reduce((names, plot) => [...names, plot.get_options().name], [] as string[]) as unknown as string[];
+
+	$: console.log("names ", plotNames)
+	$: console.log("plots ", plots)
 
 </script>
 
@@ -74,9 +86,12 @@
     <div class='menu--left'>
     </div>
 	<div bind:this={el} id={'blabla'} class='dashboard'/>
-    <div class='menu--right'>
-		<!-- <PlotSelector plotNames={plotNames}/> -->
-    </div>
+	<CollapsibleMenu collapse_direction='right'>
+		<div slot="header">Plot Menu</div>
+		<div slot="body">
+			<PlotSelector plotNames={plotNames}/>
+		</div>
+    </CollapsibleMenu>
 </div>
 
 <style>
