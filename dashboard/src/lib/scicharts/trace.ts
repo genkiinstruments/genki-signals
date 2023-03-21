@@ -13,10 +13,9 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import type { ArrayDict, SignalConfig } from './types';
+import type { ArrayDict, SignalConfig } from './data';
 
 export interface TracePlotOptions extends PlotOptions {
-    type: 'trace';
 	/** If auto_range_x is true, then x_domain_max and x_domain_min are not used */
 	auto_range_x: boolean;
 	/** If auto_range_y is true, then y_domain_max and y_domain_min are not used */
@@ -30,7 +29,7 @@ export interface TracePlotOptions extends PlotOptions {
 export function get_default_trace_plot_options(): TracePlotOptions {
     return {
         ...get_default_plot_options(),
-        type: 'trace', // overrides default_plot_options.type
+		name: 'Trace',
 		data_is_sorted: false, // overrides default_plot_options.data_is_sorted
         auto_range_x: false,
         auto_range_y: false,
@@ -53,7 +52,7 @@ export class Trace extends BasePlot {
 
 	constructor(
 		wasm_context: TSciChart,
-		surface: SciChartSubSurface | SciChartSurface,
+		surface: SciChartSubSurface,
 		plot_options: TracePlotOptions = get_default_trace_plot_options()
 	) {
 		super(wasm_context, surface);

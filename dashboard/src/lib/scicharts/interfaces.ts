@@ -1,4 +1,4 @@
-import type { ArrayDict } from './types';
+import type { ArrayDict } from './data';
 
 export interface IUpdatable {
 	/**

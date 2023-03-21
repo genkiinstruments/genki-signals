@@ -4,23 +4,17 @@ import type {
 	AxisBase2D,
 	BaseRenderableSeries,
 	SciChartSubSurface,
-	SciChartSurface,
 	BaseDataSeries
 } from 'scichart';
 
-import { SignalConfig, type ArrayDict } from './types';
+import { Signal } from './data';
+import type { SignalConfig, ArrayDict } from './data';
 import type { IDeletable, IUpdatable } from './interfaces';
 
 export interface PlotOptions {
-	type: string;
-	description: string;
-	/**
-	 * Some plots have a 1 to n mapping of sig_x to sig_y and others have a 1 to 1 mapping.
-	 * In the former case, sig_x.length is maintained at 1.
-	 * In the latter case, sig_x.length === sig_y.length is maintained.
-	 */
-	x_axis_align: 'top' | 'bottom';
-	y_axis_align: 'left' | 'right';
+	name: string;
+	x_axis_align: 'top' | 'bottom' | 'left' | 'right';
+	y_axis_align: 'left' | 'right' | 'top' | 'bottom';
 	x_axis_flipped: boolean;
 	y_axis_flipped: boolean;
 	x_axis_visible: boolean;
@@ -30,8 +24,7 @@ export interface PlotOptions {
 }
 export function get_default_plot_options(): PlotOptions {
 	return {
-		type: 'no_type',
-		description: 'no_description',
+		name: 'no_name',
 		x_axis_align: 'bottom',
 		y_axis_align: 'left',
 		x_axis_flipped: false,
@@ -52,12 +45,16 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	protected abstract x_axis: AxisBase2D;
 	protected abstract y_axis: AxisBase2D;
 
-	protected abstract sig_x: SignalConfig;
+	// The x-values are the same for all data series.
+	protected abstract sig_x: Signal;
 
-	// These lists should have the same length
-	protected abstract sig_y: SignalConfig[];
+	// ############################ The following are 1 to 1 mappings ########################################
+	// Many y-values can be mapped to one x-value.
+	protected abstract sig_y: Signal[];
 	protected abstract renderable_series: BaseRenderableSeries[];
 	protected abstract data_series: BaseDataSeries[] | BaseHeatmapDataSeries[];
+	// #######################################################################################################
+
 
 	constructor(wasm_context: TSciChart, surface: SciChartSubSurface) {
 		this.wasm_context = wasm_context;
@@ -105,8 +102,12 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	}
 
 	protected update_axes_alignment(): void {
-		this.axis_alignment(this.x_axis, this.options.x_axis_align);
-		this.axis_alignment(this.y_axis, this.options.y_axis_align);
+		const x_is_horiz = this.options.x_axis_align in ["top", "bottom"];
+		const y_is_horiz = this.options.y_axis_align in ["top", "bottom"];
+		if (x_is_horiz != y_is_horiz){
+			this.axis_alignment(this.x_axis, this.options.x_axis_align);
+			this.axis_alignment(this.y_axis, this.options.y_axis_align);
+		}
 	}
 
 	protected update_axes_flipping(): void {
@@ -127,14 +128,37 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	}
 
 	/**
+	 * Calls each update option functions.
+	 * @param options - The new plot options
+	 */
+	protected abstract update_all_options(options: PlotOptions): void;
+
+	public get_options(): PlotOptions {
+		return this.options;
+	}
+
+	public set_options(options: PlotOptions): void {
+		this.update_all_options(options);
+	}
+
+	public get_signals() {
+		return {'sig_x': this.sig_x, 'sig_y': this.sig_y};
+	}
+
+	public set_signals(sig_x: SignalConfig, sig_y: SignalConfig[]): void {
+		this.change_sig_x(sig_x);
+		this.change_sig_y(sig_y);
+	}
+
+	/**
 	 * Updates the signal config for the x-axis. If the new signal config is different from the old one,
 	 * then all data series are cleared.
 	 * @param sig_x - The new signal config for the x-axis.
 	 */
-	protected change_sig_x(sig_x: SignalConfig): void {
-		console.log('sig_x', sig_x.hasOwnProperty('compare_to'));
-		if (!(sig_x.compare_to(this.options.sig_x))) {
+	protected change_sig_x(config: SignalConfig): void {
+		if (!(this.sig_x.compare_to(config))) {
 			this.data_series.forEach((ds) => ds.clear());
+			this.sig_x.set_config(config);
 		}
 	}
 
@@ -144,12 +168,13 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 * If new signals are present in the new list, then new plots are created.
 	 * @param sig_y - The new signal configs for the y-axis.
 	 */
-	protected update_sig_y(sig_y: SignalConfig[]): void {
-		const new_set = new Set(sig_y.map((sig) => sig.get_id()));
-		const old_set = new Set(this.options.sig_y.map((sig) => sig.get_id()));
+	protected change_sig_y(sig_y: SignalConfig[]): void {
+		const new_signals = sig_y.map((config) => Signal.from_config(config));
+		const new_set = new Set(new_signals.map((sig) => sig.get_id()));
+		const old_set = new Set(this.sig_y.map((sig) => sig.get_id()));
 
-		const new_list = sig_y.filter((sig) => new_set.has(sig.get_id()));
-		const old_list = this.options.sig_y.filter((sig) => old_set.has(sig.get_id()));
+		const new_list = new_signals.filter((sig) => new_set.has(sig.get_id()));
+		const old_list = this.sig_y.filter((sig) => old_set.has(sig.get_id()));
 
 		old_list.forEach((sig, at) => {
 			if (!new_set.has(sig.get_id())) {
@@ -159,11 +184,12 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 
 		new_list.forEach((sig) => {
 			if (!old_set.has(sig.get_id())) {
-				this.add_plot();
+				this.add_renderable();
 			}
 		});
 
-		this.options.sig_y = new_list;
+		// TODO: Check this, set should preserve insertion order but there may be some unforeseen edge cases
+		this.sig_y = new_list;
     }
 
 	/**
@@ -172,30 +198,23 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 * @param sig - The signal config to access
 	 * @returns data[sig.sig_key][sig.sig_idx]
 	 */
-	protected check_and_fetch(data: ArrayDict, sig: SignalConfig | undefined): NumberArray {
+	protected check_and_fetch(data: ArrayDict, sig: Signal | undefined): NumberArray {
 		if (sig === undefined) return [];
-		const sig_key = sig.sig_key;
-		const sig_idx = sig.sig_idx;
-		if (!(sig_key in data)) return []; //throw new Error(`sig_key ${sig_key} not in data`);
-		if (sig_idx >= data[sig_key].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
+		if (!(sig.key in data)) return []; //throw new Error(`sig_key ${sig_key} not in data`);
+		if (sig.idx >= data[sig.key].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
 
-		return data[sig_key][sig_idx] as NumberArray;
+		return data[sig.key][sig.idx] as NumberArray;
 	}
 
-	public delete(): void {
-		this.surface.xAxes.remove(this.x_axis);
-		this.surface.yAxes.remove(this.y_axis);
-		this.x_axis.delete();
-		this.y_axis.delete();
-		this.surface.delete();
-
-		this.renderable_series.forEach((rs) => rs.delete());
-		this.data_series.forEach((ds) => ds.delete());
-	}
-
-	public abstract update(data: ArrayDict): void;
+	/**
+	 * A function that specifies how to create the renderable series, dataseries etc. for each subclass.
+	 */
+	protected abstract add_renderable(): void;
 
 	protected remove_renderable(at: number): void {
+		if (at >= this.renderable_series.length) return;
+		if (at === -1) at = this.renderable_series.length - 1;
+
 		this.surface.renderableSeries.remove(this.renderable_series[at]);
 		this.renderable_series[at]?.delete();
 		this.renderable_series.splice(at, 1);
@@ -204,15 +223,20 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 		this.data_series.splice(at, 1);
 	}
 
+	// ################################## Interface implementations ##################################
 
-	/**
-	 * A function that specifies how to create the renderable series, dataseries etc. for each subclass.
-	 */
-	protected abstract add_renderable(): void;
+	public abstract update(data: ArrayDict): void;
 
-	/**
-	 * Calls each update option functions.
-	 * @param options - The new plot options
-	 */
-	public abstract update_all_options(options: PlotOptions): void;
+	public delete(): void {
+		this.surface.xAxes.remove(this.x_axis);
+		this.surface.yAxes.remove(this.y_axis);
+		this.x_axis.delete();
+		this.y_axis.delete();
+
+		this.renderable_series.forEach((rs) => rs.delete());
+		this.data_series.forEach((ds) => ds.delete());
+		
+		this.surface.delete();
+	}
+
 }

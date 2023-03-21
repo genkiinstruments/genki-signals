@@ -14,10 +14,9 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import type { ArrayDict, SignalConfig } from './types';
+import { Signal, type ArrayDict } from './data';
 
 export interface LinePlotOptions extends PlotOptions {
-	type: 'line';
 	/** If auto range is true, then y_domain_max and y_domain_min are not used */
 	auto_range: boolean;
 	y_domain_max: number;
@@ -27,7 +26,7 @@ export interface LinePlotOptions extends PlotOptions {
 export function get_default_line_plot_options(): LinePlotOptions {
 	return {
 		...get_default_plot_options(),
-		type: 'line', // overrides default_plot_options.type
+		name: 'Line',
 		auto_range: true,
 		y_domain_max: 1,
 		y_domain_min: 0,
@@ -40,12 +39,15 @@ export class Line extends BasePlot {
 	y_axis: NumericAxis;
 	options: LinePlotOptions;
 
+	sig_x: Signal;
+	sig_y: Signal[];
+
 	renderable_series: FastLineRenderableSeries[] = [];
 	data_series: XyDataSeries[] = [];
 
 	constructor(
 		wasm_context: TSciChart,
-		surface: SciChartSubSurface | SciChartSurface,
+		surface: SciChartSubSurface,
 		plot_options: LinePlotOptions = get_default_line_plot_options()
 	) {
 		super(wasm_context, surface);
@@ -57,8 +59,8 @@ export class Line extends BasePlot {
 
 		this.options = plot_options;
 
-		// sig_y implicitly defines the number of plots
-		this.options.sig_y.forEach(() =ublic.add_renderable()); // one to one mapping of data series to renderable series
+		this.sig_x = new Signal('timestamp_us', 0);
+		this.sig_y = [];
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -91,16 +93,14 @@ export class Line extends BasePlot {
 
 
 	public update(data: ArrayDict): void {
-		if (this.options.sig_x.length === 0) return; // if no x signal is defined, then we can't update the plot
-		
-		const x = this.check_and_fetch(data, this.options.sig_x[0]);
+		const x = this.check_and_fetch(data, this.sig_x);
 
-		this.options.sig_y.forEach((sig_y, i) => {
-			const y = this.check_and_fetch(data, sig_y);
+		this.sig_y.forEach((sig, i) => {
+			const y = this.check_and_fetch(data, sig);
 			this.data_series[i].appendRange(x, y);
 		});
 
-		if (this.options.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
+		if (this.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
 
 		this.update_x_domain();
 	}
@@ -120,12 +120,6 @@ export class Line extends BasePlot {
 
 
 	public update_all_options(options: LinePlotOptions): void {
-		console.log('new options', options);
-		console.log('old options', this.options);
-		// These function check for changes and execute appropriately
-		this.update_sig_x(options.sig_x);
-		this.update_sig_y(options.sig_y);
-
 		this.options = options;
 		
 		this.update_x_domain();

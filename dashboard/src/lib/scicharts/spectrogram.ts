@@ -16,10 +16,9 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import type { ArrayDict, SignalConfig } from './types';
+import type { ArrayDict, SignalConfig } from './data';
 
 export interface SpectrogramPlotOptions extends PlotOptions {
-	type: 'spectrogram';
     window_size: number;
     sampling_rate: number;
 	n_visible_windows: number;
@@ -29,7 +28,7 @@ export interface SpectrogramPlotOptions extends PlotOptions {
 export function get_default_spectrogram_plot_options(): SpectrogramPlotOptions {
 	return {
 		...get_default_plot_options(),
-		type: 'spectrogram', // overrides default_plot_options.type
+        name: 'Spectrogram',
         window_size: 256,
         sampling_rate: 100,
 		n_visible_windows: 100,
@@ -53,7 +52,7 @@ export class Spectrogram extends BasePlot {
 
 	constructor(
 		wasm_context: TSciChart,
-		surface: SciChartSubSurface | SciChartSurface,
+		surface: SciChartSubSurface,
 		plot_options: SpectrogramPlotOptions = get_default_spectrogram_plot_options()
 	) {
 		super(wasm_context, surface);

@@ -6,7 +6,7 @@ import { ELayoutMode, layout_factory } from "./layouts";
 
 import type { Layout } from "./layouts";
 import type { BasePlot } from "./baseplot"
-import type { ArrayDict } from "./types";
+import type { ArrayDict } from "./data";
 import type { IUpdatable, IDeletable } from "./interfaces";
 
 
@@ -18,9 +18,9 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     private wasm_context: TSciChart;
 
     private layout: Layout;
-    private plots: BasePlot[] = [];
+    public plots: BasePlot[] = [];
 
-    constructor(scichart_surface: SciChartSurface, wasm_context: TSciChart, layout_mode: ELayoutMode = ELayoutMode.DynamicGrid) {
+    constructor(scichart_surface: SciChartSurface, wasm_context: TSciChart, layout_mode: ELayoutMode = ELayoutMode.FixedGrid) {
         this.scichart_surface = scichart_surface;
         this.wasm_context = wasm_context;
 
@@ -76,9 +76,10 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
 
     // TODO: Make this use id instead of index
     /**
-     * @param at - The index of the plot to remove.
+     * @param at - The index of the plot to remove. If -1, the last plot is removed.
      */
-    public remove_plot(at: number) {
+    public remove_plot(at: number = -1) {
+        if (at === -1) at = this.plots.length - 1;
         if (at < 0 || at >= this.plots.length) {
             throw new Error(`Index ${at} not in range [0, ${this.plots.length})`);
         }
@@ -88,9 +89,8 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     }
 
 
-    // ######################################################
-    // Interface implementations
-    // ######################################################
+	// ################################## Interface implementations ##################################
+
 
     public update(data: ArrayDict): void {
         this.plots.forEach((plot) => plot.update(data));

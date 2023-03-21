@@ -3,14 +3,15 @@
 	import { writable } from 'svelte/store';
 	import type { PlotOptions } from '$lib/scicharts/baseplot';
 
-	import { option_store, selected_index_store } from '$lib/stores/chart_stores';
+	import { option_store, selected_index_store } from '$lib/stores/plot_stores';
 	import { data_keys_store } from '$lib/stores/data_stores';
-	import { SignalConfig } from '$lib/scicharts/types';
+	import { Signal } from '$lib/scicharts/data';
 
+	export let options: PlotOptions | null;
 
 	function appendSig(key: string) {
 		return () => {
-			const new_sig = new SignalConfig('', 0);
+			const new_sig = new Signal('', 0);
 			selected_store.update((store) => {
 				store[key].push(new_sig);
 				return store;
@@ -23,8 +24,8 @@
 		'sig_x': $data_keys_store,
 		'sig_y': $data_keys_store,
 	}
-    $: selected_index = $selected_index_store;
-	$: selected_store = selected_index === -1? writable({} as PlotOptions) : $option_store[selected_index];
+    // $: selected_index = $selected_index_store;
+	$: selected_store = $selected_index_store === -1? writable({} as PlotOptions) : writable(options as PlotOptions);
 
 </script>
 <div class="container">

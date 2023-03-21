@@ -19,10 +19,9 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import type { ArrayDict, SignalConfig } from './types';
+import type { ArrayDict, SignalConfig } from './data';
 
 export interface BarPlotOptions extends PlotOptions {
-	type: 'bar';
     /** If auto range is true, then y_domain_max and y_domain_min are not used */
 	auto_range: boolean;
 	y_domain_max: number;
@@ -31,7 +30,7 @@ export interface BarPlotOptions extends PlotOptions {
 export function get_default_bar_plot_options(): BarPlotOptions {
 	return {
 		...get_default_plot_options(),
-		type: 'bar', // overrides default_plot_options.type
+		name: 'Bar',
         auto_range: true,
 		y_domain_max: 1,
 		y_domain_min: 0
@@ -48,7 +47,7 @@ export class Bar extends BasePlot {
 
 	constructor(
 		wasm_context: TSciChart,
-		surface: SciChartSubSurface | SciChartSurface,
+		surface: SciChartSubSurface,
 		plot_options: BarPlotOptions = get_default_bar_plot_options()
 	) {
 		super(wasm_context, surface);

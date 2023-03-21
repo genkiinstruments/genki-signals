@@ -45,14 +45,14 @@ def generate_data(ble_address=None):
         source = Sampler({
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
-        }, SAMPLING_RATE, timestamp_key="timestamp_us")
+        }, SAMPLING_RATE, timestamp_key="timestamp")
 
     model = SimpleGruModel.load_from_checkpoint("genki_signals/models/stc_detector_final-epoch=15-val_loss=0.53.ckpt")
 
     derived_signals = [
-        s.SampleRate(input_name="timestamp_us"),
+        s.SampleRate(),
         s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
-        s.Differentiate(name="mouse_velocity", sig_a="mouse_position", sig_b="timestamp_us"),
+        s.Differentiate(name="mouse_velocity", sig_a="mouse_position"),
         s.Inference(
             name="stc",
             model=model,
