@@ -14,38 +14,32 @@ import type { SciChartSurface, TSciChart } from "scichart";
 import { sub_surface_options } from "$lib/utils/helpers";
 
 export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
-    private scichart_surface: SciChartSurface;
-    private wasm_context: TSciChart;
+    private scichart_surface: SciChartSurface | null = null;
+    private wasm_context: TSciChart | null = null;
 
     private layout: Layout;
     public plots: BasePlot[] = [];
 
-    constructor(scichart_surface: SciChartSurface, wasm_context: TSciChart, layout_mode: ELayoutMode = ELayoutMode.FixedGrid) {
-        this.scichart_surface = scichart_surface;
-        this.wasm_context = wasm_context;
-
+    constructor(layout_mode: ELayoutMode = ELayoutMode.DynamicGrid) {
         this.layout = layout_factory(layout_mode);
     }
 
-    /**
-     * Change the layout of the dashboard which automatically updates.
-     * @param mode - The layout mode to use.
-     */
-    public set_layout_mode(mode: ELayoutMode) {
-        this.layout = layout_factory(mode);
-        this.update_layout();
+    public link_scichart(scichart_surface: SciChartSurface, wasm_context: TSciChart) {
+        this.scichart_surface = scichart_surface;
+        this.wasm_context = wasm_context;
     }
 
-    private update_layout() {
-        this.layout.apply_layout(this.plots);
-    }   
 
     /**
      * 
      * @param type - The type of plot to add.
      * @param at - The index to add the plot at. If -1, the plot is added at the end.
-     */
+    */
     public add_plot(type: string, at: number = -1) {
+        if (this.scichart_surface === null || this.wasm_context === null) {
+            throw new Error("Not linked to SciChartSurface.");
+        }
+        
         let plot: BasePlot;
         const sub_surface = this.scichart_surface.addSubChart(sub_surface_options);
         switch (type) {
@@ -74,6 +68,19 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
         this.update_layout();
     }
 
+    /**
+     * Change the layout of the dashboard which automatically updates.
+     * @param mode - The layout mode to use.
+     */
+    public set_layout_mode(mode: ELayoutMode) {
+        this.layout = layout_factory(mode);
+        this.update_layout();
+    }
+
+    private update_layout() {
+        this.layout.apply_layout(this.plots);
+    }
+
     // TODO: Make this use id instead of index
     /**
      * @param at - The index of the plot to remove. If -1, the last plot is removed.
@@ -89,7 +96,7 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     }
 
 
-	// ################################## Interface implementations ##################################
+    // ################################## Interface implementations ##################################
 
 
     public update(data: ArrayDict): void {
@@ -104,7 +111,7 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     [Symbol.iterator](): Iterator<BasePlot> {
         let index = 0;
         const plots = this.plots;
-    
+
         return {
             next: function (): IteratorResult<BasePlot> {
                 if (index < plots.length) {
@@ -114,5 +121,5 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
                 }
             },
         };
-    }    
+    }
 }

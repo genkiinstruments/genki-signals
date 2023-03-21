@@ -6,18 +6,9 @@
     $: selected_index = 0
 </script>
 
-
-<!-- <nav>
-    <ul>
-        {#each plotNames as name, i}
-        <PlotSelectionEntry bind:name={name} onSelect={() => {selected_index=i}} onDelete={() => {return}}/>
-        {/each}
-    </ul>
-</nav> -->
-
 <div class = "plotSelector">
     {#each plotNames as name, i}
-        <PlotSelectionEntry bind:name={name} onSelect={() => {selected_index=i}} onDelete={() => {return}}/>
+        <PlotSelectionEntry bind:name={name} onSelect={() => {selected_index=i}} onDelete={() => {console.log("delete")}}/>
     {/each}
 </div>
 

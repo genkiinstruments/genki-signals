@@ -12,7 +12,7 @@
 
     import { Signal, type SignalConfig } from "$lib/scicharts/data";
 	import type {BasePlot} from "$lib/scicharts/baseplot"
-	import { SciChartSurface, type TSciChart } from "scichart";
+	import { LegendModifier, SciChartSurface, type TSciChart } from "scichart";
 	import { SCICHART_KEY } from '$lib/utils/constants';
 
 
@@ -27,9 +27,7 @@
 
 	let el: HTMLDivElement;
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
-	let dashboard: Dashboard;
-
-	$: plots = [] as BasePlot[];
+	let dashboard = new Dashboard();
 
 	onMount(async () => {
 		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
@@ -37,19 +35,7 @@
 
 		main_surface = sciChartSurface;
 		wasm_context = wasmContext;
-		dashboard = new Dashboard(main_surface, wasm_context);
-		
-		console.log(dashboard.plots)
-		plots = dashboard.plots;
-
-        dashboard.add_plot("line");
-
-        const sig_x = new Signal('timestamp', 0);
-        const sig_y = [new Signal('mouse_position', 0), new Signal('mouse_position', 1)]
-        const x_config: SignalConfig = sig_x.get_config();
-        const y_configs: SignalConfig[] = sig_y.map((sig) => sig.get_config());
-
-        dashboard.plots[0]?.set_signals(x_config, y_configs);
+		dashboard.link_scichart(main_surface, wasm_context);
 
 		socket.on('data', (response) => {
 			for(let plot of dashboard) {
@@ -69,13 +55,9 @@
 			plot.delete();
 		};
 	});
-
-	// $: plotNames = plots.length == 0 ? [] as string[] : plots.forEach(plot => {plot.get_options().name}) as unknown as string[];
-	$: plotNames = plots.length == 0 ? [] as string[] : plots.reduce((names, plot) => [...names, plot.get_options().name], [] as string[]) as unknown as string[];
-
-	$: console.log("names ", plotNames)
-	$: console.log("plots ", plots)
-
+	$: plots = dashboard.plots;
+	// $: plotNames = dashboard.plots.map(plot => {plot.get_options().name}) as unknown as string[];
+	$: plotNames = dashboard.plots.reduce((names, plot) => [...names, plot.get_options().name], [] as string[]) as unknown as string[];
 </script>
 
 <div class='container'>
@@ -89,6 +71,17 @@
 	<CollapsibleMenu collapse_direction='right'>
 		<div slot="header">Plot Menu</div>
 		<div slot="body">
+			<button on:click={() => {
+				dashboard.add_plot("line");
+				const sig_x = new Signal('timestamp', 0);
+				const sig_y = [new Signal('mouse_position', 0), new Signal('mouse_position', 1)]
+				const x_config = sig_x.get_config();
+				const y_configs = sig_y.map((sig) => sig.get_config());
+
+				dashboard.plots[dashboard.plots.length - 1]?.set_signals(x_config, y_configs);
+
+				dashboard.plots = dashboard.plots
+			}}>add Line</button>
 			<PlotSelector plotNames={plotNames}/>
 		</div>
     </CollapsibleMenu>
