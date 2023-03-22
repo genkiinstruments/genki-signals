@@ -43,14 +43,15 @@ export class Signal implements SignalConfig {
 	}
 
     public compare_to(o: Signal | SignalConfig): boolean {
-        return this.key === o.key && this.idx === o.idx;
+        const other_signal = o instanceof Signal ? o : Signal.from_config(o);
+        return this.get_id() === other_signal.get_id(); 
     }
 
     private update_name(name?: string): void {
         if (name) {
             this.name = name;
         } else {
-            this.name = `${this.key} ${this.idx}`;
+            this.name = `${this.key}_${this.idx}`;
         }
     }
 }

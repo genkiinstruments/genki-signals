@@ -1,4 +1,4 @@
 import { writable} from 'svelte/store';
 
 
-export const selected_idx_store = writable(-1);
+export const selected_plot_idx = writable(-1);

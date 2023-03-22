@@ -2,22 +2,16 @@
 	import SignalMenu from "$lib/components/SignalMenu.svelte";
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
 
+	import { writable } from "svelte/store";
 	import { onDestroy, onMount } from "svelte";
-
+    
 	import { io } from 'socket.io-client';
-
+    
 	import { Dashboard } from "$lib/scicharts/dashboard";
-
 	import { SciChartSurface, type TSciChart } from "scichart";
+
 	import { SCICHART_KEY } from '$lib/utils/constants';
-    import type { SignalConfig } from "$lib/scicharts/data";
-	import { get, writable } from "svelte/store";
-
-
-    function on_save(sig_x: SignalConfig, sig_y: SignalConfig[]) {
-        console.log(sig_x, sig_y);
-        // Dashboard.plots[$selected_idx].set_signals(sig_x, sig_y);
-    }
+    import { selected_plot_idx } from "$lib/stores/plot_stores";
 
 
     const socket = io('http://localhost:5000/');
@@ -64,29 +58,20 @@
 		};
 	});
 
-
-    const x_c = {key: 'timestamp', idx: 0};
-    const y_c = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
-
     $: plot_store = dashboard === undefined? writable([]): dashboard.plot_store;
-
+    selected_plot_idx.set(0);
+    $: selected_plot = dashboard === undefined? undefined: $plot_store[$selected_plot_idx];
+    $: store_is_defined = dashboard !== undefined;
 </script>
 
 <div class='container'>
-    <CollapsibleMenu>
-        <div slot='header'> Additional </div>
-        <div slot='body'>
-            <SignalMenu x_config={x_c} y_configs={y_c} on_save={on_save}/>
-        </div>
-    </CollapsibleMenu>
-	<div bind:this={el} id={'blabla'} class='dashboard'/>
+    <div bind:this={el} id={'blabla'} class='dashboard'/>
     <CollapsibleMenu>
         <div slot='header'> Settings </div>
         <div slot='body'>
-            <button on:click={() => dashboard.add_plot("line")}> Add plot </button>
-            {#each $plot_store as plot, i}
-                <p> {plot.options.name} </p>
-            {/each}
+            {#if store_is_defined}
+                <SignalMenu plot={selected_plot}/>
+            {/if}
         </div>
     </CollapsibleMenu>
 </div>
@@ -100,7 +85,7 @@
 	.container {
 		display: flex;
 		width: 100%;
-        height: 100%;
+        height: 80vh;
 	}
 </style>
 
