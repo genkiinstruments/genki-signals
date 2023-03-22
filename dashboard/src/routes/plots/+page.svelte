@@ -1,13 +1,13 @@
 <script lang="ts">
 	import SignalMenu from "$lib/components/SignalMenu.svelte";
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
+	import PlotSelector from "$lib/components/PlotSelector.svelte"
 
 	import { onDestroy, onMount } from "svelte";
-	import { writable } from 'svelte/store';
 
 	import { io } from 'socket.io-client';
 
-	import { Dashboard } from "$lib/scicharts/dashboard";
+	import { SvelteDashboard } from "$lib/scicharts/svelteDashboard";
 
 	import { SciChartSurface, type TSciChart } from "scichart";
 	import { SCICHART_KEY } from '$lib/utils/constants';
@@ -26,7 +26,7 @@
 	let el: HTMLDivElement;
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
 
-	let dashboard: Dashboard;
+	let dashboard: SvelteDashboard;
 
 	onMount(async () => {
 		SciChartSurface.setRuntimeLicenseKey(SCICHART_KEY);
@@ -34,7 +34,7 @@
 
 		main_surface = sciChartSurface;
 		wasm_context = wasmContext;
-        dashboard = new Dashboard(main_surface, wasm_context);
+        dashboard = new SvelteDashboard(main_surface, wasm_context);
 
         dashboard.add_plot("line");
         dashboard.add_plot("line");
@@ -66,11 +66,10 @@
 		};
 	});
 
+	$: plots = dashboard === undefined ? writable([]) : dashboard.plot_store;
 
     const x_c = {key: 'timestamp', idx: 0};
     const y_c = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
-
-    $: plot_store = dashboard === undefined? writable([]): dashboard.plot_store;
 
 </script>
 
@@ -83,12 +82,9 @@
     </CollapsibleMenu>
 	<div bind:this={el} id={'blabla'} class='dashboard'/>
     <CollapsibleMenu>
-        <div slot='header'> Settings </div>
+        <div slot='header'> Plot Settings </div>
         <div slot='body'>
-            <button on:click={() => dashboard.add_plot("line")}> Add plot </button>
-            {#each $plot_store as plot, i}
-                <p> {plot.options.name} </p>
-            {/each}
+            <PlotSelector plots={$plots} onNewPlot={(type) => dashboard.add_plot(type)} onDeletePlot={(at) => dashboard.remove_plot(at)}/>
         </div>
     </CollapsibleMenu>
 </div>
@@ -101,8 +97,9 @@
 
 	.container {
 		display: flex;
+		justify-content: center;
 		width: 100%;
         height: 100%;
+		overflow: hidden;
 	}
 </style>
-
