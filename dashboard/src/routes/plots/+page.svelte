@@ -7,14 +7,9 @@
 	import { onDestroy, onMount } from "svelte";
     
 	import { io } from 'socket.io-client';
-<<<<<<< HEAD
 
-	import { SvelteDashboard } from "$lib/scicharts/svelteDashboard";
+	import { SvelteDashboard } from "$lib/scicharts/svelte_dashboard";
 
-=======
-    
-	import { Dashboard } from "$lib/scicharts/dashboard";
->>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 	import { SciChartSurface, type TSciChart } from "scichart";
 
 	import { SCICHART_KEY } from '$lib/utils/constants';
@@ -66,18 +61,10 @@
 		};
 	});
 
-<<<<<<< HEAD
-	$: plots = dashboard === undefined ? writable([]) : dashboard.plot_store;
-
-    const x_c = {key: 'timestamp', idx: 0};
-    const y_c = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
-
-=======
     $: plot_store = dashboard === undefined? writable([]): dashboard.plot_store;
     selected_plot_idx.set(0);
     $: selected_plot = dashboard === undefined? undefined: $plot_store[$selected_plot_idx];
     $: store_is_defined = dashboard !== undefined;
->>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 </script>
 
 <div class='container'>
@@ -85,13 +72,10 @@
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
         <div slot='body'>
-<<<<<<< HEAD
-            <PlotSelector plots={$plots} onNewPlot={(type) => dashboard.add_plot(type)} onDeletePlot={(at) => dashboard.remove_plot(at)}/>
-=======
+            <PlotSelector plots={$plot_store} onNewPlot={(type) => dashboard.add_plot(type)} onDeletePlot={(at) => dashboard.remove_plot(at)}/>
             {#if store_is_defined}
                 <SignalMenu plot={selected_plot}/>
             {/if}
->>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
         </div>
     </CollapsibleMenu>
 </div>
@@ -106,11 +90,6 @@
 		display: flex;
 		justify-content: center;
 		width: 100%;
-<<<<<<< HEAD
-        height: 100%;
-		overflow: hidden;
-=======
         height: 80vh;
->>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 	}
 </style>
