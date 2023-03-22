@@ -170,56 +170,37 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 */
 	protected change_sig_y(sig_y: SignalConfig[]): void {
 		const new_signals = sig_y.map((config) => Signal.from_config(config));
-		const new_set = new Set(new_signals.map((sig) => sig.get_id()));
-		const old_set = new Set(this.sig_y.map((sig) => sig.get_id()));
 
-		// Removes duplicates
-		const new_set_copy = new Set(new_set);
-		const new_list = new_signals.filter((sig) => {
-			const id = sig.get_id();
-			if (new_set_copy.has(id)) {
-				new_set_copy.delete(id);
-				return true;
-			}
-			return false;
-		});
-		const old_set_copy = new Set(old_set);
-		const old_list = this.sig_y.filter((sig) => {
-			const id = sig.get_id();
-			if (old_set_copy.has(id)) {
-				old_set_copy.delete(id);
-				return true;
-			}
-			return false;
-		});
-
-		let removed_indexes: number[] = [];
-
-		old_list.forEach((sig, at) => {
-			if (!new_set.has(sig.get_id())) {
-				console.log('removing at: ', at)
-;				this.remove_renderable(at);
-				removed_indexes.push(at);
+		// Note: Can be faster
+		
+		// Remove all signals that should no longer be drawn
+		this.sig_y.forEach((old_sig, at) =>{
+			let is_old = true;
+			new_signals.forEach((new_sig) => {
+				if (new_sig.compare_to(old_sig)){
+					is_old = false;
+				}
+			});
+			if (is_old) {
+				this.sig_y.splice(at,1);
+				this.remove_renderable(at);
 			}
 		});
 
-		// -1 signifies appending for the add_renderable function, so filling the removed_indexes array with -1s
-		// ensures that we replace any removed signals with new ones and then start appending new signals.
-		removed_indexes = [... removed_indexes, ... Array(new_list.length).fill(-1)]
-
-		let add_count = 0;
-		new_list.forEach((sig) => {
-			if (!old_set.has(sig.get_id())) {
-				const idx = removed_indexes[add_count];
-				if (idx === undefined) throw new Error("Unexpected undefined index");
-				console.log('adding at: ', idx);
-				this.add_renderable(idx);
-				add_count += 1;
+		// Add all new signals that are not being drawn
+		new_signals.forEach((new_sig) =>{
+			let is_new = true;
+			this.sig_y.forEach((old_sig) => {
+				if (new_sig.compare_to(old_sig)){
+					old_sig.name = new_sig.name;
+					is_new = false;
+				}
+			});
+			if (is_new) {
+				this.sig_y.push(new_sig);
+				this.add_renderable(-1);
 			}
 		});
-
-		// TODO: Check this, set should preserve insertion order but there may be some unforeseen edge cases
-		this.sig_y = new_list;
     }
 
 	/**

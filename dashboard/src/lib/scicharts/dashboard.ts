@@ -89,8 +89,6 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
         this.scichart_surface.removeSubChart(this.plots[at]?.surface);
         this.plots[at]?.delete();
         this.plots.splice(at, 1);
-
-        console.log(this);
         
         this.update_layout();
     }

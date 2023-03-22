@@ -9,11 +9,10 @@
     
     export let plot: BasePlot;
 
-    const {sig_x, sig_y} = plot.get_signal_configs();
+    $: sig_config = plot?.get_signal_configs();
 
-    const x_store = writable(sig_x);
-    const y_store = writable(sig_y);
-
+    $: x_store = sig_config != null ? writable(sig_config["sig_x"]) : writable();
+    $: y_store = sig_config != null ? writable(sig_config["sig_y"]) : writable();
 
     function append_y_sig() {
         y_store.update(y_configs => {
@@ -33,23 +32,26 @@
         plot.set_signals($x_store, $y_store);
     }
 
-
 </script>
 
 <div class="signal_menu">
     <div class="entries">
-        <p> Signal x </p>
-        <SignalEntry bind:config={$x_store} />
+        {#if $x_store != null}
+            <p> Signal x </p>
+            <SignalEntry bind:config={$x_store} />
+        {/if}
     </div>
     <div class="entries">
-        <p> Signal y </p>
-        <button on:click={append_y_sig}>+</button>
-        {#each $y_store as config, i}
-            <div class="container">
-                <button on:click={() => remove_sig(i)}>-</button>
-                <SignalEntry bind:config={config} />
-            </div>
-        {/each}
+        {#if $y_store != null}
+            <p> Signal y </p>
+            <button on:click={append_y_sig}>+</button>
+            {#each $y_store as config, i}
+                <div class="container">
+                    <button on:click={() => remove_sig(i)}>-</button>
+                    <SignalEntry bind:config={config} />
+                </div>
+            {/each}
+        {/if}
     </div>
 
     <button on:click={apply_changes}> Apply changes </button>

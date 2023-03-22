@@ -3,16 +3,16 @@
     // import type { Writable } from "svelte/store";
     import type { BasePlot } from "$lib/scicharts/baseplot"
 
+    import { selected_plot_idx } from "$lib/stores/plot_stores";
+
     export let plots: BasePlot[];
     export let onNewPlot: (type: string) => void;
-    export let onDeletePlot: (type: number) => void;
-
-    $: selected_index = 0
+    export let onDeletePlot: (idx: number) => void;
 </script>
 
 <div class = "plotSelector">
     {#each plots as plot, i}
-        <PlotSelectionEntry name={plot.get_options().name} onSelect={() => {selected_index=i}} onDelete={() => {onDeletePlot(i)}}/>
+        <PlotSelectionEntry idx={i} name={plot.get_options().name} onDelete={() => {onDeletePlot(i)}}/>
     {/each}
     <button on:click={() => {onNewPlot("line")}} class="plotSelectorButton">New Plot</button>
 </div>
@@ -29,7 +29,6 @@
         border-right-style: solid;
         border-bottom-style: solid;
         border-width: thin;
-        margin: 10px;
     }
 
     .plotSelectorButton {
@@ -40,6 +39,9 @@
         border-top-color: black;
         border-top-width: thin;
         white-space: nowrap;
-        padding-right: 30px;
+    }
+
+    button:hover {
+        background-color: #A5A6A5;
     }
 </style>

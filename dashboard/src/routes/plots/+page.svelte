@@ -65,6 +65,7 @@
     selected_plot_idx.set(0);
     $: selected_plot = dashboard === undefined? undefined: $plot_store[$selected_plot_idx];
     $: store_is_defined = dashboard !== undefined;
+
 </script>
 
 <div class='container'>
@@ -72,7 +73,18 @@
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
         <div slot='body'>
-            <PlotSelector plots={$plot_store} onNewPlot={(type) => dashboard.add_plot(type)} onDeletePlot={(at) => dashboard.remove_plot(at)}/>
+            <PlotSelector plots={$plot_store} 
+				onNewPlot={(type) => {
+					dashboard.add_plot(type);
+					selected_plot_idx.set(dashboard.plots.length - 1);
+				}} 
+				onDeletePlot={(at) => {
+					dashboard.remove_plot(at);
+					if (at <= $selected_plot_idx) {
+						selected_plot_idx.set(Math.max($selected_plot_idx - 1));
+					}
+				}}
+			/>
             {#if store_is_defined}
                 <SignalMenu plot={selected_plot}/>
             {/if}

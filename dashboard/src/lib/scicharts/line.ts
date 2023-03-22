@@ -106,8 +106,8 @@ export class Line extends BasePlot {
 	}
 
 	protected add_renderable(at: number = -1): void {
-		if (at === -1) at = this.renderable_series.length - 1;
-		if (at >= this.renderable_series.length) return;
+		if (at === -1) at = this.renderable_series.length;
+		if (at > this.renderable_series.length) return;
 
 		const data_series = new XyDataSeries(this.wasm_context);
 		data_series.isSorted = this.options.data_is_sorted;
