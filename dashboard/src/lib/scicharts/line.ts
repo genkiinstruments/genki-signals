@@ -59,7 +59,7 @@ export class Line extends BasePlot {
 
 		this.options = plot_options;
 
-		this.sig_x = new Signal('timestamp_us', 0);
+		this.sig_x = new Signal('timestamp', 0);
 		this.sig_y = [];
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
@@ -105,7 +105,10 @@ export class Line extends BasePlot {
 		this.update_x_domain();
 	}
 
-	protected add_renderable(): void {
+	protected add_renderable(at: number = -1): void {
+		if (at === -1) at = this.renderable_series.length - 1;
+		if (at >= this.renderable_series.length) return;
+
 		const data_series = new XyDataSeries(this.wasm_context);
 		data_series.isSorted = this.options.data_is_sorted;
 		data_series.containsNaN = this.options.data_contains_nan;
@@ -114,8 +117,8 @@ export class Line extends BasePlot {
 		renderable_series.dataSeries = data_series;
 
 		this.surface.renderableSeries.add(renderable_series);
-		this.renderable_series.push(renderable_series);
-		this.data_series.push(data_series);
+		this.renderable_series.splice(at, 0, renderable_series);
+		this.data_series.splice(at, 0, data_series);
 	}
 
 

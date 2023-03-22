@@ -1,25 +1,28 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
+	import { writable } from 'svelte/store';
 
     import SignalEntry from './SignalEntry.svelte';
 
 	import type { SignalConfig } from '$lib/scicharts/data';
+	import type { BasePlot } from '$lib/scicharts/baseplot';
+	import { selected_plot_idx } from '$lib/stores/plot_stores';
+    
+    export let plot: BasePlot;
 
-    export let x_config: SignalConfig;
-    export let y_configs: SignalConfig[];
+    const {sig_x, sig_y} = plot.get_signal_configs();
 
-    export let on_save: (sig_x: SignalConfig, sig_y: SignalConfig[]) => void;
+    const x_store = writable(sig_x);
+    const y_store = writable(sig_y);
 
-    const y_store = writable(y_configs);
 
-    function appendSig() {
+    function append_y_sig() {
         y_store.update(y_configs => {
             y_configs.push({key: '', idx: 0} as SignalConfig);
             return y_configs;
         });
     }
 
-    function removeSig(idx: number) {
+    function remove_sig(idx: number) {
         y_store.update(y_configs => {
             y_configs.splice(idx, 1);
             return y_configs;
@@ -27,7 +30,7 @@
     }
 
     function apply_changes() {
-        on_save(x_config, $y_store);
+        plot.set_signals($x_store, $y_store);
     }
 
 
@@ -36,20 +39,20 @@
 <div class="signal_menu">
     <div class="entries">
         <p> Signal x </p>
-        <SignalEntry bind:config={x_config} />
+        <SignalEntry bind:config={$x_store} />
     </div>
     <div class="entries">
         <p> Signal y </p>
-        <button on:click={appendSig}>+</button>
+        <button on:click={append_y_sig}>+</button>
         {#each $y_store as config, i}
             <div class="container">
-                <button on:click={() => removeSig(i)}>-</button>
+                <button on:click={() => remove_sig(i)}>-</button>
                 <SignalEntry bind:config={config} />
             </div>
         {/each}
     </div>
 
-    <button on:click={() => apply_changes}> Apply changes </button>
+    <button on:click={apply_changes}> Apply changes </button>
 </div>
 
 <style>

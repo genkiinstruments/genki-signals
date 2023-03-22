@@ -3,22 +3,22 @@
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
 	import PlotSelector from "$lib/components/PlotSelector.svelte"
 
+	import { writable } from "svelte/store";
 	import { onDestroy, onMount } from "svelte";
-
+    
 	import { io } from 'socket.io-client';
+<<<<<<< HEAD
 
 	import { SvelteDashboard } from "$lib/scicharts/svelteDashboard";
 
+=======
+    
+	import { Dashboard } from "$lib/scicharts/dashboard";
+>>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 	import { SciChartSurface, type TSciChart } from "scichart";
+
 	import { SCICHART_KEY } from '$lib/utils/constants';
-    import type { SignalConfig } from "$lib/scicharts/data";
-	import { get, writable } from "svelte/store";
-
-
-    function on_save(sig_x: SignalConfig, sig_y: SignalConfig[]) {
-        console.log(sig_x, sig_y);
-        // Dashboard.plots[$selected_idx].set_signals(sig_x, sig_y);
-    }
+    import { selected_plot_idx } from "$lib/stores/plot_stores";
 
 
     const socket = io('http://localhost:5000/');
@@ -66,25 +66,32 @@
 		};
 	});
 
+<<<<<<< HEAD
 	$: plots = dashboard === undefined ? writable([]) : dashboard.plot_store;
 
     const x_c = {key: 'timestamp', idx: 0};
     const y_c = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
 
+=======
+    $: plot_store = dashboard === undefined? writable([]): dashboard.plot_store;
+    selected_plot_idx.set(0);
+    $: selected_plot = dashboard === undefined? undefined: $plot_store[$selected_plot_idx];
+    $: store_is_defined = dashboard !== undefined;
+>>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 </script>
 
 <div class='container'>
-    <CollapsibleMenu>
-        <div slot='header'> Additional </div>
-        <div slot='body'>
-            <SignalMenu x_config={x_c} y_configs={y_c} on_save={on_save}/>
-        </div>
-    </CollapsibleMenu>
-	<div bind:this={el} id={'blabla'} class='dashboard'/>
+    <div bind:this={el} id={'blabla'} class='dashboard'/>
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
         <div slot='body'>
+<<<<<<< HEAD
             <PlotSelector plots={$plots} onNewPlot={(type) => dashboard.add_plot(type)} onDeletePlot={(at) => dashboard.remove_plot(at)}/>
+=======
+            {#if store_is_defined}
+                <SignalMenu plot={selected_plot}/>
+            {/if}
+>>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
         </div>
     </CollapsibleMenu>
 </div>
@@ -99,7 +106,11 @@
 		display: flex;
 		justify-content: center;
 		width: 100%;
+<<<<<<< HEAD
         height: 100%;
 		overflow: hidden;
+=======
+        height: 80vh;
+>>>>>>> f3006415b762bc8aee44f2d7b8fa113e0ba9cca3
 	}
 </style>

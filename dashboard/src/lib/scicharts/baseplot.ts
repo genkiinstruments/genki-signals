@@ -141,8 +141,8 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 		this.update_all_options(options);
 	}
 
-	public get_signals() {
-		return {'sig_x': this.sig_x, 'sig_y': this.sig_y};
+	public get_signal_configs() {
+		return {'sig_x': this.sig_x.get_config(), 'sig_y': this.sig_y.map((sig) => sig.get_config())};
 	}
 
 	public set_signals(sig_x: SignalConfig, sig_y: SignalConfig[]): void {
@@ -173,18 +173,48 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 		const new_set = new Set(new_signals.map((sig) => sig.get_id()));
 		const old_set = new Set(this.sig_y.map((sig) => sig.get_id()));
 
-		const new_list = new_signals.filter((sig) => new_set.has(sig.get_id()));
-		const old_list = this.sig_y.filter((sig) => old_set.has(sig.get_id()));
+		// Removes duplicates
+		const new_set_copy = new Set(new_set);
+		const new_list = new_signals.filter((sig) => {
+			const id = sig.get_id();
+			if (new_set_copy.has(id)) {
+				new_set_copy.delete(id);
+				return true;
+			}
+			return false;
+		});
+		const old_set_copy = new Set(old_set);
+		const old_list = this.sig_y.filter((sig) => {
+			const id = sig.get_id();
+			if (old_set_copy.has(id)) {
+				old_set_copy.delete(id);
+				return true;
+			}
+			return false;
+		});
+
+		let removed_indexes: number[] = [];
 
 		old_list.forEach((sig, at) => {
 			if (!new_set.has(sig.get_id())) {
-				this.remove_renderable(at);
+				console.log('removing at: ', at)
+;				this.remove_renderable(at);
+				removed_indexes.push(at);
 			}
 		});
 
+		// -1 signifies appending for the add_renderable function, so filling the removed_indexes array with -1s
+		// ensures that we replace any removed signals with new ones and then start appending new signals.
+		removed_indexes = [... removed_indexes, ... Array(new_list.length).fill(-1)]
+
+		let add_count = 0;
 		new_list.forEach((sig) => {
 			if (!old_set.has(sig.get_id())) {
-				this.add_renderable();
+				const idx = removed_indexes[add_count];
+				if (idx === undefined) throw new Error("Unexpected undefined index");
+				console.log('adding at: ', idx);
+				this.add_renderable(idx);
+				add_count += 1;
 			}
 		});
 
@@ -208,20 +238,27 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 
 	/**
 	 * A function that specifies how to create the renderable series, dataseries etc. for each subclass.
+	 * @ param at - The index of the renderable series to add, -1 for last.
 	 */
-	protected abstract add_renderable(): void;
+	protected abstract add_renderable(at: number): void;
 
+	/**
+	 * A function that specifies how to remove the renderable series, dataseries etc.
+	 * @param at - The index of the renderable series to remove, -1 for last.
+	 */
 	protected remove_renderable(at: number): void {
-		if (at >= this.renderable_series.length) return;
 		if (at === -1) at = this.renderable_series.length - 1;
+		if (at >= this.renderable_series.length) return;
 
 		this.surface.renderableSeries.remove(this.renderable_series[at]);
 		this.renderable_series[at]?.delete();
 		this.renderable_series.splice(at, 1);
 
+		// this.data_series[at]?.clear();
 		this.data_series[at]?.delete();
 		this.data_series.splice(at, 1);
 	}
+
 
 	// ################################## Interface implementations ##################################
 
