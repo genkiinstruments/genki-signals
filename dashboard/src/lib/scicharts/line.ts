@@ -14,11 +14,10 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import { compare_signals } from './types';
-import type { ArrayDict, SignalConfig } from './types';
+import { Signal, type ISignalConfig } from './signal';
+import type { IArrayDict } from './interfaces';
 
 export interface LinePlotOptions extends PlotOptions {
-	type: 'line';
 	/** If auto range is true, then y_domain_max and y_domain_min are not used */
 	auto_range: boolean;
 	y_domain_max: number;
@@ -28,11 +27,11 @@ export interface LinePlotOptions extends PlotOptions {
 export function get_default_line_plot_options(): LinePlotOptions {
 	return {
 		...get_default_plot_options(),
-		type: 'line', // overrides default_plot_options.type
+		name: 'Line',
 		auto_range: true,
 		y_domain_max: 1,
 		y_domain_min: 0,
-		n_visible_points: 10000
+		n_visible_points: 1000
 	};
 }
 
@@ -46,10 +45,12 @@ export class Line extends BasePlot {
 
 	constructor(
 		wasm_context: TSciChart,
-		surface: SciChartSubSurface | SciChartSurface,
-		plot_options: LinePlotOptions = get_default_line_plot_options()
+		surface: SciChartSubSurface,
+		plot_options: LinePlotOptions = get_default_line_plot_options(),
+		sig_x_config: ISignalConfig = { key: '', idx: 0 },
+		sig_y_config: ISignalConfig[] = []
 	) {
-		super(wasm_context, surface);
+		super(wasm_context, surface, sig_x_config, sig_y_config);
 
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
@@ -57,13 +58,6 @@ export class Line extends BasePlot {
 		this.surface.yAxes.add(this.y_axis);
 
 		this.options = plot_options;
-
-		if (this.options.sig_x.length > 1) {
-			throw new Error('Line plots only support one x signal');
-		}
-
-		// sig_y implicitly defines the number of plots
-		this.options.sig_y.forEach(() => this.create_plot()); // one to one mapping of data series to renderable series
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -96,22 +90,23 @@ export class Line extends BasePlot {
 	}
 
 
-	public update(data: ArrayDict): void {
-		if (this.options.sig_x.length === 0) return; // if no x signal is defined, then we can't update the plot
-		
-		const x = this.fetch_and_check(data, this.options.sig_x[0]);
+	public update(data: IArrayDict): void {
+		const x = this.check_and_fetch(data, this.sig_x);
 
-		this.options.sig_y.forEach((sig_y, i) => {
-			const y = this.fetch_and_check(data, sig_y);
+		this.sig_y.forEach((sig, i) => {
+			const y = this.check_and_fetch(data, sig);
 			this.data_series[i].appendRange(x, y);
 		});
 
-		if (this.options.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
+		if (this.sig_y.length === 0 || this.surface.zoomState == EZoomState.UserZooming) return;
 
 		this.update_x_domain();
 	}
 
-	private create_plot(): void {
+	protected add_renderable(at: number = -1): void {
+		if (at === -1) at = this.renderable_series.length;
+		if (at > this.renderable_series.length) return;
+
 		const data_series = new XyDataSeries(this.wasm_context);
 		data_series.isSorted = this.options.data_is_sorted;
 		data_series.containsNaN = this.options.data_contains_nan;
@@ -120,63 +115,15 @@ export class Line extends BasePlot {
 		renderable_series.dataSeries = data_series;
 
 		this.surface.renderableSeries.add(renderable_series);
-		this.renderable_series.push(renderable_series);
-		this.data_series.push(data_series);
+		this.renderable_series.splice(at, 0, renderable_series);
+		this.data_series.splice(at, 0, data_series);
 	}
 
-	public add_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null): void {
-		if (sig_x !== null && this.options.sig_x.length > 0) {
-			throw new Error(
-				'Having multiple x signals / replacing the x signal is not supported for line plots'
-			);
-		}
-
-		this.options.sig_y.forEach((sig) => {
-			if (compare_signals(sig, sig_y)) {
-				throw new Error('Signal already exists in plot');
-			}
-		});
-
-		this.create_plot();
-		this.options.sig_y.push(sig_y);
-	}
-
-	public remove_plot(sig_y: SignalConfig, sig_x: SignalConfig | null = null) {
-		if (
-			sig_x !== null &&
-			(this.options.sig_x.length == 0 || !compare_signals(this.options.sig_x[0], sig_x))
-		) {
-			throw new Error('x signal does not exist on this plot');
-		}
-
-		let deleted = false;
-
-		this.options.sig_y.forEach((sig, idx) => {
-			if (compare_signals(sig, sig_y)) {
-				this.options.sig_y.splice(idx, 1);
-				this.surface.renderableSeries.remove(this.renderable_series[idx]);
-				this.renderable_series.splice(idx, 1);
-				this.data_series.splice(idx, 1);
-				deleted = true;
-			}
-		});
-
-		if (!deleted) {
-			throw new Error('Signal does not exist on this plot');
-		}
-	}
 
 	public update_all_options(options: LinePlotOptions): void {
-		this.options = options; // TODO: check if this is redundant since it should be the same object in memory
-
-		const n = this.options.sig_y.length;
-		if (n > this.renderable_series.length) {
-			for (let i = this.renderable_series.length; i < n; i++) {
-				this.create_plot();
-			}
-		}
-
-		// this.update_x_domain();
+		this.options = options;
+		
+		this.update_x_domain();
 		this.update_y_domain();
 		this.update_axes_alignment();
 		this.update_axes_flipping();

@@ -103,7 +103,7 @@ class Delay(Signal):
             self.buffer.extend(init_vals)
 
         self.buffer.extend(sig)
-        out = self.buffer.popleft(len(sig))
+        out = self.buffer.popleft(sig.shape[-1])
         return out
 
 
