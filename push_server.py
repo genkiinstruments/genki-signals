@@ -22,6 +22,7 @@ from genki_signals.data_sources import (  # noqa: E402
 from genki_signals.data_sources import (
     MouseDataSource,
     RandomNoise,
+    MicDataSource,
     Sampler
 )
 from genki_signals.system import System  # noqa: E402
@@ -32,16 +33,21 @@ import numpy as np
 # eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173/*')
+# CORS(app, resources={r"/*":{"origins":"*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
+DATA_SOURCE = 'Mic'
+# DATA_SOURCE = 'Sampler'
 
 
 def generate_data(ble_address=None):
     if ble_address is not None:
         source = WaveDataSource(ble_address)
-    else:
+    if DATA_SOURCE == 'Mic':
+        source = MicDataSource()
+    elif DATA_SOURCE == 'Sampler':
         source = Sampler({
             "random": RandomNoise(),
             "mouse_position": MouseDataSource()
