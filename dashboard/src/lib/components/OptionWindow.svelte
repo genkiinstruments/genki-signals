@@ -38,11 +38,6 @@
 		'y_axis_align': ['top', 'bottom', 'left', 'right'],
 		'sig_x': $data_keys_store,
 		'sig_y': $data_keys_store,
-		'input_a': $data_keys_store,
-		'input_b': $data_keys_store,
-		'sig_a': $data_keys_store,
-		'sig_b': $data_keys_store,
-		'input_name': $data_keys_store,
 	}
     $: selected_index = $selected_index_store;
 	$: selected_store = selected_index === -1? writable({} as PlotOptions) : $option_store[selected_index];
@@ -123,35 +118,33 @@
 			</label>
 			{#if $selected_derived_signal.sig_name !== undefined}
 				{#each $selected_derived_signal.args as arg,i}
-					{#if arg.type === 'int' || arg.type === 'float'}
+					{#if arg.type === 'number'}
 						<label>
 							{arg.name}:
 							<input type="number" bind:value={arg.value}/>
 						</label>
-					{:else if arg.type === 'bool'}
+					{:else if arg.type === 'boolean'}
 						<label>
 							{arg.name}:
 							<input type="checkbox" checked={arg.value} bind:value={arg.value}/>
 						</label>
-					{:else if arg.type === 'str'}
+					{:else if arg.type === 'string'}
 						<label>
 							{arg.name}:
-							{#if arg.name in dropdown_values}
-								<div class="signal_menu">
-									<select bind:value={arg.value}>
-										{#each dropdown_values[arg.name] as item}
-											<option value={item}>{item}</option>
-										{/each}
-									</select>
-									<label>
-										sig_idx:
-										<input type="string" bind:value={arg.sig_idx}/>
-									</label>
-								</div>
-							{:else}
 							<input type="string" bind:value={arg.value}/>
-							{/if}
 						</label>
+					{:else if arg.type === 'signal'}
+						<div class="signal_menu">
+							<select bind:value={arg.value}>
+								{#each $data_keys_store as item}
+									<option value={item}>{item}</option>
+								{/each}
+							</select>
+							<label>
+								sig_idx:
+								<input type="string" bind:value={arg.sig_idx}/>
+							</label>
+						</div>
 					{:else}
 						<label>unknown type {arg.name}</label>
 					{/if}

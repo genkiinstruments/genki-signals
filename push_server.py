@@ -41,18 +41,32 @@ SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 DATA_SOURCE = 'Sampler'
 
-from inspect import signature, getmembers, isclass
+from inspect import getmembers, isclass
 
-derived_signals = {}
+
+# TODO: implement list/dict/types
+type_map = {
+    "int": "number",
+    "float": "number",
+    "str": "string",
+    "bool": "boolean",
+}
+
+def py_type_to_js(type: str):
+    if type in type_map:
+        return type_map[type]
+    return type
+
+
+derived_signals = []
 name_to_signal = {}
 for sig_name, sig in getmembers(s,isclass):
+    config = sig.toJSON(sig)
+    for arg in config["args"]:
+        arg["type"] = py_type_to_js(arg["type"])
     name_to_signal[sig_name] = sig
-    derived_signals[sig_name] = {}
-    for arg in signature(sig, follow_wrapped=True).parameters.values():
-        derived_signals[sig_name][arg.name] = {"type": str(arg.annotation)}
-        if arg.default is not arg.empty:
-            derived_signals[sig_name][arg.name]["default"] = arg.default
-
+    derived_signals.append(config)
+    
 def generate_data(ble_address=None):
     if ble_address is not None:
         source = WaveDataSource(ble_address)

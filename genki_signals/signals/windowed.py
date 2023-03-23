@@ -4,7 +4,7 @@ import numpy as np
 import scipy
 
 from genki_signals.buffers import NumpyBuffer
-from genki_signals.signals.base import Signal
+from genki_signals.signals.base import Signal, signal
 
 
 def upsample(signal, factor):
@@ -13,7 +13,7 @@ def upsample(signal, factor):
 
 
 class SampleRate(Signal):
-    def __init__(self, input_name: str = "timestamp", name: str = "sample_rate", unit_multiplier: float=1):
+    def __init__(self, input_name: signal = "timestamp", name: str = "sample_rate", unit_multiplier: float=1):
         self.name = name
         self.input_names = [input_name]
         self.unit_multiplier = unit_multiplier
@@ -59,8 +59,8 @@ class FourierTransform(WindowedSignal):
     """
     def __init__(
             self,
-            input_name :str,
-            name :str,
+            input_name: signal,
+            name: str,
             window_size: int = 256,
             window_overlap: int = 0,
             detrend_type: str = "linear",
@@ -90,7 +90,7 @@ class FourierTransform(WindowedSignal):
 class Delay(Signal):
     """Delays signal by n samples"""
 
-    def __init__(self, sig_a: str, n: int, name: str=None):
+    def __init__(self, sig_a: signal, n: int, name: str=None):
         self.name = name if name is not None else "Delay"
         self.n = n
         self.input_names = [sig_a]
@@ -109,7 +109,6 @@ class Delay(Signal):
 
 __all__ = [
     "SampleRate",
-    "WindowedSignal",
     "FourierTransform",
     "Delay",
     ]

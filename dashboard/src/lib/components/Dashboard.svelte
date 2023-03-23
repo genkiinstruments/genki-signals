@@ -6,27 +6,32 @@
 	import { SciChartSurface } from 'scichart/Charting/Visuals/SciChartSurface';
 	import type { TSciChart } from 'scichart';
 
-	import { getSubChartRects } from '../utils/subchart_helpers';
-	import { SubChart } from '../scicharts/subchart';
-	import { SCICHART_KEY } from '../utils/constants';
-	import { option_store, selected_index_store } from '../stores/chart_stores';
-	import { data_keys_store, data_idxs_store, derived_signal_store } from '../stores/data_stores';
-	import type {IndexRanges, DerivedSignal, Argument} from '../stores/data_stores'; 
+	import { getSubChartRects } from '$lib/utils/subchart_helpers';
+	import { SubChart } from '$lib/scicharts/subchart';
+	import { SCICHART_KEY } from '$lib/utils/constants';
+	import { option_store, selected_index_store } from '$lib/stores/chart_stores';
+	import { data_keys_store, data_idxs_store, derived_signal_store } from '$lib/stores/data_stores';
+	import type {IndexRanges, DerivedSignal, Argument} from '$lib/stores/data_stores'; 
 
 	export let socket: Socket;
 
-	socket.on('derived_signals', (response: Record<string, Record<string, Record<string, string>>>) => {
+	socket.on('derived_signals', (response: Record<string, string | Record<string, string>[]>[]) => {
 		let derived_signals: DerivedSignal[] = [];
-		Object.entries(response).forEach(([sig_name, args]) => {
+		response.forEach((sig_config) => {
+			if (typeof sig_config["sig_name"] !== "string") throw new Error("derived signal name must be a string")
+			if (!Array.isArray(sig_config["args"])) throw new Error("arguments must be a list")
 			let argList: Argument[] = [];
-			Object.entries(args).forEach(([arg_name, value]) => {
-				if(value.type){
-					argList.push({name: arg_name, type: value.type, value: value.default})
+			sig_config["args"].forEach(arg => {
+				if (arg.name && arg.type){
+					argList.push({
+						name: arg.name,
+						type: arg.type,
+						value: arg.default,
+					});
 				}
-				else {throw new Error("type missing for" + sig_name + "." + arg_name)}
 			});
-			derived_signals.push({sig_name: sig_name, args: argList});
-		});
+			derived_signals.push({sig_name: sig_config["sig_name"], args: argList});
+		})
 		derived_signal_store.set(derived_signals);
 	});
 
