@@ -16,7 +16,7 @@ class Signal(abc.ABC):
         return f"<{self.__class__.__name__}: {self.name}>"
     
     @classmethod
-    def to_json(self):
+    def config_json(self):
         args = []
         for arg in signature(self, follow_wrapped=True).parameters.values():
             arg_config = {

@@ -61,7 +61,7 @@ def py_type_to_js(type: str):
 derived_signals = []
 name_to_signal = {}
 for sig_name, sig in getmembers(s,isclass):
-    config = sig.to_json()
+    config = sig.config_json()
     for arg in config["args"]:
         arg["type"] = py_type_to_js(arg["type"])
     name_to_signal[sig_name] = sig
