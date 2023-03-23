@@ -1,7 +1,7 @@
 <script lang="ts">
 	import SignalMenu from "$lib/components/SignalMenu.svelte";
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
-	import PlotSelector from "$lib/components/PlotSelector.svelte"
+	import PlotMenu from "$lib/components/PlotMenu.svelte"
 
 	import { writable } from "svelte/store";
 	import { onDestroy, onMount } from "svelte";
@@ -73,12 +73,12 @@
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
         <div slot='body'>
-            <PlotSelector plots={$plot_store} 
-				onNewPlot={(type) => {
+            <PlotMenu plots={$plot_store} 
+				add_plot={(type) => {
 					dashboard.add_plot(type);
 					selected_plot_idx.set(dashboard.plots.length - 1);
 				}} 
-				onDeletePlot={(at) => {
+				delete_plot={(at) => {
 					dashboard.remove_plot(at);
 					if (at <= $selected_plot_idx) {
 						selected_plot_idx.set(Math.max($selected_plot_idx - 1));
@@ -87,6 +87,7 @@
 			/>
             {#if store_is_defined}
                 <SignalMenu plot={selected_plot}/>
+				<!-- <OptionMenu plot={selected_plot}/> -->
             {/if}
         </div>
     </CollapsibleMenu>
