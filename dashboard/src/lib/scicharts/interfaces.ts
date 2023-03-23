@@ -1,11 +1,13 @@
-import type { ArrayDict } from './data';
+export interface IArrayDict {
+	[key: string]: number[][];
+}
 
 export interface IUpdatable {
 	/**
 	 * Updates accordingly, given the data.
 	 * @returns void
 	 */
-	update(data: ArrayDict): void;
+	update(data: IArrayDict): void;
 }
 
 export interface IDeletable {

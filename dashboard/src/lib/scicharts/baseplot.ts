@@ -7,9 +7,9 @@ import type {
 	BaseDataSeries
 } from 'scichart';
 
-import { Signal } from './data';
-import type { SignalConfig, ArrayDict } from './data';
-import type { IDeletable, IUpdatable } from './interfaces';
+import { Signal } from './signal';
+import type { ISignalConfig } from './signal';
+import type { IDeletable, IUpdatable, IArrayDict } from './interfaces';
 
 export interface PlotOptions {
 	name: string;
@@ -45,20 +45,23 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	protected abstract x_axis: AxisBase2D;
 	protected abstract y_axis: AxisBase2D;
 
-	// The x-values are the same for all data series.
-	protected abstract sig_x: Signal;
+	// The x-values should be the same for all y data series.
+	protected sig_x: Signal;
 
 	// ############################ The following are 1 to 1 mappings ########################################
 	// Many y-values can be mapped to one x-value.
-	protected abstract sig_y: Signal[];
+	protected sig_y: Signal[];
 	protected abstract renderable_series: BaseRenderableSeries[];
 	protected abstract data_series: BaseDataSeries[] | BaseHeatmapDataSeries[];
 	// #######################################################################################################
 
 
-	constructor(wasm_context: TSciChart, surface: SciChartSubSurface) {
+	constructor(wasm_context: TSciChart, surface: SciChartSubSurface, sig_x_config: ISignalConfig, sig_y_config: ISignalConfig[]) {
 		this.wasm_context = wasm_context;
 		this.surface = surface;
+
+		this.sig_x = Signal.from_config(sig_x_config);
+		this.sig_y = sig_y_config.map((config) => Signal.from_config(config));
 	}
 
 	/**
@@ -145,7 +148,7 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 		return {'sig_x': this.sig_x.get_config(), 'sig_y': this.sig_y.map((sig) => sig.get_config())};
 	}
 
-	public set_signals(sig_x: SignalConfig, sig_y: SignalConfig[]): void {
+	public set_signals(sig_x: ISignalConfig, sig_y: ISignalConfig[]): void {
 		this.change_sig_x(sig_x);
 		this.change_sig_y(sig_y);
 	}
@@ -155,7 +158,7 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 * then all data series are cleared.
 	 * @param sig_x - The new signal config for the x-axis.
 	 */
-	protected change_sig_x(config: SignalConfig): void {
+	protected change_sig_x(config: ISignalConfig): void {
 		if (!(this.sig_x.compare_to(config))) {
 			this.data_series.forEach((ds) => ds.clear());
 			this.sig_x.set_config(config);
@@ -168,7 +171,7 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 * If new signals are present in the new list, then new plots are created.
 	 * @param sig_y - The new signal configs for the y-axis.
 	 */
-	protected change_sig_y(sig_y: SignalConfig[]): void {
+	protected change_sig_y(sig_y: ISignalConfig[]): void {
 		const new_signals = sig_y.map((config) => Signal.from_config(config));
 
 		// Note: Can be faster
@@ -209,7 +212,7 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	 * @param sig - The signal config to access
 	 * @returns data[sig.sig_key][sig.sig_idx]
 	 */
-	protected check_and_fetch(data: ArrayDict, sig: Signal | undefined): NumberArray {
+	protected check_and_fetch(data: IArrayDict, sig: Signal | undefined): NumberArray {
 		if (sig === undefined) return [];
 		if (!(sig.key in data)) return []; //throw new Error(`sig_key ${sig_key} not in data`);
 		if (sig.idx >= data[sig.key].length) return []; //throw new Error(`sig_idx ${sig_idx} out of bounds`);
@@ -243,7 +246,7 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 
 	// ################################## Interface implementations ##################################
 
-	public abstract update(data: ArrayDict): void;
+	public abstract update(data: IArrayDict): void;
 
 	public delete(): void {
 		this.surface.xAxes.remove(this.x_axis);

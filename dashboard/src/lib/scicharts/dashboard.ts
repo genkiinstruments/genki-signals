@@ -6,7 +6,7 @@ import { ELayoutMode, layout_factory } from "./layouts";
 
 import type { Layout } from "./layouts";
 import type { BasePlot } from "./baseplot"
-import type { ArrayDict } from "./data";
+import type { IArrayDict } from "./interfaces";
 import type { IUpdatable, IDeletable } from "./interfaces";
 
 
@@ -32,10 +32,6 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
      * @param at - The index to add the plot at. If -1, the plot is added at the end.
     */
     public add_plot(type: string, at: number = -1) {
-        if (this.scichart_surface === null || this.wasm_context === null) {
-            throw new Error("Not linked to SciChartSurface.");
-        }
-        
         let plot: BasePlot;
         const sub_surface = this.scichart_surface.addSubChart(sub_surface_options);
         switch (type) {
@@ -55,11 +51,8 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
                 throw new Error("Unknown plot type: " + type);
         }
 
-        if (at === -1) {
-            this.plots.push(plot);
-        } else {
-            this.plots.splice(at, 0, plot);
-        }
+        if (at === -1) at = this.plots.length;
+        this.plots.splice(at, 0, plot);
 
         this.update_layout();
     }
@@ -97,7 +90,7 @@ export class Dashboard implements IUpdatable, IDeletable, Iterable<BasePlot> {
     // ################################## Interface implementations ##################################
 
 
-    public update(data: ArrayDict): void {
+    public update(data: IArrayDict): void {
         this.plots.forEach((plot) => plot.update(data));
     }
 

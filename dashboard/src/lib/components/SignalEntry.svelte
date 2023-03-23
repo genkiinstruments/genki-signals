@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { SignalConfig } from "$lib/scicharts/data";
+	import type { ISignalConfig } from "$lib/scicharts/signal";
 
-    export let config: SignalConfig;
+    export let config: ISignalConfig;
 </script>
 
 <div class="entry">

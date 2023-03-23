@@ -19,7 +19,8 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import type { ArrayDict, SignalConfig } from './data';
+import type { IArrayDict } from './interfaces';
+import type { ISignalConfig } from './signal';
 
 export interface BarPlotOptions extends PlotOptions {
     /** If auto range is true, then y_domain_max and y_domain_min are not used */
@@ -48,18 +49,21 @@ export class Bar extends BasePlot {
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface,
-		plot_options: BarPlotOptions = get_default_bar_plot_options()
+		plot_options: BarPlotOptions = get_default_bar_plot_options(),
+		sig_x_config: ISignalConfig = { key: '', idx: 0 },
+		sig_y_config: ISignalConfig[] = []
 	) {
-		super(wasm_context, surface);
+		super(wasm_context, surface, sig_x_config, sig_y_config);
 
 		this.x_axis = new NumericAxis(this.wasm_context, {autoRange: EAutoRange.Always});
 		this.y_axis = new NumericAxis(this.wasm_context, {growBy: new NumberRange(0,0.2)});
 		this.surface.xAxes.add(this.x_axis);
 		this.surface.yAxes.add(this.y_axis);
 
-		this.options = plot_options;
+		// Bar uses only one data series for N columns
+		this.data_series.push(new XyDataSeries(this.wasm_context));
 
-		this.add_plot();
+		this.options = plot_options;
 
 		this.update_y_domain();
 		this.update_axes_alignment();
@@ -79,16 +83,18 @@ export class Bar extends BasePlot {
 		}
 	}
 
-	public update(data: ArrayDict): void {
-        this.data_series[0]?.clear()
-		this.options.sig_y.forEach((sig_y, i) => {
+	public update(data: IArrayDict): void {
+		const ds = this.data_series[0];
+		if (ds === undefined || this.data_series.length > 1) throw new Error('Bar should contain exactly one data series');
+        ds.clear();
+		this.sig_y.forEach((sig_y, i) => {
 			const y = this.check_and_fetch(data, sig_y);
-			this.data_series[0]?.append(i, y[y.length-1]);
+			ds.append(i, y[y.length-1]);
 		});
 	}
 
 	private update_label_format(){
-		const labels = this.options.sig_y.map((s) => s.sig_name);
+		const labels = this.sig_y.map((s) => s.name);
 		
 		const valid = labels.every((l) => l !== undefined);
 
@@ -99,13 +105,15 @@ export class Bar extends BasePlot {
 		}
 		else {
 			this.x_axis.labelProvider = new TextLabelProvider({
-				labels: this.options.sig_y.map((sig_config) => sig_config.sig_name + "_" + sig_config.sig_idx)
+				labels: this.sig_y.map((sig) => sig.get_id())
 			});
 		}
     }
 
+	protected add_renderable(at: number = -1): void {
+		if (at === -1) at = this.renderable_series.length;
+		if (at > this.renderable_series.length) return;
 
-	private add_plot(): void {
 		const renderable_series = new FastColumnRenderableSeries(this.wasm_context, {
             dataLabels: {
                 horizontalTextPosition: EHorizontalTextPosition.Center,
@@ -114,14 +122,12 @@ export class Bar extends BasePlot {
                 color: "#FFFFFF",
             },
         });
-		const data_series = new XyDataSeries(this.wasm_context);
-		data_series.containsNaN = this.options.data_contains_nan;
-		data_series.isSorted = this.options.data_is_sorted;
-		renderable_series.dataSeries = data_series;
+		const ds = this.data_series[0];
+		if (ds === undefined || this.data_series.length > 1) throw new Error('Bar should contain exactly one data series');
+		renderable_series.dataSeries = ds;
 
 		this.surface.renderableSeries.add(renderable_series);
-		this.renderable_series.push(renderable_series);
-		this.data_series.push(data_series);
+		this.renderable_series.splice(at, 0, renderable_series);
 
         this.update_label_format();
 	}

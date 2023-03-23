@@ -14,7 +14,8 @@ import {
 } from 'scichart';
 
 import { BasePlot, get_default_plot_options, type PlotOptions } from './baseplot';
-import { Signal, type ArrayDict } from './data';
+import { Signal, type ISignalConfig } from './signal';
+import type { IArrayDict } from './interfaces';
 
 export interface LinePlotOptions extends PlotOptions {
 	/** If auto range is true, then y_domain_max and y_domain_min are not used */
@@ -39,18 +40,17 @@ export class Line extends BasePlot {
 	y_axis: NumericAxis;
 	options: LinePlotOptions;
 
-	sig_x: Signal;
-	sig_y: Signal[];
-
 	renderable_series: FastLineRenderableSeries[] = [];
 	data_series: XyDataSeries[] = [];
 
 	constructor(
 		wasm_context: TSciChart,
 		surface: SciChartSubSurface,
-		plot_options: LinePlotOptions = get_default_line_plot_options()
+		plot_options: LinePlotOptions = get_default_line_plot_options(),
+		sig_x_config: ISignalConfig = { key: '', idx: 0 },
+		sig_y_config: ISignalConfig[] = []
 	) {
-		super(wasm_context, surface);
+		super(wasm_context, surface, sig_x_config, sig_y_config);
 
 		this.x_axis = new NumericAxis(this.wasm_context);
 		this.y_axis = new NumericAxis(this.wasm_context);
@@ -58,9 +58,6 @@ export class Line extends BasePlot {
 		this.surface.yAxes.add(this.y_axis);
 
 		this.options = plot_options;
-
-		this.sig_x = new Signal('timestamp', 0);
-		this.sig_y = [];
 
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -92,7 +89,7 @@ export class Line extends BasePlot {
 	}
 
 
-	public update(data: ArrayDict): void {
+	public update(data: IArrayDict): void {
 		const x = this.check_and_fetch(data, this.sig_x);
 
 		this.sig_y.forEach((sig, i) => {
