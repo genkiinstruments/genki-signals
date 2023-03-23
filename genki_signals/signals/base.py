@@ -2,7 +2,7 @@ import abc
 from inspect import signature
 from typing import NewType
 
-signal = NewType("signal", str)
+SignalName = NewType("signal", str)
 
 class Signal(abc.ABC):
     """
@@ -15,7 +15,8 @@ class Signal(abc.ABC):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.name}>"
     
-    def toJSON(self):
+    @classmethod
+    def to_json(self):
         args = []
         for arg in signature(self, follow_wrapped=True).parameters.values():
             arg_config = {
@@ -31,4 +32,3 @@ class Signal(abc.ABC):
     @property
     def frequency_ratio(self):
         return 1
-
