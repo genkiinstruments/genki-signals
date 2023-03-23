@@ -4,7 +4,7 @@
 		<div class="box">
 			<a href="/">Home</a>
 		</div>
-		<img src="static/favicon.png" alt="logo" class="logo" />
+		<img src="favicon.png" alt="logo" class="logo" />
 		<div class="box">
 			<a href="/plots">Plots</a>
 		</div>

@@ -3,17 +3,19 @@
 	import { writable } from 'svelte/store';
 	import type { PlotOptions } from '$lib/scicharts/baseplot';
 
-	import { option_store, selected_index_store } from '$lib/stores/chart_stores';
+	import { option_store, selected_index_store } from '$lib/stores/plot_stores';
 	import { data_keys_store } from '$lib/stores/data_stores';
+	import { Signal } from '$lib/scicharts/data';
 
+	export let options: PlotOptions | null;
 
 	function appendSig(key: string) {
 		return () => {
-			const new_sig = {'sig_name': '', 'sig_idx': 0};
+			const new_sig = new Signal('', 0);
 			selected_store.update((store) => {
 				store[key].push(new_sig);
 				return store;
-			});
+			});	
 		};
 	}
 	$: dropdown_values = {
@@ -22,8 +24,8 @@
 		'sig_x': $data_keys_store,
 		'sig_y': $data_keys_store,
 	}
-    $: selected_index = $selected_index_store;
-	$: selected_store = selected_index === -1? writable({} as PlotOptions) : $option_store[selected_index];
+    // $: selected_index = $selected_index_store;
+	$: selected_store = $selected_index_store === -1? writable({} as PlotOptions) : writable(options as PlotOptions);
 
 </script>
 <div class="container">
@@ -67,7 +69,7 @@
 										sig_key: 
 										<br>
 										<select bind:value={$selected_store[key][idx].sig_key} >
-											<option value="" selected disabled hidden>Choose here</option>
+											<option value='random' selected disabled hidden>random</option>
 											{#each dropdown_values['sig_x'] as item}
 												<option value={item}>{item}</option>
 											{/each}
@@ -76,10 +78,6 @@
 									<label>
 										sig_idx:
 										<input type="number" bind:value={$selected_store[key][idx].sig_idx} />
-									</label>
-									<label>
-										sig_name:
-										<input type="text" bind:value={$selected_store[key][idx].sig_name} />
 									</label>
 								</div>
 							{/each}

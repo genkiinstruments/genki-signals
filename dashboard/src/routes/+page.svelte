@@ -1,6 +1,6 @@
 <div class='container'>
     <p><i><b>graphic design is my passion</b></i></p>
-    <img src="static/giphy.gif" alt="gif">
+    <img src="giphy.gif" alt="gif">
 </div>
 
 <style>
