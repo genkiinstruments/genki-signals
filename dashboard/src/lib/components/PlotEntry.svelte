@@ -3,7 +3,7 @@
 
     export let name: string;
     export let idx: number;
-    export let onDelete: () => void;
+    export let delete_entry: () => void;
 
     $: styles = {
 		'color': $selected_plot_idx === idx ? "#FF5F49" : "#F0F0F0",
@@ -16,13 +16,13 @@
 
 </script>
 
-<div class="plotSelectionEntry" style="{css_var_styles}">
-    <button on:click={() => selected_plot_idx.set(idx)} class="plotNameButton">{name}</button>
-    <button on:click={() => onDelete()} class="plotDeleteButton">X</button>
+<div class="plot_entry" style="{css_var_styles}">
+    <button on:click={() => selected_plot_idx.set(idx)} class="plot_name_button">{name}</button>
+    <button on:click={() => delete_entry()} class="plot_delete_button">X</button>
 </div>
 
 <style>
-    .plotSelectionEntry {
+    .plot_entry {
         width: 100%;
         display: flex;
         justify-content: space-between;
@@ -31,7 +31,7 @@
         background-color: var(--color, #F0F0F0);
     }
 
-    .plotDeleteButton {
+    .plot_delete_button {
         position: relative;
         right: 0;
         height: 100%;
@@ -39,7 +39,7 @@
         background: transparent;
     }
 
-    .plotNameButton {
+    .plot_name_button {
         text-align: left;
         height: 100%;
         width: 100%;
@@ -47,7 +47,7 @@
         background: transparent;
     }
 
-    .plotSelectionEntry:hover {
+    .plot_entry:hover {
         background-color: var(--hover-color, #A5A6A5);
     }
 </style>

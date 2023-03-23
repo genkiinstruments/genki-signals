@@ -1,25 +1,25 @@
 <script lang="ts">
-    import PlotSelectionEntry from "$lib/components/PlotSelectionEntry.svelte"
-    // import type { Writable } from "svelte/store";
+    import PlotEntry from "$lib/components/PlotEntry.svelte"
     import type { BasePlot } from "$lib/scicharts/baseplot"
 
     import { selected_plot_idx } from "$lib/stores/plot_stores";
 
     export let plots: BasePlot[];
-    export let onNewPlot: (type: string) => void;
-    export let onDeletePlot: (idx: number) => void;
+    export let add_plot: (type: string) => void;
+    export let delete_plot: (idx: number) => void;
 </script>
 
-<div class = "plotSelector">
+<div class = "plot_menu">
     {#each plots as plot, i}
-        <PlotSelectionEntry idx={i} name={plot.get_options().name} onDelete={() => {onDeletePlot(i)}}/>
+        <PlotEntry idx={i} name={plot.get_options().name} delete_entry={() => {delete_plot(i)}}/>
     {/each}
-    <button on:click={() => {onNewPlot("line")}} class="plotSelectorButton">New Plot</button>
+    <button on:click={() => {add_plot("line")}} class="new_plot_button">New Plot</button>
 </div>
 
 
 <style>
-    .plotSelector {
+    .plot_menu
+ {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -31,7 +31,7 @@
         border-width: thin;
     }
 
-    .plotSelectorButton {
+    .new_plot_button {
         width: 100%;
         text-align: left;
         border-style: none;
@@ -41,7 +41,7 @@
         white-space: nowrap;
     }
 
-    button:hover {
+    .new_plot_button:hover {
         background-color: #A5A6A5;
     }
 </style>
