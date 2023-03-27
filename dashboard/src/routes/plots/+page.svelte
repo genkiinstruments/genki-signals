@@ -2,6 +2,7 @@
 	import SignalMenu from "$lib/components/SignalMenu.svelte";
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
 	import PlotMenu from "$lib/components/PlotMenu.svelte"
+	import OptionMenu from "$lib/components/OptionMenu.svelte";
 
 	import { writable } from "svelte/store";
 	import { onDestroy, onMount } from "svelte";
@@ -16,7 +17,9 @@
     import { selected_plot_idx } from "$lib/stores/plot_stores";
 
 
-    const socket = io('http://localhost:5000/');
+    const socket = io('http://localhost:5000/', {
+		transports: ["websocket"]
+	});
 
 	let el: HTMLDivElement;
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
@@ -31,18 +34,18 @@
 		wasm_context = wasmContext;
         dashboard = new SvelteDashboard(main_surface, wasm_context);
 
-        dashboard.add_plot("line");
-        dashboard.add_plot("line");
-        dashboard.add_plot("line");
-        dashboard.add_plot("line");
+        // dashboard.add_plot("line");
+        // dashboard.add_plot("line");
+        // dashboard.add_plot("line");
+        // dashboard.add_plot("line");
 
 
-        const x_config = {key: 'timestamp', idx: 0};
-        const y_configs = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
+        // const x_config = {key: 'timestamp', idx: 0};
+        // const y_configs = [{key: 'mouse_position', idx: 0}, {key: 'mouse_position', idx: 1}];
 
-        for (let plot of dashboard) {
-            plot.set_signals(x_config, y_configs);
-        }
+        // for (let plot of dashboard) {
+        //     plot.set_signals(x_config, y_configs);
+        // }
 
 		socket.on('data', (response) => {
 			for(let plot of dashboard) {
@@ -81,13 +84,17 @@
 				delete_plot={(at) => {
 					dashboard.remove_plot(at);
 					if (at <= $selected_plot_idx) {
-						selected_plot_idx.set(Math.max($selected_plot_idx - 1));
+						selected_plot_idx.set(Math.max($selected_plot_idx - 1, 0));
 					}
 				}}
 			/>
             {#if store_is_defined}
                 <SignalMenu plot={selected_plot}/>
-				<!-- <OptionMenu plot={selected_plot}/> -->
+				<OptionMenu options={selected_plot?.get_options()}
+					update_options={(options) => {
+						selected_plot?.set_options(options);
+					}}
+				/>
             {/if}
         </div>
     </CollapsibleMenu>
@@ -104,5 +111,12 @@
 		justify-content: center;
 		width: 100%;
         height: 80vh;
+	}
+
+	:global(:root) {
+		--genki-red: #FF5F49;
+		--genki-white: #F0F0F0;
+		--genki-grey: #A5A6A5;
+		--genki-red-grey: rgb(201, 67, 55);
 	}
 </style>

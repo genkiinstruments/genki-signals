@@ -38,8 +38,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
-DATA_SOURCE = 'Mic'
-# DATA_SOURCE = 'Sampler'
+# DATA_SOURCE = 'Mic'
+DATA_SOURCE = 'Sampler'
 
 
 def generate_data(ble_address=None):

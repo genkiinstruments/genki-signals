@@ -70,6 +70,7 @@ export class Line extends BasePlot {
 	}
 
 	private update_x_domain(): void {
+		if (this.data_series.length == 0) return;
 		const x_max = this.get_native_x(-1);
 		const x_min = this.get_native_x(-this.options.n_visible_points);
 		this.x_axis.visibleRange = new NumberRange(x_min, x_max);

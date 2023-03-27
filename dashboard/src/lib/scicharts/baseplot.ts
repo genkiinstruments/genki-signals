@@ -105,8 +105,8 @@ export abstract class BasePlot implements IUpdatable, IDeletable {
 	}
 
 	protected update_axes_alignment(): void {
-		const x_is_horiz = this.options.x_axis_align in ["top", "bottom"];
-		const y_is_horiz = this.options.y_axis_align in ["top", "bottom"];
+		const x_is_horiz = ["top", "bottom"].includes(this.options.x_axis_align);
+		const y_is_horiz = ["top", "bottom"].includes(this.options.y_axis_align);
 		if (x_is_horiz != y_is_horiz){
 			this.axis_alignment(this.x_axis, this.options.x_axis_align);
 			this.axis_alignment(this.y_axis, this.options.y_axis_align);

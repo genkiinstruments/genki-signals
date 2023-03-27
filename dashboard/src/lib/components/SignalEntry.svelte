@@ -6,9 +6,18 @@
 
 <div class="entry">
     <label for="signal">
-        <input type="text" bind:value={config.key} />
-        <input type="number" bind:value={config.idx} />
-        <input type="text" bind:value={config.name} />
+        <label>
+            <input type="text" bind:value={config.key}/>
+            Signal key
+        </label>
+        <label>
+            <input type="number" bind:value={config.idx} />
+            Signal idx
+        </label>
+        <label>
+            <input type="text" bind:value={config.name} />
+            Display Name
+        </label>
     </label>
 </div>
 

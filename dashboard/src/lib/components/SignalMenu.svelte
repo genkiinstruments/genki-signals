@@ -35,26 +35,28 @@
 </script>
 
 <div class="signal_menu">
-    <div class="entries">
-        {#if $x_store != null}
-            <p> Signal x </p>
-            <SignalEntry bind:config={$x_store} />
-        {/if}
-    </div>
-    <div class="entries">
-        {#if $y_store != null}
-            <p> Signal y </p>
-            <button on:click={append_y_sig}>+</button>
-            {#each $y_store as config, i}
-                <div class="container">
-                    <button on:click={() => remove_sig(i)}>-</button>
-                    <SignalEntry bind:config={config} />
-                </div>
-            {/each}
-        {/if}
-    </div>
+    {#if sig_config != null}
+        <div class="entries">
+            {#if $x_store != null}
+                <p> Signal x </p>
+                <SignalEntry config={$x_store} />
+            {/if}
+        </div>
+        <div class="entries">
+            {#if $y_store != null}
+                <p> Signal y </p>
+                <button on:click={append_y_sig}>+</button>
+                {#each $y_store as config, i}
+                    <div class="container">
+                        <button on:click={() => remove_sig(i)}>-</button>
+                        <SignalEntry config={config} />
+                    </div>
+                {/each}
+            {/if}
+        </div>
 
-    <button on:click={apply_changes}> Apply changes </button>
+        <button on:click={apply_changes}> Apply changes </button>
+    {/if}
 </div>
 
 <style>
@@ -73,5 +75,10 @@
         align-items: center;
         margin-bottom: 10px;
         border: 1px solid black;
+    }
+
+    .container {
+        display: flex;
+        flex-direction: row;
     }
 </style>
