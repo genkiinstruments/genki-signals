@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 from genki_signals.filters import FirFilter, ButterFilter
-from genki_signals.signals.base import Signal
+from genki_signals.signals.base import Signal, SignalName
 
 
 class GaussianSmooth(Signal):
     """Smooths signal with a gaussian kernel"""
 
     def __init__(
-            self, sig_a, width_in_sec: float, fs: int, half: bool = False, name=None
+            self, sig_a: SignalName, width_in_sec: float, fs: int, half: bool = False, name: str=None
     ):
         self.name = f"GaussianSmooth({sig_a})" if name is None else name
         self.width_in_sec = width_in_sec
@@ -29,7 +31,7 @@ class GaussianSmooth(Signal):
 
 
 class HighPassFilter(Signal):
-    def __init__(self, sig_a, order, cutoff_freq, fs=100, name=None):
+    def __init__(self, sig_a: SignalName, order: int, cutoff_freq: float, fs: int = 100, name: str=None):
         self.filter = ButterFilter(order, cutoff_freq, "highpass", fs=fs)
         self.name = f"HighPass({sig_a}, {cutoff_freq})" if name is None else name
         self.input_names = [sig_a]
@@ -41,7 +43,7 @@ class HighPassFilter(Signal):
 
 
 class BandPassFilter(Signal):
-    def __init__(self, sig_a, order, cutoff_freq, fs, name=None):
+    def __init__(self, sig_a: SignalName, order: int, cutoff_freq: float, fs: int, name: str=None):
         self.filter = ButterFilter(order, cutoff_freq, "bandpass", fs=fs)
         self.name = f"BandPass({sig_a}, {cutoff_freq})" if name is None else name
         self.input_names = [sig_a]
@@ -53,7 +55,7 @@ class BandPassFilter(Signal):
 
 
 class LowPassFilter(Signal):
-    def __init__(self, sig_a, order, cutoff_freq, fs=100, name=None):
+    def __init__(self, sig_a: SignalName, order: int, cutoff_freq: float, fs: int=100, name: str=None):
         self.filter = ButterFilter(order, cutoff_freq, "lowpass", fs=fs)
         self.name = f"Lowpass({sig_a}, {cutoff_freq})" if name is None else name
         self.input_names = [sig_a]
@@ -63,3 +65,9 @@ class LowPassFilter(Signal):
             return self.filter.process(val)
         return val
 
+__all__ = [
+    "GaussianSmooth",
+    "HighPassFilter",
+    "BandPassFilter",
+    "LowPassFilter",
+    ]

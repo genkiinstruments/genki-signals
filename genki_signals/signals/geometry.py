@@ -8,7 +8,7 @@ import logging
 
 from genki_signals.dead_reckoning import calc_per_t_power, combine_power
 from genki_signals.filters import FirFilter
-from genki_signals.signals import Signal
+from genki_signals.signals.base import Signal, SignalName
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class Norm(Signal):
     Euclidian norm of a vector signal
     """
 
-    def __init__(self, input_names, name):
+    def __init__(self, input_names: SignalName, name: str):
         # TODO: Can we abstract this away?
         self.name = name
         self.input_names = input_names
@@ -33,7 +33,7 @@ class EulerOrientation(Signal):
     Convert quaternion representation to Euler axis/angle representation
     """
 
-    def __init__(self, input_signal="current_pose", name="orientation"):
+    def __init__(self, input_signal: SignalName = "current_pose", name: str = "orientation"):
         self.name = name
         self.input_names = [input_signal]
 
@@ -50,7 +50,7 @@ class EulerAngle(Signal):
     Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
     """
 
-    def __init__(self, input_signal, name="euler_angle"):
+    def __init__(self, input_signal: SignalName, name: str = "euler_angle"):
         self.name = name
         self.input_names = [input_signal]
 
@@ -78,7 +78,7 @@ class Gravity(Signal):
     Compute gravity vector from a quaternion orientation signal
     """
 
-    def __init__(self, input_signal="current_pose", name=None):
+    def __init__(self, input_signal: SignalName = "current_pose", name: str = None):
         self.name = f"grav({input_signal})" if name is None else name
         self.input_names = [input_signal]
 
@@ -96,7 +96,7 @@ class Rotate(Signal):
     Compute a rotated version of a 3D signal with a quaternion input signal
     """
 
-    def __init__(self, signal, orientation_signal="current_pose", name=None):
+    def __init__(self, signal: SignalName, orientation_signal: SignalName = "current_pose", name: str = None):
         self.name = f"rotate({signal}, {orientation_signal})" if name is None else name
         self.orientation_signal = orientation_signal
         self.signal = signal
@@ -157,7 +157,7 @@ class OrientationXy(Signal):
         - Rotating using the conjugate quaternion is a rotation: global coordinate system -> local coordinate system
     """
 
-    def __init__(self, orientation_signal="current_pose", name=None):
+    def __init__(self, orientation_signal: SignalName = "current_pose", name: str = None):
         self.name = f"XyOrientation({orientation_signal})" if name is None else name
         self.orientatation = orientation_signal
 
@@ -184,14 +184,14 @@ class MadgwickOrientation(Signal):
 
     def __init__(
             self,
-            fs=100.0,
-            q0=np.array([1.0, 0.0, 0.0, 0.0]),
-            gyro_cols="gyro",
-            acc_cols="acc",
-            name="madgwick",
+            fs: float = 100.0,
+            q0: list[int] = [1.0, 0.0, 0.0, 0.0],
+            gyro_cols: SignalName = "gyro",
+            acc_cols: SignalName = "acc",
+            name: str = "madgwick",
     ):
-        self.Q = q0
-        self.madgwick = Madgwick(gain=0.033, frequency=fs, q0=q0)
+        self.Q = np.array(q0)
+        self.madgwick = Madgwick(gain=0.033, frequency=fs, q0=self.Q)
         self.offset = imufusion.Offset(int(fs))  # gyro debiasing
         self.name = name
         self.synced = False
@@ -234,12 +234,12 @@ class FusionOrientation(Signal):
 
     def __init__(
             self,
-            fs=100,
-            gyro_cols="gyro",
-            acc_cols="acc",
-            gain=0.5,
-            use_offset=True,
-            name="fusion",
+            fs: float = 100,
+            gyro_cols: SignalName = "gyro",
+            acc_cols: SignalName = "acc",
+            gain: float = 0.5,
+            use_offset: bool = True,
+            name: str = "fusion",
     ):
         self.ahrs = ahrs(
             gain, fs, mag_rejection=90.0, acc_rejection=90.0, rejection_timeout_sec=3
@@ -269,7 +269,7 @@ class GravityProjection(Signal):
     """
 
     def __init__(
-            self, signal_to_project, gravity_signal="grav", name="grav_projection"
+            self, signal_to_project: SignalName, gravity_signal: SignalName = "grav", name: str = "grav_projection"
     ):
         self.qr_fact = np.vectorize(
             np.linalg.qr, signature="(n, m, r)->(n, m, r),(n, r, r)"
@@ -306,7 +306,7 @@ class AngleBetween(Signal):
     Signal to compute the angle between two 2D vector signals
     """
 
-    def __init__(self, signal_1, signal_2, name=None):
+    def __init__(self, signal_1: SignalName, signal_2: SignalName, name: str = None):
         self.name = name if name is not None else f"angle_{signal_1}_{signal_2}"
         self.input_names = [self.signal_1, self.signal_2]
 
@@ -322,17 +322,17 @@ class DeadReckoning(Signal):
 
     def __init__(
             self,
-            len_sec,
-            fs,
-            bias=0.11,
-            c_acc=1.0,
-            c_gyro=1 / 300,
-            beta=50.0,
-            prefix_gyro="gyro",
-            prefix_acc="linacc_glob",
-            threshold=0.5,
-            half=True,
-            name="DeadReckoning",
+            len_sec: float,
+            fs: int,
+            bias: float = 0.11,
+            c_acc: float = 1.0,
+            c_gyro: float = 1 / 300,
+            beta: float = 50.0,
+            prefix_gyro: SignalName = "gyro",
+            prefix_acc: SignalName = "linacc_glob",
+            threshold: float = 0.5,
+            half: bool = True,
+            name: str = "DeadReckoning",
     ):
         self.name = name
         self.filter_gyro = (
@@ -375,7 +375,7 @@ class ExtractDimension(Signal):
     Signal to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
     """
 
-    def __init__(self, signal, dim, name=None):
+    def __init__(self, signal: SignalName, dim: int, name: str = None):
         self.name = name if name is not None else f"{signal}_{dim}"
         self.dim = dim
 
@@ -389,7 +389,7 @@ class ExtractDimension(Signal):
 class ZeroCrossing(Signal):
     """Returns the zero crossing of signals as 1 and otherwise 0"""
 
-    def __init__(self, sig_a, name=None):
+    def __init__(self, sig_a: SignalName, name: str = None):
         self.name = name if name is not None else "ZeroCrossing"
         self.state = None
         self.input_names = [sig_a]
@@ -408,3 +408,19 @@ class ZeroCrossing(Signal):
             self.state = curr_state
         return out
 
+
+__all__ = [
+    "Norm",
+    "EulerOrientation",
+    "EulerAngle",
+    "Gravity",
+    "Rotate",
+    "OrientationXy",
+    "MadgwickOrientation",
+    "FusionOrientation",
+    "GravityProjection",
+    "AngleBetween",
+    "DeadReckoning",
+    "ExtractDimension",
+    "ZeroCrossing",
+]

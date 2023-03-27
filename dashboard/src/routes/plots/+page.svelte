@@ -15,8 +15,30 @@
 	import { SCICHART_KEY } from '$lib/utils/constants';
     import { selected_plot_idx } from "$lib/stores/plot_stores";
 
+	import type {DerivedSignal, Argument} from '$lib/stores/data_stores';
+
 
     const socket = io('http://localhost:5000/');
+
+	let derived_signals: DerivedSignal[] = [];
+	socket.on('derived_signals', (response: Record<string, string | Record<string, string>[]>[]) => {
+		derived_signals = []
+		response.forEach((sig_config) => {
+			if (typeof sig_config["sig_name"] !== "string") throw new Error("derived signal name must be a string")
+			if (!Array.isArray(sig_config["args"])) throw new Error("arguments must be a list")
+			let argList: Argument[] = [];
+			sig_config["args"].forEach(arg => {
+				if (arg.name && arg.type){
+					argList.push({
+						name: arg.name,
+						type: arg.type,
+						value: arg.default,
+					});
+				}
+			});
+			derived_signals.push({sig_name: sig_config["sig_name"], args: argList});
+		})
+	});
 
 	let el: HTMLDivElement;
 	let main_surface: SciChartSurface, wasm_context: TSciChart;
@@ -54,6 +76,7 @@
 
 	onDestroy(() => {
 		socket.off('data');
+		socket.off('derived_signals')
 
 		main_surface?.delete();
 		for(let plot of dashboard) {
