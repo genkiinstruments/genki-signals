@@ -116,6 +116,7 @@ export class Bar extends BasePlot {
                 style: { fontFamily: "Arial", fontSize: 16, padding: new Thickness(0,0,20,0) },
                 color: "#FFFFFF",
             },
+			cornerRadius: 10,
         });
 		const ds = this.data_series[0];
 		if (ds === undefined || this.data_series.length > 1) throw new Error('Bar should contain exactly one data series');

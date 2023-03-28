@@ -135,7 +135,10 @@ export class Trace extends BasePlot {
 		data_series.isSorted = this.options.data_is_sorted;
 		data_series.containsNaN = this.options.data_contains_nan;
 
-		const renderable_series = new FastLineRenderableSeries(this.wasm_context);
+		const renderable_series = new FastLineRenderableSeries(this.wasm_context, {
+			strokeThickness: 3,
+			stroke: "auto",
+		});
 		renderable_series.dataSeries = data_series;
 
 		this.surface.renderableSeries.add(renderable_series);
