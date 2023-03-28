@@ -8,7 +8,7 @@
 
 <div class="menu" class:collapsed>
 	<div class="menu_header">
-        <button on:click={collapse}>
+        <button on:click={collapse} class="genki_button">
             <slot name="header" />
         </button>
 	</div>

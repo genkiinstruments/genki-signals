@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import numpy as np
 import scipy
 
 from genki_signals.buffers import NumpyBuffer
-from genki_signals.signals.base import Signal
+from genki_signals.signals.base import Signal, SignalName
 
 
 def upsample(signal, factor):
@@ -11,7 +13,7 @@ def upsample(signal, factor):
 
 
 class SampleRate(Signal):
-    def __init__(self, input_name="timestamp", name="sample_rate", unit_multiplier=1):
+    def __init__(self, input_name: SignalName = "timestamp", name: str = "sample_rate", unit_multiplier: float=1):
         self.name = name
         self.input_names = [input_name]
         self.unit_multiplier = unit_multiplier
@@ -24,7 +26,7 @@ class SampleRate(Signal):
 
 
 class WindowedSignal(Signal):
-    def __init__(self, window_size, window_overlap, output_shape, default_value=0.0, upsample=True):
+    def __init__(self, window_size: int, window_overlap: int, output_shape, default_value: float=0.0, upsample: bool=True):
         self.win_size = window_size
         self.window_overlap = window_overlap
         self.num_to_pop = self.win_size - window_overlap
@@ -57,13 +59,13 @@ class FourierTransform(WindowedSignal):
     """
     def __init__(
             self,
-            input_name,
-            name,
-            window_size=256,
-            window_overlap=0,
-            detrend_type="linear",
-            window_type="hann",
-            **kwargs
+            input_name: SignalName,
+            name: str,
+            window_size: int = 256,
+            window_overlap: int = 0,
+            detrend_type: str = "linear",
+            window_type: str = "hann",
+            upsample: bool = False,
     ):
         self.name = name
         self.win_size = window_size
@@ -74,7 +76,7 @@ class FourierTransform(WindowedSignal):
             self.window_fn = scipy.signal.windows.hann
         else:
             raise ValueError(f"Unknown window type: {window_type}")
-        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j, **kwargs)
+        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j, upsample=upsample)
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)
@@ -88,7 +90,7 @@ class FourierTransform(WindowedSignal):
 class Delay(Signal):
     """Delays signal by n samples"""
 
-    def __init__(self, sig_a, n, name=None):
+    def __init__(self, sig_a: SignalName, n: int, name: str=None):
         self.name = name if name is not None else "Delay"
         self.n = n
         self.input_names = [sig_a]
@@ -103,3 +105,10 @@ class Delay(Signal):
         self.buffer.extend(sig)
         out = self.buffer.popleft(sig.shape[-1])
         return out
+
+
+__all__ = [
+    "SampleRate",
+    "FourierTransform",
+    "Delay",
+    ]

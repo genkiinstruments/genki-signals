@@ -3,6 +3,7 @@
     import CollapsibleMenu from "$lib/components/CollapsibleMenu.svelte";
 	import PlotMenu from "$lib/components/PlotMenu.svelte"
 	import OptionMenu from "$lib/components/OptionMenu.svelte";
+	import DerivedSignalMenu from "$lib/components/DerivedSignalMenu.svelte";
 
 	import { writable } from "svelte/store";
 	import { onDestroy, onMount } from "svelte";
@@ -16,9 +17,31 @@
 	import { SCICHART_KEY } from '$lib/utils/constants';
     import { selected_plot_idx } from "$lib/stores/plot_stores";
 
+	import {data_keys_store, type DerivedSignal, type Argument} from '$lib/stores/data_stores';
+ 
 
     const socket = io('http://localhost:5000/', {
 		transports: ["websocket"]
+	});
+
+	let derived_signals: DerivedSignal[] = [];
+	socket.on('derived_signals', (response: Record<string, string | Record<string, string>[]>[]) => {
+		derived_signals = []
+		response.forEach((sig_config) => {
+			if (typeof sig_config["sig_name"] !== "string") throw new Error("derived signal name must be a string")
+			if (!Array.isArray(sig_config["args"])) throw new Error("arguments must be a list")
+			let argList: Argument[] = [];
+			sig_config["args"].forEach(arg => {
+				if (arg.name && arg.type){
+					argList.push({
+						name: arg.name,
+						type: arg.type,
+						value: arg.default,
+					});
+				}
+			});
+			derived_signals.push({sig_name: sig_config["sig_name"], args: argList});
+		})
 	});
 
 	let el: HTMLDivElement;
@@ -48,6 +71,7 @@
         // }
 
 		socket.on('data', (response) => {
+			data_keys_store.set(Object.keys(response));
 			for(let plot of dashboard) {
 				plot.update(response);
 			};
@@ -57,6 +81,7 @@
 
 	onDestroy(() => {
 		socket.off('data');
+		socket.off('derived_signals')
 
 		main_surface?.delete();
 		for(let plot of dashboard) {
@@ -72,6 +97,17 @@
 </script>
 
 <div class='container'>
+	<CollapsibleMenu>
+		<div slot='header'> System Settings </div>
+        <div slot='body'>
+			<DerivedSignalMenu 
+				derived_signals = {derived_signals}
+				add_signal={(derived_signal) => {
+					socket.emit("derived_signal", derived_signal)
+				}}
+			/>
+		</div>
+	</CollapsibleMenu>
     <div bind:this={el} id={'blabla'} class='dashboard'/>
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
@@ -101,6 +137,17 @@
 </div>
 
 <style>
+	@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+
+	:root {
+		/* font-family: 'Lato'; */
+		font-family: Arial, Helvetica, sans-serif
+	}
+
+	:global(.font) {
+		font: inherit;
+	}
+
 	.dashboard {
 		width: 100%;
 		height: 100%;
@@ -117,6 +164,78 @@
 		--genki-red: #FF5F49;
 		--genki-white: #F0F0F0;
 		--genki-grey: #A5A6A5;
+		--genki-black: #191A18;
 		--genki-red-grey: rgb(201, 67, 55);
 	}
+
+	:global(.genki_button) {
+		font: inherit;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+		text-align: left;
+		border: none;
+		background-color: var(--genki-white);
+    }
+
+	:global(.genki_button:hover) {
+		background-color: var(--genki-grey);
+	}
+
+	:global(.selected) {
+		font-weight: 700;
+        background-color: var(--genki-red);
+    }
+
+	:global(.selected:hover) {
+		background-color: var(--genki-red-grey);
+	}
+
+	:global(.border) {
+		border: 1px solid var(--genki-grey);
+		border-radius: 4px;
+	}
+
+	:global(.no_border) {
+		border: none;
+		background-color: inherit;
+	}
+
+	:global(.right) {
+		right: 0;
+	}
+
+	:global(.w100) {
+		width: 100%;
+	}
+
+	:global(.fill_right) {
+		width: 100%;
+		text-align: left;
+	}
+
+	:global(.genki_list) {
+		font: inherit;
+		list-style: none;
+		padding-left: 5%;
+	}
+
+	:global(.option_window) {
+		height: calc(100%-10px-4px);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 10px;
+		background-color: var(--genki-white);
+	}
+
+	:global(.option_window *) {
+		font: inherit;
+		margin-bottom: 5px;
+	}
+
+	:global(.genki_select) {
+		font: inherit;
+	}
+
 </style>

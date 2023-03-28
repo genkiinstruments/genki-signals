@@ -34,51 +34,26 @@
 
 </script>
 
-<div class="signal_menu">
-    {#if sig_config != null}
-        <div class="entries">
+{#if sig_config != null}
+    <div class="option_window border">
+        <div class="option_window border">
             {#if $x_store != null}
                 <p> Signal x </p>
                 <SignalEntry config={$x_store} />
             {/if}
         </div>
-        <div class="entries">
+        <div class="option_window border">
             {#if $y_store != null}
                 <p> Signal y </p>
                 <button on:click={append_y_sig}>+</button>
                 {#each $y_store as config, i}
-                    <div class="container">
+                    <div class="option_window border">
                         <button on:click={() => remove_sig(i)}>-</button>
                         <SignalEntry config={config} />
                     </div>
                 {/each}
             {/if}
         </div>
-
         <button on:click={apply_changes}> Apply changes </button>
-    {/if}
-</div>
-
-<style>
-    .signal_menu {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow-y: scroll;
-        overflow-x: hidden;
-        margin-left: 10px;
-    }
-
-    .entries {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 10px;
-        border: 1px solid black;
-    }
-
-    .container {
-        display: flex;
-        flex-direction: row;
-    }
-</style>
+    </div>
+{/if}
