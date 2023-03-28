@@ -43,7 +43,6 @@ export class Spectrogram extends BasePlot {
 	y_axis: NumericAxis;
 	options: SpectrogramPlotOptions;
 
-    window_size: number;
     sampling_rate: number;
     bin_count: number;
 
@@ -78,11 +77,10 @@ export class Spectrogram extends BasePlot {
 
 		this.options = plot_options;
 
-        this.window_size = this.options.window_size
-        this.sampling_rate = this.options.sampling_rate
-        this.bin_count = Math.floor(this.window_size/2) + 1;
+        this.sampling_rate = this.options.sampling_rate;
+        this.bin_count = Math.floor(this.options.window_size/2) + 1;
 
-        this.z_values = this.create_empty_2d();
+        this.z_values = zeroArray2D([this.bin_count, this.options.n_visible_windows]);
 
         this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
@@ -96,8 +94,14 @@ export class Spectrogram extends BasePlot {
 		this.update_axes_visibility();
 	}
 
-    private create_empty_2d(): number[][] {
-        return zeroArray2D([this.bin_count, this.options.n_visible_windows])
+    private create_new_2d(): number[][] {
+        let zeros = zeroArray2D([this.bin_count, Math.max(this.options.n_visible_windows - this.z_values[0].length, 0)]);
+        return zeros.map((row, i) => {
+            if (this.z_values[i] != null) {
+                return row.concat(this.z_values[i]).slice(-this.options.n_visible_windows)
+            }
+            return row.concat(Array(this.z_values[0]?.length).fill(0)).slice(-this.options.n_visible_windows);
+        });
     }
 
 	public update(data: IArrayDict): void {
@@ -108,14 +112,17 @@ export class Spectrogram extends BasePlot {
 
         if(data[sig_key][0].length == 0) return; // no new data
 
-        this.z_values = this.z_values.map((row, i) => row.concat(data[sig_key][i]).slice(-this.options.n_visible_windows))
+        this.z_values = this.z_values.map((row, i) => {
+            if (data[sig_key][i] != null) {
+                return row.concat(data[sig_key][i]).slice(-this.options.n_visible_windows);
+            }
+            return row.concat(Array(data[sig_key][0]?.length).fill(0)).slice(-this.options.n_visible_windows)
+        });
 
         this.data_series[0].setZValues(this.z_values);
 	}
 
 	protected add_renderable(at: number = -1): void {
-        if (this.renderable_series.length > 0) return;
-
         this.data_series[0]?.delete();
         this.renderable_series[0]?.delete();
         this.data_series = [];
@@ -137,7 +144,7 @@ export class Spectrogram extends BasePlot {
                 precision: 10,
             }
         });
-        this.z_values = this.create_empty_2d();
+        this.z_values = this.create_new_2d();
 		const data_series = new UniformHeatmapDataSeries(this.wasm_context, {
             xStart: 0,
             xStep: 1,
@@ -175,7 +182,12 @@ export class Spectrogram extends BasePlot {
     public update_all_options(options: SpectrogramPlotOptions): void {
         this.options = options;
 
-        this.bin_count = Math.floor(this.window_size/2) + 1; // Should bin count be handled in the options?
+        this.bin_count = Math.floor(this.options.window_size/2) + 1; // Should bin count be handled in the options?
+
+        if (options.n_visible_windows != this.data_series[0]?.arrayWidth || this.bin_count != this.data_series[0]?.arrayHeight || this.options.sampling_rate != this.sampling_rate) {
+            this.add_renderable();
+            this.sampling_rate = this.options.sampling_rate;
+        }
 
         this.update_color_gradient();
         this.update_axes_alignment();

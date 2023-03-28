@@ -40,6 +40,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 DATA_SOURCE = 'Sampler'
+DATA_SOURCE = 'Mic'
 
 from inspect import getmembers, isclass
 
