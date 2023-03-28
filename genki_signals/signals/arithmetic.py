@@ -113,7 +113,7 @@ class Differentiate(Signal):
 class MovingAverage(Signal):
     """Returns the moving average of a signal"""
 
-    def __init__(self, input_name: SignalName, length: SignalName, name: str):
+    def __init__(self, input_name: SignalName, length: int, name: str):
         self.name = name
         self.buffer = NumpyBuffer(maxlen=length)
         self.input_names = [input_name]
