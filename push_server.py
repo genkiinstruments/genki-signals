@@ -80,7 +80,7 @@ def generate_data(ble_address=None):
     if DATA_SOURCE == 'Mic':
         source = MicDataSource()
         derived_signals = [
-            s.FourierTransform(name="fourier", input_name="audio", window_size=1024, window_overlap=0),
+            s.FourierTransform(name="fourier", input_name="audio", window_size=2048, window_overlap=0),
         ]
         print(source.sample_rate)
     elif DATA_SOURCE == 'Sampler':

@@ -86,8 +86,7 @@ export class Spectrogram extends BasePlot {
         this.surface.chartModifiers.add(new ZoomPanModifier());
         this.surface.chartModifiers.add(new ZoomExtentsModifier());
 
-
-		this.add_renderable();
+        this.add_renderable();
 
 		this.update_axes_alignment();
 		this.update_axes_flipping();
@@ -105,19 +104,20 @@ export class Spectrogram extends BasePlot {
     }
 
 	public update(data: IArrayDict): void {
-		if (this.sig_y.length !== 1) return; // if no x signal is defined, then we can't update the plot
+		if (this.sig_y.length !== 1) return; // if no y signal is defined, then we can't update the plot
 
         const sig_key = this.sig_y[0].key;
 		if (!(sig_key in data)) throw new Error(`sig_key ${sig_key} not in data`);
 
-        if(data[sig_key][0].length == 0) return; // no new data
+        if (data[sig_key][0].length == 0) return; // no new data
 
-        this.z_values = this.z_values.map((row, i) => {
-            if (data[sig_key][i] != null) {
-                return row.concat(data[sig_key][i]).slice(-this.options.n_visible_windows);
-            }
-            return row.concat(Array(data[sig_key][0]?.length).fill(0)).slice(-this.options.n_visible_windows)
-        });
+        if (data[sig_key]?.length != this.bin_count) {
+            this.bin_count = data[sig_key]?.length
+            this.z_values = zeroArray2D([this.bin_count, this.options.n_visible_windows]);
+            this.add_renderable();
+        }
+
+        this.z_values = this.z_values.map((row, i) => row.concat(data[sig_key][i]).slice(-this.options.n_visible_windows));
 
         this.data_series[0].setZValues(this.z_values);
 	}
@@ -182,9 +182,8 @@ export class Spectrogram extends BasePlot {
     public update_all_options(options: SpectrogramPlotOptions): void {
         this.options = options;
 
-        this.bin_count = Math.floor(this.options.window_size/2) + 1; // Should bin count be handled in the options?
-
-        if (options.n_visible_windows != this.data_series[0]?.arrayWidth || this.bin_count != this.data_series[0]?.arrayHeight || this.options.sampling_rate != this.sampling_rate) {
+        const new_max_hz = (this.bin_count-1) * this.options.sampling_rate/this.options.window_size
+        if (options.n_visible_windows != this.data_series[0]?.arrayWidth || new_max_hz != this.y_axis.visibleRange.max) {
             this.add_renderable();
             this.sampling_rate = this.options.sampling_rate;
         }

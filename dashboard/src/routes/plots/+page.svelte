@@ -112,7 +112,7 @@
     <CollapsibleMenu>
         <div slot='header'> Plot Settings </div>
         <div slot='body'>
-            <PlotMenu plots={$plot_store} 
+			<PlotMenu plots={$plot_store}
 				add_plot={(type) => {
 					dashboard.add_plot(type);
 					selected_plot_idx.set(dashboard.plots.length - 1);
@@ -124,15 +124,15 @@
 					}
 				}}
 			/>
-            {#if store_is_defined}
-                <SignalMenu plot={selected_plot}/>
+			{#if store_is_defined}
+				<SignalMenu plot={selected_plot}/>
 				<OptionMenu options={selected_plot?.get_options()}
 					update_options={(options) => {
 						selected_plot?.set_options(options);
 					}}
 				/>
-            {/if}
-        </div>
+			{/if}
+		</div>
     </CollapsibleMenu>
 </div>
 
@@ -218,6 +218,7 @@
 		font: inherit;
 		list-style: none;
 		padding-left: 5%;
+		margin: 0%;
 	}
 
 	:global(.option_window) {
