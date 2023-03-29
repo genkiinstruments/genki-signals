@@ -52,6 +52,8 @@ class Sampler(SamplerBase):
         self.is_active = True
 
     def stop(self):
+        if not self.is_active:
+            return
         for source in self.sources.values():
             if hasattr(source, "stop"):
                 source.stop()

@@ -99,7 +99,7 @@ class MicDataSource(SamplerBase):
         self.format = pyaudio.paInt16
         self.chunk_size = chunk_size
         self.stream = None
-        self.buffer = DataBuffer(max_size=None)
+        self.buffer = DataBuffer(maxlen=None)
         self.is_active = False
         self.signal_names = ["audio"]
 

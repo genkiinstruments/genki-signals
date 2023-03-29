@@ -17,12 +17,20 @@ import time
 from queue import Queue
 
 import numpy as np
-from genki_wave.data import DataPackage, RawDataPackage
+from genki_wave.data import DataPackage, RawDataPackage, SpectrogramDataPackage
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.data_sources.base import DataSource, SamplerBase
 
 logger = logging.getLogger(__name__)
+
+
+def _dict_to_array(data):
+    if 'w' in data:
+        return np.array([data['w'], data['x'], data['y'], data['z']])
+    elif 'x' in data:
+        return np.array([data['x'], data['y'], data['z']])
+    return np.array(list(data.values()))
 
 
 class WaveDataSource(DataSource, SamplerBase):
@@ -37,7 +45,7 @@ class WaveDataSource(DataSource, SamplerBase):
     def __call__(self, t):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False):
         if ble_address is None and not godot:
             raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
@@ -48,6 +56,7 @@ class WaveDataSource(DataSource, SamplerBase):
         self.ble_address = ble_address
         self.latest_point = None
         self.lead = True
+        self.spectrogram = spectrogram
 
     def read(self):
         data = DataBuffer()
@@ -63,7 +72,8 @@ class WaveDataSource(DataSource, SamplerBase):
             from godot import GodotListener
             self.wave = GodotListener(callbacks=[self.process_data])
         else:
-            self.wave = WaveListener(self.ble_address, callbacks=[self.process_data])
+            self.wave = WaveListener(self.ble_address, callbacks=[self.process_data],
+                                     enable_spectrogram=self.spectrogram)
 
         for source in self.followers:
             source.start()
@@ -76,11 +86,13 @@ class WaveDataSource(DataSource, SamplerBase):
         self.wave.join()
 
     def process_data(self, data):
-        if isinstance(data, (DataPackage, RawDataPackage)):
+        if self.spectrogram and isinstance(data, DataPackage):
+            return
+        if isinstance(data, (DataPackage, RawDataPackage, SpectrogramDataPackage)):
             data = data.as_dict()
             for key, value in data.items():
                 if isinstance(value, dict):
-                    data[key] = np.array(list(value.values()))
+                    data[key] = _dict_to_array(value)
             for source in self.followers:
                 secondary_data = source.read_current()
                 secondary_data.pop("timestamp", None)
