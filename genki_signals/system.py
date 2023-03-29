@@ -16,15 +16,15 @@ class System:
         if derived_signals is None:
             derived_signals = []
         self.derived_signals = derived_signals
-        self.running = False
+        self.is_active = False
 
     def start(self):
-        self.running = True
+        self.is_active = True
         self.source.start()
 
     def stop(self):
         self.source.stop()
-        self.running = False
+        self.is_active = False
 
     def __enter__(self):
         self.start()
@@ -39,9 +39,12 @@ class System:
 
             # TODO: error reporting here? Remove ill-behaved signals?
             #       * If the signal throws an exception, this context is useful
-            #       * the output should have the same length as the input
-            output = signal(*inputs)
-            data[signal.name] = output
+            try:
+                output = signal(*inputs)
+                data[signal.name] = output
+            except Exception as e:
+                logger.exception(f"Error computing derived signal {signal.name}")
+                raise e
 
     def read(self):
         """
