@@ -1,0 +1,147 @@
+params:
+  batch_size: 32
+  num_epochs: 100
+  check_val_every_n_epoch: 5
+evaluation:
+  n_splits: 3
+  shuffle: false
+  random_state: null
+  num_runs: 1
+debug:
+  num_sanity_val_steps: 0
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  progress_bar_refresh_rate: 10
+  profiler: null
+wandb:
+  mode: online
+  project: release
+  save_dir: data
+  group: null
+logging:
+  log_level: INFO
+output_subdir: data/.hydra_tmp
+model:
+  name: interns_net_seg
+  kwargs:
+    window_confidence: 0.3
+    vals_per_window: 16
+dataset:
+  name: wave_collection
+  kwargs:
+    splits:
+      'on': session_name
+      val:
+      - robert_desk_03
+      train: []
+      skip:
+      - saeunn
+      - sigrun_knitting
+      - vigdis
+    base_path: data/wave_collection
+    paths:
+    - andri-swipe-at-desk-00
+    - andri-swipe-at-desk-01
+    - dg_working
+    - dg_working_2
+    - ingibjorg-swipe-at-desk01
+    - ingibjorg-swipe-at-desk02
+    - ingibjorg_desk
+    - jon-swipe-at-desk
+    - markus_desk
+    - markus_desk_01
+    - oli-swipe01
+    - oli-swipe02
+    - robert_background
+    - robert_data_at_desk
+    - robert_desk_00
+    - robert_desk_01
+    - robert_desk_02
+    - robert_desk_03
+    - robert_reading_book
+    - robert_with_guitar
+    - saeunn
+    - sigrun-sayeh_desk
+    - sigrun-sayeh_desk_01
+    - sigrun_knitting
+    - vigdis
+    - vigdis_round_01
+    - vigdis_round_01_control
+    window_len: 128
+    window_overlap: 0
+    cols:
+    - gyro_x
+    - gyro_y
+    - gyro_z
+    - acc_x
+    - acc_y
+    - acc_z
+    classes_to_use:
+    - background
+    - swipe_left
+    - swipe_right
+optimizer:
+  name: adam
+  kwargs:
+    lr: 0.001
+  scheduler_kwargs:
+    step_size: 100
+    gamma: 0.1
+transforms:
+  name: augmentation
+  kwargs:
+  - name: ToTensor
+    kwargs: {}
+    validation: true
+  - name: Transpose2Dims
+    kwargs: {}
+    validation: true
+  - name: ResizePickOut
+    kwargs:
+      every_n_samples: 1
+    validation: true
+  - name: NormalizeFixed
+    kwargs:
+      mean:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      std:
+      - 2000.0
+      - 2000.0
+      - 2000.0
+      - 8.0
+      - 8.0
+      - 8.0
+    validation: true
+  - name: DropRandomSamplesAndInterpolate
+    kwargs:
+      p: 0.5
+      num_to_drop:
+      - 13
+      - 26
+    validation: false
+  - name: AddNoise
+    kwargs:
+      p: 0.4
+      scale: 0.1
+    validation: false
+  - name: CutOut
+    kwargs:
+      p: 0.4
+      scale_factor: 0.1
+    validation: false
+  - name: DropoutTransform
+    kwargs:
+      p: 0.4
+      p_drop: 0.2
+      per_timestamp: true
+    validation: false
+loss:
+  name: ce
+  kwargs: {}
+  post_process_kwargs:
+    threshold: null

@@ -1,0 +1,22 @@
+{
+    "os": "Linux-4.19.0-18-cloud-amd64-x86_64-with-glibc2.10",
+    "python": "3.8.8",
+    "heartbeatAt": "2021-11-18T14:04:14.697837",
+    "startedAt": "2021-11-18T14:04:13.413438",
+    "docker": null,
+    "gpu": "Tesla P4",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "cuda": "11.0.228",
+    "args": [],
+    "state": "running",
+    "program": "/home/robert/wave_ml/wave_ml/run_train.py",
+    "codePath": "wave_ml/run_train.py",
+    "host": "robert-gpu-2",
+    "username": "robert",
+    "executable": "/opt/conda/envs/genki/bin/python",
+    "link": "https://wandb.ai/genki/release/runs/h5wdvf5i?workspace=user-genki",
+    "git": {
+        "commit": "1cd3652e0dd54e95c0588069822f2a75432497d0"
+    }
+}

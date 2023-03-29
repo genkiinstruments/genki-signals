@@ -1,0 +1,11 @@
+{
+    "Model version": "0.1",
+    "Model path": "data/release/output_release/model.onnx",
+    "Input shape": "(1, 6, 16)",
+    "Input state shape": "(1, 512)",
+    "Output shape": "(1, 4)",
+    "Output state shape": "(1, 512)",
+    "Output classes": "['touching_still', 'touching_moving', 'in_air_still', 'in_air_moving']",
+    "Model input names": "['input', 'input_state']",
+    "Model output names": "['output', 'output_state']"
+}

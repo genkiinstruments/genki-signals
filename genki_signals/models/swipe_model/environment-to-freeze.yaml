@@ -1,0 +1,43 @@
+channels:
+    # The `pytorch` channel needs to come before `conda-forge` for `cpuonly` to work
+    - pytorch
+    - conda-forge
+
+dependencies:
+    - python=3.8.8 # fix
+    - black=20.8b1 # fix - need to update github actions as well
+    - flake8=3.9.0 # fix - need to update github actions as well
+    - cpuonly=1.0  # fix - restricts pytorch to CPU build
+    - jupyter=1.0.0
+    # There is a bug with autocompletion in jedi=0.18.0 and ipython so we pin the deps this way
+    - ipython=7.19.0  # fix
+    - jedi=0.17.2  # fix
+    - hydra-core=1.1.1
+    - matplotlib=3.4.3
+    - more-itertools=8.9.0
+    - numpy=1.21.2
+    - onnx=1.10.1
+    - onnxruntime=1.7.2
+    - pandas=1.3.2
+    - pandera=0.7.0
+    - pip
+    - plotly=5.3.1
+    - pyarrow=4.0.0
+    - pydantic=1.8.2
+    - pynput=1.7.3
+    - pytest=6.2.5
+    - pytorch=1.9.0=py3.8_cpu_0  # py3.8_cpu_0 should be removed with pytorch 1.10
+    - pytorch-lightning=1.4.5
+    - rich=10.9.0
+    - scikit-learn=0.24.2
+    - scipy=1.7.1
+    - torchaudio=0.9.0
+    - torchvision=0.10.0=py38_cpu  # py3.8_cpu should be removed with pytorch 1.10
+    - tqdm=4.62.2
+    - pip:
+        - genki-wave==0.1.5
+        - wandb==0.12.1
+        - streamlit==1.1.0
+        - streamlit-bokeh-events==0.1.2
+        # streamlit-bokeh-events does not (currently) work with a higher version of bokeh
+        - bokeh==2.2.2  # fix
