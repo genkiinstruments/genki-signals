@@ -1,7 +1,9 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import scipy
 
-from genki_signals.buffers import NumpyBuffer
+from genki_signals.buffers import NumpyBuffer, DataBuffer
 from genki_signals.signals.base import Signal
 
 
@@ -23,31 +25,37 @@ class SampleRate(Signal):
         return rate * self.unit_multiplier
 
 
-class WindowedSignal(Signal):
-    def __init__(self, window_size, window_overlap, output_shape, default_value=0.0, upsample=True):
+class WindowedSignal(Signal, ABC):
+    def __init__(self, window_size, output_shape, window_overlap=0, default_value=0.0, upsample=False):
         self.win_size = window_size
         self.window_overlap = window_overlap
         self.num_to_pop = self.win_size - window_overlap
         self.input_buffer = NumpyBuffer(None)
         self.output_buffer = NumpyBuffer(None, n_cols=output_shape)
-        self.output_buffer.extend(default_value * np.ones((*output_shape, window_size-1)))
+        if upsample:
+            self.output_buffer.extend(default_value * np.ones((*output_shape, window_size - 1)))
         self.default_value = default_value
         self.upsample = upsample
 
-    def __call__(self, sig):
-        self.input_buffer.extend(sig)
+    def __call__(self, inputs):
+        self.input_buffer.extend(inputs)
         while len(self.input_buffer) >= self.win_size:
-            x = self.input_buffer.view(self.win_size)
+            inputs = self.input_buffer.view(self.win_size)
             self.input_buffer.popleft(self.num_to_pop)
-            out = self.windowed_fn(x)
+            out = self.windowed_fn(inputs)
             if self.upsample:
                 upsampled = upsample(out, self.num_to_pop)
             else:
                 upsampled = out
             self.output_buffer.extend(upsampled)
-        return self.output_buffer.popleft(len(sig))
 
-    def windowed_fn(self, x):
+        if self.upsample:
+            return self.output_buffer.popleft(len(inputs))
+        else:
+            return self.output_buffer.popleft_all()
+
+    @abstractmethod
+    def windowed_fn(self, **inputs):
         raise NotImplementedError
 
 
@@ -74,7 +82,8 @@ class FourierTransform(WindowedSignal):
             self.window_fn = scipy.signal.windows.hann
         else:
             raise ValueError(f"Unknown window type: {window_type}")
-        super().__init__(window_size, window_overlap, (self.no_buckets,), default_value=0+0j, **kwargs)
+        super().__init__(window_size=window_size, window_overlap=window_overlap,
+                         output_shape=(self.no_buckets,), default_value=0+0j, **kwargs)
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)
