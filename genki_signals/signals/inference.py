@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from functools import partial
 from pathlib import Path
 from typing import Callable
 
@@ -10,42 +11,79 @@ import numpy as np
 import pandas as pd
 import torch
 from more_itertools import zip_equal
+from onnxruntime import InferenceSession
 
 from genki_signals.buffers import PandasBuffer, NumpyBuffer
 from genki_signals.is_touching_models import StateGruInferenceOnly
-from genki_signals.signals.windowed import upsample
+from genki_signals.signals.windowed import upsample, WindowedSignal
 from genki_signals.signals.base import Signal
-
+from genki_signals.post_processing import prepare_predictions, group_dist_heuristic, GroupTracker
 
 logger = logging.getLogger(__name__)
 
 
 class Inference(Signal):
     """
-    Run real-time inference using a torch model
+    Run real-time inference using an ONNX model
     """
 
-    def __init__(self, model, input_signals, stateful, name, init_state=None):
+    def __init__(self, model, input_signal, stateful, name, init_state=None):
         self.name = name
-        self.model = model
-        self.input_names = input_signals
+        self.input_names = [input_signal]
         self.stateful = stateful
         self.state = init_state
+        self.session = InferenceSession(model)
 
-    def __call__(self, *inputs):
-        to_concat = []
-        for col_data in inputs:
-            if col_data.ndim == 1:
-                to_concat.append(col_data[:, None])
-            else:
-                to_concat.append(col_data)
-        arr = np.concatenate(to_concat).T
-        tns = torch.from_numpy(arr).float()
+    def __call__(self, x):
+        # x shape (6, 16, t)
+        x = x[np.newaxis, ..., -1] # note doesn't work offline
         if self.stateful:
-            inferred_tns, self.state = self.model.inference(tns, self.state)
+            output, self.state = self.session.run(
+                ["output", "output_state"], {"input": x.astype(np.float32), "input_state": self.state.astype(np.float32)}
+            )
         else:
-            inferred_tns = self.model.inference(tns)
-        return inferred_tns.numpy().T
+            output, output_extra = self.session.run(
+                ["output", "output_extra"], {"input": x.astype(np.float32)}
+            )
+        return output[0, ..., None]
+
+
+class WindowedInference(WindowedSignal):
+    def __init__(self, model, input_signal, name, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.model = model
+        self.input_names = [input_signal]
+        self.session = InferenceSession(model)
+
+    def windowed_fn(self, x):
+        x = x.T[np.newaxis, ...]
+        output, output_extra = self.session.run(
+            ["output", "output_extra"], {"input": x.astype(np.float32)}
+        )
+        return output[0]
+
+
+class ObjectTracker(WindowedSignal):
+    def __init__(self, input_signal, name, callback, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.input_names = [input_signal]
+        self.callback = callback
+
+        min_group_size, min_trigger_idx = (3, 8)
+        max_disappeared = 3
+        dist_func = partial(group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False)
+        self._tracker = GroupTracker(dist_func, max_disappeared, min_group_size, min_trigger_idx)
+
+    def windowed_fn(self, x):
+        output = torch.tensor(x[None])
+        groups = prepare_predictions(output, confidence=0.9, confidence_low=0.5)
+        _, new_groups = self._tracker.update(groups)
+
+        for g in new_groups:
+            self.callback(g.key)
+        return output[0].numpy()
 
 
 def _model_path(path: Path) -> Path:
