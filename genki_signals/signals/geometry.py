@@ -370,22 +370,6 @@ class DeadReckoning(Signal):
         return 1.0 * (probability < self.threshold)
 
 
-class ExtractDimension(Signal):
-    """
-    Signal to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
-    """
-
-    def __init__(self, signal, dim, name=None):
-        self.name = name if name is not None else f"{signal}_{dim}"
-        self.dim = dim
-
-        self.input_names = [signal]
-
-    def __call__(self, v):
-        # Slice ensures that the output is 2D i.e. (1, n)
-        return v[self.dim:self.dim + 1]
-
-
 class ZeroCrossing(Signal):
     """Returns the zero crossing of signals as 1 and otherwise 0"""
 
