@@ -62,6 +62,7 @@ export class Line extends BasePlot {
 		this.surface.chartModifiers.add(new MouseWheelZoomModifier());
         this.surface.chartModifiers.add(new ZoomPanModifier());
         this.surface.chartModifiers.add(new ZoomExtentsModifier({isAnimated: false}));
+		// this.surface.chartModifiers.add(new LegendModifier({showCheckBoxes: false, showSeriesMarkers: true}));
 
 		this.update_y_domain();
 		this.update_axes_alignment();

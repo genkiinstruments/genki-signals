@@ -282,3 +282,9 @@ class WindowedModelTorch(Signal):
             self.outputs
         ), "Expected the number of current outputs and the defined outputs to be eq."
         return out
+
+__all__ = [
+    "Inference",
+    "WindowedModel",
+    "WindowedModelTorch",
+    ]

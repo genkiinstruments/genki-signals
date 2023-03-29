@@ -1,10 +1,11 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy
 
 from genki_signals.buffers import NumpyBuffer, DataBuffer
-from genki_signals.signals.base import Signal
+from genki_signals.signals.base import Signal, SignalName
 
 
 def upsample(signal, factor):
@@ -13,7 +14,7 @@ def upsample(signal, factor):
 
 
 class SampleRate(Signal):
-    def __init__(self, input_name="timestamp", name="sample_rate", unit_multiplier=1):
+    def __init__(self, input_name: SignalName = "timestamp", name: str = "sample_rate", unit_multiplier: float=1):
         self.name = name
         self.input_names = [input_name]
         self.unit_multiplier = unit_multiplier
@@ -26,7 +27,7 @@ class SampleRate(Signal):
 
 
 class WindowedSignal(Signal, ABC):
-    def __init__(self, window_size, output_shape, window_overlap=0, default_value=0.0, upsample=False):
+    def __init__(self, window_size: int, output_shape, window_overlap: int=0, default_value: float=0.0, upsample: bool=False):
         self.win_size = window_size
         self.window_overlap = window_overlap
         self.num_to_pop = self.win_size - window_overlap
@@ -65,12 +66,12 @@ class FourierTransform(WindowedSignal):
     """
     def __init__(
             self,
-            input_name,
-            name,
-            window_size=256,
-            window_overlap=0,
-            detrend_type="linear",
-            window_type="hann",
+            input_name: SignalName,
+            name: str,
+            window_size: int = 256,
+            window_overlap: int = 0,
+            detrend_type: str = "linear",
+            window_type: str = "hann",
             **kwargs
     ):
         self.name = name
@@ -97,7 +98,7 @@ class FourierTransform(WindowedSignal):
 class Delay(Signal):
     """Delays signal by n samples"""
 
-    def __init__(self, sig_a, n, name=None):
+    def __init__(self, sig_a: SignalName, n: int, name: str=None):
         self.name = name if name is not None else "Delay"
         self.n = n
         self.input_names = [sig_a]
@@ -112,3 +113,10 @@ class Delay(Signal):
         self.buffer.extend(sig)
         out = self.buffer.popleft(sig.shape[-1])
         return out
+
+
+__all__ = [
+    "SampleRate",
+    "FourierTransform",
+    "Delay",
+    ]
