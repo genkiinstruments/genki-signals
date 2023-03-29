@@ -62,7 +62,6 @@ export class Spectrogram extends BasePlot {
 
 		this.x_axis = new NumericAxis(this.wasm_context, {
             autoRange: EAutoRange.Never,
-            drawLabels: false,
             drawMinorTickLines: false,
             drawMajorTickLines: false,
         });
