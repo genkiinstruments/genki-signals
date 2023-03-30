@@ -27,14 +27,15 @@
         padding: 0 1rem;
 		overflow: hidden;
 		max-width: 15%;
-		min-width: 1%;
+		min-width: 7.5%;
 		height: 100%;
-		transition: all 0.3s;
+		/* transition: all 0.3s; */
 	}
 
 	.menu.collapsed {
         /* TODO: Set this so that menu header fits */
-		max-width: 5%; 
+		min-width: 1%;
+		max-width: 3%;
 	}
 
 	.menu.collapsed .menu_body {

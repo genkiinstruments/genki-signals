@@ -59,7 +59,7 @@
                 {arg.name}
             </label>
             {:else if arg.type === "SignalName"}
-                <label >
+                <label>
                     <select bind:value={arg.value} class="genki_select">
                         {#each $data_keys_store as sig_key}
                             <option value={sig_key}>{sig_key}</option>

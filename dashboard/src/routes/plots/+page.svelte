@@ -18,9 +18,8 @@
     import { selected_plot_idx } from "$lib/stores/plot_stores";
 
 	import {data_keys_store, type DerivedSignal, type Argument} from '$lib/stores/data_stores';
- 
 
-    const socket = io('http://localhost:5000/', {
+    const socket = io('http://127.0.0.1:5000/', {
 		transports: ["websocket"]
 	});
 
@@ -76,7 +75,6 @@
 				plot.update(response);
 			};
 		});
-
 	});
 
 	onDestroy(() => {
@@ -94,9 +92,10 @@
     $: selected_plot = dashboard === undefined? undefined: $plot_store[$selected_plot_idx];
     $: store_is_defined = dashboard !== undefined;
 
+	$: window_height = 0.8 * window.innerHeight;
 </script>
 
-<div class='container'>
+<div class='container' style="--window_height: {window_height}px;">
 	<CollapsibleMenu>
 		<div slot='header'> System Settings </div>
         <div slot='body'>
@@ -157,7 +156,8 @@
 		display: flex;
 		justify-content: center;
 		width: 100%;
-        height: 80vh;
+        /* height: 80vh; */
+		height: var(--window_height);
 	}
 
 	:global(:root) {
@@ -236,6 +236,7 @@
 	}
 
 	:global(.genki_select) {
+		max-width: 50%;
 		font: inherit;
 	}
 
