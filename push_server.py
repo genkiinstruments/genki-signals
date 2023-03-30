@@ -32,7 +32,7 @@ import numpy as np
 
 # eventlet.monkey_patch()
 app = Flask(__name__)
-CORS(app, origins='http://localhost:5173/*')
+CORS(app, origins='http://127.0.0.1:5173/*')
 # CORS(app, resources={r"/*":{"origins":"*"}})
 # socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -40,7 +40,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
 DATA_SOURCE = 'Sampler'
-DATA_SOURCE = 'Mic'
+# DATA_SOURCE = 'Mic'
 
 from inspect import getmembers, isclass
 
@@ -93,7 +93,7 @@ def generate_data(ble_address=None):
 
         derived_signals = [
             s.SampleRate(),
-            s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
+            # s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
             s.Differentiate(name="mouse_velocity", sig_a="mouse_position"),
             s.Inference(
                 name="stc",
@@ -113,6 +113,7 @@ def generate_data(ble_address=None):
             data = system.read()
             data_dict = {}
             for key in data:
+                data[key] = np.array(data[key]) # data is sometimes list and sometimes np.array
                 if data[key].ndim == 1:
                     data_dict[key] = data[key][None, :].tolist()
                 else:

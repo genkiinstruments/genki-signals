@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { PlotOptions } from '$lib/scicharts/baseplot';
-	import { compute_rest_props } from 'svelte/internal';
 
     export let options: PlotOptions;
     export let update_options: (options: PlotOptions) => void; 
@@ -17,7 +16,10 @@
         {#each Object.entries(options) as [key, value]}
             {#if typeof value === 'number'}
                 <label>
-                    <input type="number" bind:value={options[key]} required/>
+                    <!-- <input type="number" bind:value={options[key]} required/> -->
+                    <input type="number" value={value} on:change={(e) => {
+                        if (!isNaN(e.target.valueAsNumber)) {options[key] = e.target.valueAsNumber;}
+                    }}/>
                     {key}
                 </label>
             {:else if typeof value === 'boolean'}
@@ -35,10 +37,10 @@
                     {key}
                 </label>
             {:else if typeof value === 'string'}
-            <label>
-                <input type="string" bind:value={options[key]} />
-                {key}
-            </label>
+                <label>
+                    <input type="string" bind:value={options[key]} />
+                    {key}
+                </label>
             {/if}
         {/each}
     </div>

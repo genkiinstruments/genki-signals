@@ -157,7 +157,7 @@
 		justify-content: center;
 		width: 100%;
         /* height: 80vh; */
-		height: var(--window_height);
+		height: 1000px;
 	}
 
 	:global(:root) {

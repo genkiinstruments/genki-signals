@@ -81,12 +81,14 @@ export class Line extends BasePlot {
 	private update_y_domain(): void {
 		if (this.options.auto_range) {
 			this.y_axis.autoRange = EAutoRange.Always;
+			this.y_axis.zoomExtentsRange = undefined;
 		} else {
 			this.y_axis.autoRange = EAutoRange.Never;
 			this.y_axis.visibleRange = new NumberRange(
 				this.options.y_domain_min,
 				this.options.y_domain_max
 			);
+			this.y_axis.zoomExtentsRange = this.y_axis.visibleRange;
 		}
 	}
 
