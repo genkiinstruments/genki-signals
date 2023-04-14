@@ -11,6 +11,7 @@ class DataFrameDataSource(SamplerBase):
     A way to use a pandas DataFrame that has been loaded into memory as a DataSource.
     The way this works is, on each call to read(), the same number of lines are read from the DataFrame.
     """
+
     def __init__(self, df, lines_per_read=5):
         self.current_line = None
         self.data = df
@@ -34,8 +35,8 @@ class DataFrameDataSource(SamplerBase):
             data = self.data
         else:
             data = self.data.iloc[
-               self.current_line:self.current_line + self.lines_per_read
-           ]
+                self.current_line : self.current_line + self.lines_per_read
+            ]
         self.next_chunk = DataBuffer.from_dataframe(data)
 
     def read(self):
@@ -79,5 +80,3 @@ class FileDataSource(DataFrameDataSource):
 class SessionDataSource(DataFrameDataSource):
     def __init__(self, session, lines_per_read=-1):
         super().__init__(session.df, lines_per_read)
-
-

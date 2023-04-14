@@ -84,7 +84,11 @@ class Buffer(ABC):
             raise IndexError("Pop from empty buffer")
         data_out = self._slice(self._data, n)
         n_to_keep = self._data.shape[-1] - n
-        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
+        self._data = (
+            self._slice(self._data, n_to_keep, end=True)
+            if n_to_keep > 0
+            else self._empty()
+        )
         return data_out
 
     def popleft_all(self):
@@ -95,10 +99,7 @@ class Buffer(ABC):
 
 
 class DataBuffer(MutableMapping, Buffer):
-    """
-
-    """
-
+    """ """
 
     # ========================
     #  Direct dict operations
@@ -228,12 +229,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label=key)
         line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {
-            "type": "line",
-            "key": key,
-            "line": line,
-            "x_key": x_key
-        }
+        chart_obj = {"type": "line", "key": key, "line": line, "x_key": x_key}
         # Call _update_line_chart first, if there is an error
         # we won't add the chart to self.charts
         self._update_line_chart(chart_obj)
@@ -263,7 +259,7 @@ class DataBuffer(MutableMapping, Buffer):
             "key": key,
             "line": line,
             "sample_rate": kwargs.get("sample_rate", 1),  # Is there a sensible default?
-            "window_size": kwargs.get("window_size", 1)  # Is there a sensible default?
+            "window_size": kwargs.get("window_size", 1),  # Is there a sensible default?
         }
         fig = bq.Figure(marks=[line], axes=[xax, yax])
         # Call _update_spectrogram first, if there is an error
@@ -289,11 +285,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label="y")
         line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {
-            "type": "trace2D",
-            "key": key,
-            "line": line
-        }
+        chart_obj = {"type": "trace2D", "key": key, "line": line}
         # Call _update_line_chart first, if there is an error
         # we won't add the chart to self.charts
         self._update_trace(chart_obj)
@@ -316,11 +308,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label="Probability")
         bars = bq.Bars(x=x_names, y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[bars], axes=[xax, yax])
-        chart_obj = {
-            "type": "histogram",
-            "key": key,
-            "bars": bars
-        }
+        chart_obj = {"type": "histogram", "key": key, "bars": bars}
         # Call _update_histogram first, if there is an error
         # we won't add the chart to self.charts
         self._update_histogram(chart_obj)
@@ -365,7 +353,9 @@ class PandasBuffer(Buffer):
             self.cols = data.columns
 
     def _validate(self, data):
-        assert set(data.columns) == set(self.cols), f"Expected the same columns. Got {data.columns=} and {self.cols}"
+        assert set(data.columns) == set(
+            self.cols
+        ), f"Expected the same columns. Got {data.columns=} and {self.cols}"
 
     def _slice(self, data, n, end=False):
         return data.iloc[-n:] if end else data.iloc[:n]
@@ -400,8 +390,10 @@ class NumpyBuffer(Buffer):
         # don't validate empty data
         if data.shape[-1] == 0:
             return
-        assert data.shape[:-1] == self.cols, ("Expected a fixed number of cols to be able to concatenate "
-                                              f"got {data.shape=} with {self.cols=}")
+        assert data.shape[:-1] == self.cols, (
+            "Expected a fixed number of cols to be able to concatenate "
+            f"got {data.shape=} with {self.cols=}"
+        )
 
     def _slice(self, data, n, end=False):
         return data[..., -n:] if end else data[..., :n]

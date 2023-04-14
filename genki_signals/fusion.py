@@ -10,7 +10,9 @@ class OffsetGyro:
     https://github.com/xioTechnologies/Fusion/blob/main/Fusion/FusionOffset.c
     """
 
-    def __init__(self, sampling_rate, cutoff_freq=0.02, timeout_const=5.0, threshold=3.0):
+    def __init__(
+        self, sampling_rate, cutoff_freq=0.02, timeout_const=5.0, threshold=3.0
+    ):
         self._filter_coeff = cutoff_freq * 2.0 * np.pi / sampling_rate
         self._timeout = timeout_const * sampling_rate
         self._timer = 0

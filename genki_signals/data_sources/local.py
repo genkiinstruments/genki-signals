@@ -6,6 +6,7 @@ import numpy as np
 class MouseDataSource(DataSource):
     def __init__(self):
         import pynput
+
         self.mouse = pynput.mouse.Controller()
 
     def __call__(self, t):
@@ -15,6 +16,7 @@ class MouseDataSource(DataSource):
 class KeyboardDataSource(DataSource):
     def __init__(self, keys):
         import pynput
+
         self.keys = keys
         self.listener = pynput.keyboard.Listener(
             on_press=self.on_press, on_release=self.on_release
@@ -80,7 +82,7 @@ class CameraDataSource(DataSource):
         if ret:
             frame = self.cv.cvtColor(frame, self.cv.COLOR_BGR2RGB)
             frame = self.cv.resize(frame, self.resolution)
-            frame = frame[..., None] # add time dimension
+            frame = frame[..., None]  # add time dimension
             self.last_frame = frame
             return {"image": frame}
         else:

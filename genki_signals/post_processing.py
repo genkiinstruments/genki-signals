@@ -10,7 +10,9 @@ from more_itertools import pairwise
 from torch import Tensor
 
 
-def propagate_threshold(preds: list | Tensor | np.ndarray, low: float, high: float) -> List[List[int]]:
+def propagate_threshold(
+    preds: list | Tensor | np.ndarray, low: float, high: float
+) -> List[List[int]]:
     """Given a 1D array, find consecutive groups of values where all the values in each group are above `low` and at
     least one is above `high`, hysteresis thresholding
 
@@ -109,10 +111,14 @@ def propagate_threshold_array(
     return output
 
 
-def process_predictions(pred: Tensor, confidence_low: float, confidence: float | None) -> Tensor:
+def process_predictions(
+    pred: Tensor, confidence_low: float, confidence: float | None
+) -> Tensor:
     if confidence is None:
         return pred
-    pred_proc = propagate_threshold_array(torch.squeeze(pred, dim=0), low=confidence_low, high=confidence)
+    pred_proc = propagate_threshold_array(
+        torch.squeeze(pred, dim=0), low=confidence_low, high=confidence
+    )
     pred_proc[0, :] = confidence
     return pred_proc
 
@@ -129,8 +135,12 @@ def idx_pairs_from_start_mask(start_mask: np.ndarray) -> list:
     """
     if len(start_mask) == 0:
         return []
-    assert set(np.unique(start_mask)).issubset({0, 1}), "Expected the start mask to be only 0 or 1"
-    assert start_mask[0] == 1, f"Expected the first element to be the start of a mask, got {start_mask[0]}"
+    assert set(np.unique(start_mask)).issubset(
+        {0, 1}
+    ), "Expected the start mask to be only 0 or 1"
+    assert (
+        start_mask[0] == 1
+    ), f"Expected the first element to be the start of a mask, got {start_mask[0]}"
     idx = np.where(start_mask)[0]
     idx = np.r_[idx, len(start_mask)]
     idx_pairs = list(pairwise(idx))
@@ -143,7 +153,10 @@ def _extract_groups_np(x: np.ndarray, skip_zero: bool = False) -> List[Group]:
         return []
     start_mask = np.r_[1, np.diff(x) != 0]
     idx_pairs = idx_pairs_from_start_mask(start_mask)
-    groups = [Group(key=int(x[p_min].item()), length=p_max - p_min, loc=p_min) for p_min, p_max in idx_pairs]
+    groups = [
+        Group(key=int(x[p_min].item()), length=p_max - p_min, loc=p_min)
+        for p_min, p_max in idx_pairs
+    ]
     groups = [g for g in groups if not (skip_zero and g.key == 0)]
     return groups
 
@@ -163,7 +176,9 @@ def _extract_groups(p: list, skip_zero=False) -> List[Group]:
     return groups
 
 
-def extract_groups(x: List | torch.Tensor | np.ndarray, skip_zero: bool = False) -> List[Group]:
+def extract_groups(
+    x: List | torch.Tensor | np.ndarray, skip_zero: bool = False
+) -> List[Group]:
     """Extract consecutive groups of values in 1D arrays
 
     Examples:
@@ -215,7 +230,10 @@ def group_dist(group0: Group, group1: Group) -> float:
 
 
 def group_dist_heuristic(
-    group_old: Group, group_new: Group, match_lower_or_eq_idx: bool = False, enforce_key: bool = False
+    group_old: Group,
+    group_new: Group,
+    match_lower_or_eq_idx: bool = False,
+    enforce_key: bool = False,
 ) -> float:
     """Find distance between groups
 
@@ -236,7 +254,9 @@ def group_dist_heuristic(
 
 
 def calc_dist_mat(
-    groups_registered: List[Group], groups_found: List[Group], dist_func: Callable[[Group, Group], float]
+    groups_registered: List[Group],
+    groups_found: List[Group],
+    dist_func: Callable[[Group, Group], float],
 ) -> np.ndarray:
     dist_mat = np.zeros((len(groups_registered), len(groups_found)))
     for i, g_reg in enumerate(groups_registered):
@@ -285,7 +305,11 @@ class GroupTracker:
 
     def deregister_disappeared(self) -> None:
         """Find all object that have disappeared and de-register them"""
-        objects_to_deregister = [obj_id for obj_id, n in self._disappeared.items() if n > self._max_disappeared]
+        objects_to_deregister = [
+            obj_id
+            for obj_id, n in self._disappeared.items()
+            if n > self._max_disappeared
+        ]
         for obj_id in objects_to_deregister:
             self.deregister(obj_id)
 
@@ -396,7 +420,9 @@ def flatten_inputs(x: Tensor) -> Tensor:
     return x.view(-1, x.size(-1))
 
 
-def with_threshold(y: torch.Tensor, threshold: float | None, dim: int = 0) -> torch.Tensor:
+def with_threshold(
+    y: torch.Tensor, threshold: float | None, dim: int = 0
+) -> torch.Tensor:
     """
     Examples:
         >>> x = torch.Tensor([[0.1, 0.2, 0.3],
@@ -416,9 +442,11 @@ def with_threshold(y: torch.Tensor, threshold: float | None, dim: int = 0) -> to
     y_thresh[:, dim] = threshold
     return y_thresh
 
-def prepare_predictions(pred: torch.Tensor, confidence: float, confidence_low: float) -> List[Group]:
+
+def prepare_predictions(
+    pred: torch.Tensor, confidence: float, confidence_low: float
+) -> List[Group]:
     pred_proc = process_predictions(pred, confidence_low, confidence)
     pred_argmax = torch.argmax(pred_proc, dim=-2)
     groups = extract_groups(pred_argmax)
     return groups
-

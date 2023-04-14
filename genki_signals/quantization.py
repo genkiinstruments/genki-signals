@@ -11,7 +11,9 @@ def linear_quant_encode(x, num_levels=QUANT_LEVELS):
         >>> linear_quant_encode(torch.tensor([-1.0, 0.0, 1.0, 0.1, -0.9]), 21)
         tensor([ 0, 10, 20, 11,  1], dtype=torch.int32)
     """
-    assert num_levels % 2 == 1, f"Expected odd (to make sure 0 maps to 0), got {num_levels=}"
+    assert (
+        num_levels % 2 == 1
+    ), f"Expected odd (to make sure 0 maps to 0), got {num_levels=}"
     assert torch.max(x) <= 1.0
     assert torch.min(x) >= -1.0
 
@@ -43,7 +45,9 @@ def mu_law_encode(x, num_levels=QUANT_LEVELS):
 
     device = x.get_device() if x.is_cuda else None
 
-    mag = torch.log(1 + mu * torch.abs(x)) / torch.log(torch.tensor([1 + mu], device=device))
+    mag = torch.log(1 + mu * torch.abs(x)) / torch.log(
+        torch.tensor([1 + mu], device=device)
+    )
     sig = torch.sign(x) * mag
     return sig
 

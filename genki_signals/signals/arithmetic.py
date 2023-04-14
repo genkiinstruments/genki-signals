@@ -8,10 +8,10 @@ from genki_signals.signals.base import Signal, SignalName
 
 
 class Scale(Signal):
-    def __init__(self, input_name: SignalName, scale_factor: float, name: str):
+    def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
         self.name = name
         self.scale_factor = scale_factor
-        self.input_names = [input_name]
+        self.input_signals = [input_signal]
 
     def __call__(self, x):
         return x * self.scale_factor
@@ -20,7 +20,7 @@ class Scale(Signal):
 class Sum(Signal):
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         self.name = name
-        self.input_names = [input_a, input_b]
+        self.input_signals = [input_a, input_b]
 
     def __call__(self, a, b):
         return a + b
@@ -31,18 +31,16 @@ class Difference(Signal):
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         self.name = name
-        self.input_names = [input_a, input_b]
+        self.input_signals = [input_a, input_b]
 
     def __call__(self, a, b):
         return a - b
 
 
-
-
 class Multiply(Signal):
-    def __init__(self, sig_a: SignalName, sig_b: SignalName, name: str):
+    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         self.name = name
-        self.input_names = [sig_a, sig_b]
+        self.input_signals = [input_a, input_b]
 
     def __call__(self, a, b):
         return a * b
@@ -51,12 +49,18 @@ class Multiply(Signal):
 class Integrate(Signal):
     """Integrates a signal with respect to another signal (usually time)"""
 
-    def __init__(self, sig_a: SignalName, sig_b: SignalName = "timestamp", use_trapz: bool = True, name: str = None):
-        self.name = f"Int({sig_a} w.r.t. {sig_b})" if name is None else name
+    def __init__(
+        self,
+        input_a: SignalName,
+        input_b: SignalName = "timestamp",
+        use_trapz: bool = True,
+        name: str = None,
+    ):
+        self.name = f"Int({input_a} w.r.t. {input_b})" if name is None else name
         self.state = 0.0
         self.trapezoid = use_trapz
         self.last_b = None
-        self.input_names = [sig_a, sig_b]
+        self.input_signals = [input_a, input_b]
 
     def __call__(self, a, b):
         if self.trapezoid:
@@ -78,17 +82,21 @@ class Integrate(Signal):
 class Differentiate(Signal):
     """
     Differentiates a signal with respect to another signal (usually time).
-    If sig_b is None, the discrete difference of sig_a is used.
+    If input_b is None, the discrete difference of input_a is used.
     """
 
-    def __init__(self, sig_a: SignalName, sig_b: SignalName = "timestamp", name: str = None):
+    def __init__(
+        self, input_a: SignalName, input_b: SignalName = "timestamp", name: str = None
+    ):
         self.name = (
-            f"Diff({sig_a})" if sig_b is None else f"Diff({sig_a} w.r.t. {sig_b})"
+            f"Diff({input_a})"
+            if input_b is None
+            else f"Diff({input_a} w.r.t. {input_b})"
         )
         self.name = name if name is not None else self.name
         self.last_a = None
         self.last_b = None
-        self.input_names = [sig_a] if sig_b is None else [sig_a, sig_b]
+        self.input_signals = [input_a] if input_b is None else [input_a, input_b]
 
     def __call__(self, a, b=None):
         if b is None:  # I.e. use discrete difference
@@ -113,17 +121,18 @@ class Differentiate(Signal):
 class MovingAverage(Signal):
     """Returns the moving average of a signal"""
 
-    def __init__(self, input_name: SignalName, length: int, name: str):
+    def __init__(self, input_signal: SignalName, length: int, name: str):
         self.name = name
         self.buffer = NumpyBuffer(maxlen=length)
-        self.input_names = [input_name]
+        self.input_signals = [input_signal]
 
     def __call__(self, x):
         output = np.zeros(x.shape)
         for i in range(x.shape[-1]):
-            self.buffer.extend(x[..., i:i+1])
+            self.buffer.extend(x[..., i : i + 1])
             output[i] = np.mean(self.buffer.view(), axis=-1)
         return output
+
 
 __all__ = [
     "Scale",
@@ -133,4 +142,4 @@ __all__ = [
     "Integrate",
     "Differentiate",
     "MovingAverage",
-    ]
+]

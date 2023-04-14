@@ -16,8 +16,12 @@ from onnxruntime import InferenceSession
 from genki_signals.buffers import PandasBuffer, NumpyBuffer
 from genki_signals.is_touching_models import StateGruInferenceOnly
 from genki_signals.signals.windowed import upsample, WindowedSignal
-from genki_signals.signals.base import Signal
-from genki_signals.post_processing import prepare_predictions, group_dist_heuristic, GroupTracker
+from genki_signals.signals.base import Signal, SignalName
+from genki_signals.post_processing import (
+    prepare_predictions,
+    group_dist_heuristic,
+    GroupTracker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +31,30 @@ class Inference(Signal):
     Run real-time inference using an ONNX model
     """
 
-    def __init__(self, model, input_signal, stateful, name, init_state=None):
+    def __init__(
+        self,
+        model,
+        input_signal: SignalName,
+        stateful: bool,
+        name: str,
+        init_state=None,
+    ):
         self.name = name
-        self.input_names = [input_signal]
         self.stateful = stateful
         self.state = init_state
         self.session = InferenceSession(model)
+        self.input_signals = [input_signal]
 
     def __call__(self, x):
         # x shape (6, 16, t)
-        x = x[np.newaxis, ..., -1] # note doesn't work offline
+        x = x[np.newaxis, ..., -1]  # note doesn't work offline
         if self.stateful:
             output, self.state = self.session.run(
-                ["output", "output_state"], {"input": x.astype(np.float32), "input_state": self.state.astype(np.float32)}
+                ["output", "output_state"],
+                {
+                    "input": x.astype(np.float32),
+                    "input_state": self.state.astype(np.float32),
+                },
             )
         else:
             output, output_extra = self.session.run(
@@ -49,12 +64,12 @@ class Inference(Signal):
 
 
 class WindowedInference(WindowedSignal):
-    def __init__(self, model, input_signal, name, **kwargs):
+    def __init__(self, model, input_signal: SignalName, name: str, **kwargs):
         super().__init__(**kwargs)
         self.name = name
         self.model = model
-        self.input_names = [input_signal]
         self.session = InferenceSession(model)
+        self.input_signals = [input_signal]
 
     def windowed_fn(self, x):
         x = x.T[np.newaxis, ...]
@@ -65,16 +80,23 @@ class WindowedInference(WindowedSignal):
 
 
 class ObjectTracker(WindowedSignal):
-    def __init__(self, input_signal, name, callback, **kwargs):
+    def __init__(
+        self, input_signal: SignalName, name: str, callback: Callable, **kwargs
+    ):
         super().__init__(**kwargs)
         self.name = name
-        self.input_names = [input_signal]
         self.callback = callback
 
         min_group_size, min_trigger_idx = (3, 8)
         max_disappeared = 3
-        dist_func = partial(group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False)
-        self._tracker = GroupTracker(dist_func, max_disappeared, min_group_size, min_trigger_idx)
+        dist_func = partial(
+            group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False
+        )
+        self._tracker = GroupTracker(
+            dist_func, max_disappeared, min_group_size, min_trigger_idx
+        )
+
+        self.input_signals = [input_signal]
 
     def windowed_fn(self, x):
         output = torch.tensor(x[None])
@@ -110,13 +132,13 @@ def load_model(base_path: Path | str) -> tuple:
 
 class WindowedModel(Signal):
     def __init__(
-            self,
-            win_size: int,
-            hop_length: int,
-            lookback_length: int,
-            output_names: list[str],
-            preprocessing: Callable[[pd.DataFrame], np.ndarray],
-            predict: Callable[[np.ndarray], np.ndarray],
+        self,
+        win_size: int,
+        hop_length: int,
+        lookback_length: int,
+        output_names: list[str],
+        preprocessing: Callable[[pd.DataFrame], np.ndarray],
+        predict: Callable[[np.ndarray], np.ndarray],
     ):
         """WindowedModel is a signal that gets predictions from a model.
 
@@ -211,8 +233,8 @@ class WindowedModel(Signal):
             self.lookback_buffer.popleft(1)
             y = self.predict(x)  # (1, num_classes)
             y_upsampled = [
-                              y[0]
-                          ] * self.hop_length  # one prediction per window, upsample to each sample
+                y[0]
+            ] * self.hop_length  # one prediction per window, upsample to each sample
             self.prediction_buffer.extend(y_upsampled)
 
         preds_cur = [
@@ -241,9 +263,9 @@ class WindowedModelTorch(Signal):
     for each class as returned by the model
     """
 
-    def __init__(self, ckpt_path: str | Path):
+    def __init__(self, ckpt_path: str | Path, input_signal: SignalName):
         self.name = "is_touching_torch"
-        self.input_names = ["acc", "gyro"]
+        self.input_signals = [input_signal]
 
         self.model = StateGruInferenceOnly.load_from_checkpoint(ckpt_path)
         self.model.freeze()
@@ -283,8 +305,9 @@ class WindowedModelTorch(Signal):
         ), "Expected the number of current outputs and the defined outputs to be eq."
         return out
 
+
 __all__ = [
     "Inference",
     "WindowedModel",
     "WindowedModelTorch",
-    ]
+]

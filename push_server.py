@@ -16,14 +16,12 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 
 import genki_signals.signals as s  # noqa: E402
-from genki_signals.data_sources import (  # noqa: E402
-    WaveDataSource
-)
+from genki_signals.data_sources import WaveDataSource  # noqa: E402
 from genki_signals.data_sources import (
     MouseDataSource,
     RandomNoise,
     MicDataSource,
-    Sampler
+    Sampler,
 )
 from genki_signals.system import System  # noqa: E402
 from genki_signals.models.letter_detection_model import SimpleGruModel  # noqa: E402
@@ -32,14 +30,14 @@ import numpy as np
 
 # eventlet.monkey_patch()
 app = Flask(__name__)
-CORS(app, origins='http://localhost:5173/*')
+CORS(app, origins="http://localhost:5173/*")
 # CORS(app, resources={r"/*":{"origins":"*"}})
 # socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 SAMPLING_RATE = 100
 GUI_UPDATE_RATE = 50
-DATA_SOURCE = 'Sampler'
+DATA_SOURCE = "Sampler"
 
 from inspect import getmembers, isclass
 
@@ -52,6 +50,7 @@ type_map = {
     "bool": "boolean",
 }
 
+
 def py_type_to_js(type: str):
     if type in type_map:
         return type_map[type]
@@ -60,53 +59,63 @@ def py_type_to_js(type: str):
 
 derived_signals = []
 name_to_signal = {}
-for sig_name, sig in getmembers(s,isclass):
+for sig_name, sig in getmembers(s, isclass):
     config = sig.config_json()
     for arg in config["args"]:
         arg["type"] = py_type_to_js(arg["type"])
     name_to_signal[sig_name] = sig
     derived_signals.append(config)
 
-@socketio.on('connect')
+
+@socketio.on("connect")
 def send_derived_signals(response):
     socketio.emit("derived_signals", derived_signals)
-    
+
+
 def generate_data(ble_address=None):
     if ble_address is not None:
         source = WaveDataSource(ble_address)
         derived_signals = []
-    if DATA_SOURCE == 'Mic':
+    if DATA_SOURCE == "Mic":
         source = MicDataSource()
         derived_signals = [
-            s.FourierTransform(name="fourier", input_name="audio", window_size=1024, window_overlap=0),
+            s.FourierTransform(
+                name="fourier", input_name="audio", window_size=1024, window_overlap=0
+            ),
         ]
         print(source.sample_rate)
-    elif DATA_SOURCE == 'Sampler':
-        source = Sampler({
-            "random": RandomNoise(),
-            "mouse_position": MouseDataSource()
-        }, SAMPLING_RATE, timestamp_key="timestamp")
+    elif DATA_SOURCE == "Sampler":
+        source = Sampler(
+            {"random": RandomNoise(), "mouse_position": MouseDataSource()},
+            SAMPLING_RATE,
+            timestamp_key="timestamp",
+        )
 
-        model = SimpleGruModel.load_from_checkpoint("genki_signals/models/stc_detector_final-epoch=15-val_loss=0.53.ckpt")
+        model = SimpleGruModel.load_from_checkpoint(
+            "genki_signals/models/stc_detector_final-epoch=15-val_loss=0.53.ckpt"
+        )
 
         derived_signals = [
             s.SampleRate(),
-            s.FourierTransform(name="fourier", input_name="mouse_position_0", window_size=32, window_overlap=31),
+            s.FourierTransform(
+                name="fourier",
+                input_name="mouse_position_0",
+                window_size=32,
+                window_overlap=31,
+            ),
             s.Differentiate(name="mouse_velocity", sig_a="mouse_position"),
             s.Inference(
-                name="stc",
-                model=model,
-                input_signals=["mouse_velocity"],
-                stateful=True
-            )
+                name="stc", model=model, input_signals=["mouse_velocity"], stateful=True
+            ),
         ]
-        
+
     with System(source, derived_signals=derived_signals) as system:
+
         @socketio.on("derived_signal")
         def add_derived_signal(response):
-            arg_dict = {arg["name"]:arg["value"] for arg in response["args"]}
+            arg_dict = {arg["name"]: arg["value"] for arg in response["args"]}
             system.add_derived_signal(name_to_signal[response["sig_name"]](**arg_dict))
-            
+
         while True:
             data = system.read()
             data_dict = {}
@@ -115,7 +124,7 @@ def generate_data(ble_address=None):
                     data_dict[key] = data[key][None, :].tolist()
                 else:
                     data_dict[key] = data[key].tolist()
-            if("fourier" in data):
+            if "fourier" in data:
                 data_dict["fourier"] = np.abs(data_dict["fourier"]).tolist()
             socketio.emit("data", data_dict, broadcast=True)
             socketio.sleep(1 / GUI_UPDATE_RATE)

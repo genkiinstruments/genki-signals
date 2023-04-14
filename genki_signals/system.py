@@ -35,7 +35,7 @@ class System:
 
     def _compute_derived(self, data: DataBuffer):
         for signal in self.derived_signals:
-            inputs = tuple(data[name] for name in signal.input_names)
+            inputs = tuple(data[name] for name in signal.input_signals)
 
             # TODO: error reporting here? Remove ill-behaved signals?
             #       * If the signal throws an exception, this context is useful
