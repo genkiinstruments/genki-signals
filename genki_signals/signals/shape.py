@@ -24,8 +24,9 @@ class Concatenate(Signal):
     Signal to concatenate multiple signals together
     """
 
-    def __init__(self, input_signals: list[SignalName], name: str):
+    def __init__(self, input_signals: list[SignalName], name: str, axis: int = 0):
         self.name = name
+        self.axis = axis
         self.input_signals = input_signals
 
     def __call__(self, *signals):
@@ -35,7 +36,7 @@ class Concatenate(Signal):
                 to_concat.append(col_data[None])
             else:
                 to_concat.append(col_data)
-        return np.concatenate(to_concat, axis=0)
+        return np.concatenate(to_concat, axis=self.axis)
 
 
 class Reshape(Signal):
