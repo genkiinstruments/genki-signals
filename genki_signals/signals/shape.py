@@ -9,7 +9,7 @@ class ExtractDimension(Signal):
     """
 
     def __init__(self, input_signal: SignalName, dim: int, name: str = None):
-        self.name = f"{input_signal}[{dim}]" if name is None else name
+        self.name = f"{input_signal}_{dim}" if name is None else name
         self.dim = dim
 
         self.input_signals = [input_signal]

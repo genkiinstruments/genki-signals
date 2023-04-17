@@ -119,8 +119,8 @@ class FourierTransform(WindowedSignal):
 class Delay(Signal):
     """Delays signal by n samples"""
 
-    def __init__(self, input_signal: SignalName, n: int, name: str = None):
-        self.name = "Delay" if name is None else name
+    def __init__(self, input_signal: SignalName, n: int, name: str):
+        self.name = name
         self.n = n
         self.buffer = None
         self.input_signals = [input_signal]

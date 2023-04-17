@@ -52,11 +52,11 @@ class Integrate(Signal):
     def __init__(
         self,
         input_a: SignalName,
-        input_b: SignalName = "timestamp",
+        input_b: SignalName,
+        name: str,
         use_trapz: bool = True,
-        name: str = None,
     ):
-        self.name = f"Int({input_a} w.r.t. {input_b})" if name is None else name
+        self.name = name
         self.state = 0.0
         self.trapezoid = use_trapz
         self.last_b = None
@@ -85,15 +85,8 @@ class Differentiate(Signal):
     If input_b is None, the discrete difference of input_a is used.
     """
 
-    def __init__(
-        self, input_a: SignalName, input_b: SignalName = "timestamp", name: str = None
-    ):
-        self.name = (
-            f"Diff({input_a})"
-            if input_b is None
-            else f"Diff({input_a} w.r.t. {input_b})"
-        )
-        self.name = name if name is not None else self.name
+    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
+        self.name = name
         self.last_a = None
         self.last_b = None
         self.input_signals = [input_a] if input_b is None else [input_a, input_b]
