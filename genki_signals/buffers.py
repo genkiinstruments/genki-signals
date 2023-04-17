@@ -236,7 +236,7 @@ class DataBuffer(MutableMapping, Buffer):
         self._update_video(obj)
         self.charts.append(obj)
         return frame
-    
+
     def _update_video(self, obj):
         key = obj["key"]
         frame = obj["frame"]
