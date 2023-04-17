@@ -12,10 +12,10 @@ class GaussianSmooth(Signal):
         input_signal: SignalName,
         width_in_sec: float,
         sample_rate: int,
+        name: str,
         half: bool = False,
-        name: str = None,
     ):
-        self.name = f"GaussianSmooth({input_signal})" if name is None else name
+        self.name = name
         self.width_in_sec = width_in_sec
         self.sample_rate = sample_rate
         self.filter = None
@@ -41,13 +41,13 @@ class HighPassFilter(Signal):
         input_signal: SignalName,
         order: int,
         cutoff_freq: float,
-        sample_rate: int = 100,
-        name: str = None,
+        sample_rate: int,
+        name: str,
     ):
+        self.name = name
         self.filter = ButterFilter(
             order, cutoff_freq, "highpass", sample_rate=sample_rate
         )
-        self.name = f"HighPass({input_signal}, {cutoff_freq})" if name is None else name
         self.input_signals = [input_signal]
 
     def __call__(self, val):
@@ -63,12 +63,12 @@ class BandPassFilter(Signal):
         order: int,
         cutoff_freq: float,
         sample_rate: int,
-        name: str = None,
+        name: str,
     ):
+        self.name = name
         self.filter = ButterFilter(
             order, cutoff_freq, "bandpass", sample_rate=sample_rate
         )
-        self.name = f"BandPass({input_signal}, {cutoff_freq})" if name is None else name
         self.input_signals = [input_signal]
 
     def __call__(self, val):
@@ -83,13 +83,13 @@ class LowPassFilter(Signal):
         input_signal: SignalName,
         order: int,
         cutoff_freq: float,
-        sample_rate: int = 100,
-        name: str = None,
+        sample_rate: int,
+        name: str,
     ):
+        self.name = name
         self.filter = ButterFilter(
             order, cutoff_freq, "lowpass", sample_rate=sample_rate
         )
-        self.name = f"Lowpass({input_signal}, {cutoff_freq})" if name is None else name
         self.input_signals = [input_signal]
 
     def __call__(self, val):

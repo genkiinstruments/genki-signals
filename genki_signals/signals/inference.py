@@ -139,6 +139,7 @@ class WindowedModel(Signal):
         output_names: list[str],
         preprocessing: Callable[[pd.DataFrame], np.ndarray],
         predict: Callable[[np.ndarray], np.ndarray],
+        name: str = "windowed_model",
     ):
         """WindowedModel is a signal that gets predictions from a model.
 
@@ -165,7 +166,7 @@ class WindowedModel(Signal):
             with the highest probability.
         """
 
-        self.name = "windowed_model"
+        self.name = name
 
         self.win_size = win_size
         self.hop_length = hop_length
