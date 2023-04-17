@@ -7,6 +7,10 @@ import numpy as np
 import pandas as pd
 import bqplot as bq
 
+import cv2
+from ipywidgets import Image
+from IPython.display import display
+
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +214,8 @@ class DataBuffer(MutableMapping, Buffer):
             return self._plot_trace(key, **kwargs)
         elif plot_type == "histogram":
             return self._plot_histogram(key, **kwargs)
+        elif plot_type == "video":
+            return self._plot_video(key, **kwargs)
 
     def _update_charts(self):
         for chart in self.charts:
@@ -221,6 +227,22 @@ class DataBuffer(MutableMapping, Buffer):
                 self._update_trace(chart)
             elif chart["type"] == "histogram":
                 self._update_histogram(chart)
+            elif chart["type"] == "video":
+                self._update_video(chart)
+
+    def _plot_video(self, key):
+        frame = Image(format="jpeg")
+        obj = {"type": "video", "key": key, "frame": frame}
+        self._update_video(obj)
+        self.charts.append(obj)
+        return frame
+
+    def _update_video(self, obj):
+        key = obj["key"]
+        frame = obj["frame"]
+        value = self[key][..., -1].transpose(2, 1, 0)
+        _, jpeg_image = cv2.imencode(".jpeg", value)
+        frame.value = jpeg_image.tobytes()
 
     def _plot_line_chart(self, key, x_key=None):
         xs = bq.LinearScale()

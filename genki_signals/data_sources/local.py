@@ -69,7 +69,7 @@ class CameraDataSource(DataSource):
 
         self.cap = self.cv.VideoCapture(self.camera_id)
         self.last_frame = None
-        self.signal_names = ["timestamp", "image"]
+        self.signal_names = ["image"]
 
     def start(self):
         self.cap.open(self.camera_id)
@@ -80,9 +80,7 @@ class CameraDataSource(DataSource):
     def __call__(self, t):
         ret, frame = self.cap.read()
         if ret:
-            frame = self.cv.cvtColor(frame, self.cv.COLOR_BGR2RGB)
             frame = self.cv.resize(frame, self.resolution)
-            frame = frame[..., None]  # add time dimension
             self.last_frame = frame
             return {"image": frame}
         else:
