@@ -88,7 +88,7 @@ class ArduinoListener(threading.Thread):
 async def arduino_bluetooth_task(ble_address: str, comm: CommunicateCancel, process_data: Callable) -> None:
     protocol = ArduinoProtocol()
     callback = prepare_protocol_as_bleak_callback_asyncio(protocol)
-    print(f"Connecting to arduino at address {ble_address}")
+    print(f"Connecting to Arduino at address {ble_address}")
     async with BleakClient(ble_address) as client:
         await client.start_notify(CHARACTERISTIC_UUID, callback)
 
