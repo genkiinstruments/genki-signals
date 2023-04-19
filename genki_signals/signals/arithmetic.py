@@ -18,12 +18,12 @@ class Scale(Signal):
 
 
 class Sum(Signal):
-    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
+    def __init__(self, inputs: list[SignalName], name: str):
         self.name = name
-        self.input_names = [input_a, input_b]
+        self.input_names = inputs
 
-    def __call__(self, a, b):
-        return a + b
+    def __call__(self, *inputs):
+        return sum(inputs)
 
 
 class Difference(Signal):

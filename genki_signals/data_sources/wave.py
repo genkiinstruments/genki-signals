@@ -45,7 +45,7 @@ class WaveDataSource(DataSource, SamplerBase):
     def __call__(self, t):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False, spectrogram=False):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False, rec_buffer_size=10_000):
         if ble_address is None and not godot:
             raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
@@ -57,6 +57,11 @@ class WaveDataSource(DataSource, SamplerBase):
         self.latest_point = None
         self.lead = True
         self.spectrogram = spectrogram
+        self._recording_buffer = None
+        self.is_recording = False
+        self.recording_filename = None
+        self._has_written_file = False
+        self.rec_buffer_size = rec_buffer_size
 
     def read(self):
         data = DataBuffer()
@@ -85,6 +90,26 @@ class WaveDataSource(DataSource, SamplerBase):
             source.stop()
         self.wave.join()
 
+    def start_recording(self, filename, rec_buffer_size=10_000):
+        self.rec_buffer_size = rec_buffer_size
+        self._recording_buffer = DataBuffer()
+        self.recording_filename = filename
+        self.is_recording = True
+        self._has_written_file = False
+
+    def stop_recording(self):
+        self._flush_to_file()
+        self.is_recording = False
+
+    def _flush_to_file(self):
+        df = self._recording_buffer.to_dataframe()
+        if self._has_written_file:
+            df.to_csv(self.recording_filename, header=False, index=False, mode="a")
+        else:
+            df.to_csv(self.recording_filename, index=False)
+            self._has_written_file = True
+        self._recording_buffer.clear()
+
     def process_data(self, data):
         if self.spectrogram and isinstance(data, DataPackage):
             return
@@ -102,6 +127,10 @@ class WaveDataSource(DataSource, SamplerBase):
 
             self.buffer.put(data)
             self.latest_point = data
+            if self.is_recording:
+                self._recording_buffer.append(data)
+                if len(self._recording_buffer) >= self.rec_buffer_size:
+                    self._flush_to_file()
 
     def is_active(self):
         return hasattr(self, "wave") and self.wave.is_alive()

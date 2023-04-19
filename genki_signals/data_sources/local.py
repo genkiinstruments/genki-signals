@@ -102,6 +102,7 @@ class MicDataSource(SamplerBase):
         self.buffer = DataBuffer(maxlen=None)
         self.is_active = False
         self.signal_names = ["audio"]
+        self.wavefile = None
 
     def start(self):
 
@@ -127,9 +128,19 @@ class MicDataSource(SamplerBase):
 
         data = np.frombuffer(in_data, dtype=np.int16)
         self.buffer.extend({"audio": data})
+        if self.is_recording:
+            self.wavefile.writeframes(in_data)
         return in_data, paContinue
 
     def read(self):
         value = self.buffer.copy()
         self.buffer.clear()
         return value
+
+    def start_recording(self, filename):
+        import wave
+        self.wavefile = wave.open(filename, 'wb')
+        self.wavefile.setnchannels(self.mic_info["maxInputChannels"])
+        self.wavefile.setsampwidth(self.pa.get_sample_size(self.format))
+        self.wavefile.setframerate(self.sample_rate)
+        self.is_recording = True

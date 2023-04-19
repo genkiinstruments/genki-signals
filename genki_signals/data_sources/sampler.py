@@ -32,7 +32,7 @@ class BusyThread(threading.Thread):
 
 
 class Sampler(SamplerBase):
-    def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
+    def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp", rec_buffer_size=10_000):
         self.sources = sources
         self.is_active = False
         self.buffer = Queue()
@@ -41,6 +41,11 @@ class Sampler(SamplerBase):
         self._busy_loop = None
         self.sample_rate = sample_rate
         self.sleep_time = sleep_time
+        self.is_recording = False
+        self.recording_filename = None
+        self.rec_buffer_size = rec_buffer_size
+        self._recording_buffer = None
+        self._has_written_file = False
 
     def start(self):
         for source in self.sources.values():
@@ -70,6 +75,10 @@ class Sampler(SamplerBase):
             else:
                 data[name] = d
         self.buffer.put(data)
+        if self.is_recording:
+            self._recording_buffer.append(data)
+            if len(self._recording_buffer) > self.rec_buffer_size:
+                self._flush_to_file()
 
     def read(self):
         data = DataBuffer()
@@ -77,6 +86,25 @@ class Sampler(SamplerBase):
             d = self.buffer.get()
             data.append(d)
         return data
+
+    def start_recording(self, filename):
+        self._recording_buffer = DataBuffer()
+        self.recording_filename = filename
+        self.is_recording = True
+        self._has_written_file = False
+
+    def stop_recording(self):
+        self._flush_to_file()
+        self.is_recording = False
+
+    def _flush_to_file(self):
+        df = self._recording_buffer.to_dataframe()
+        if self._has_written_file:
+            df.to_csv(self.recording_filename, header=False, index=False, mode="a")
+        else:
+            df.to_csv(self.recording_filename, index=False)
+            self._has_written_file = True
+        self._recording_buffer.clear()
 
     def __repr__(self):
         return f"Sampler({self.sources}, {self.sample_rate=})"
