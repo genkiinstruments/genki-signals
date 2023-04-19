@@ -7,6 +7,10 @@ import numpy as np
 import pandas as pd
 import bqplot as bq
 
+import cv2
+from ipywidgets import Image
+from IPython.display import display
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +88,11 @@ class Buffer(ABC):
             raise IndexError("Pop from empty buffer")
         data_out = self._slice(self._data, n)
         n_to_keep = self._data.shape[-1] - n
-        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
+        self._data = (
+            self._slice(self._data, n_to_keep, end=True)
+            if n_to_keep > 0
+            else self._empty()
+        )
         return data_out
 
     def popleft_all(self):
@@ -95,10 +103,7 @@ class Buffer(ABC):
 
 
 class DataBuffer(MutableMapping, Buffer):
-    """
-
-    """
-
+    """ """
 
     # ========================
     #  Direct dict operations
@@ -209,6 +214,8 @@ class DataBuffer(MutableMapping, Buffer):
             return self._plot_trace(key, **kwargs)
         elif plot_type == "histogram":
             return self._plot_histogram(key, **kwargs)
+        elif plot_type == "video":
+            return self._plot_video(key, **kwargs)
 
     def _update_charts(self):
         for chart in self.charts:
@@ -220,6 +227,22 @@ class DataBuffer(MutableMapping, Buffer):
                 self._update_trace(chart)
             elif chart["type"] == "histogram":
                 self._update_histogram(chart)
+            elif chart["type"] == "video":
+                self._update_video(chart)
+
+    def _plot_video(self, key):
+        frame = Image(format="jpeg")
+        obj = {"type": "video", "key": key, "frame": frame}
+        self._update_video(obj)
+        self.charts.append(obj)
+        return frame
+
+    def _update_video(self, obj):
+        key = obj["key"]
+        frame = obj["frame"]
+        value = self[key][..., -1].transpose(2, 1, 0)
+        _, jpeg_image = cv2.imencode(".jpeg", value)
+        frame.value = jpeg_image.tobytes()
 
     def _plot_line_chart(self, key, x_key=None):
         xs = bq.LinearScale()
@@ -228,12 +251,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label=key)
         line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {
-            "type": "line",
-            "key": key,
-            "line": line,
-            "x_key": x_key
-        }
+        chart_obj = {"type": "line", "key": key, "line": line, "x_key": x_key}
         # Call _update_line_chart first, if there is an error
         # we won't add the chart to self.charts
         self._update_line_chart(chart_obj)
@@ -263,7 +281,7 @@ class DataBuffer(MutableMapping, Buffer):
             "key": key,
             "line": line,
             "sample_rate": kwargs.get("sample_rate", 1),  # Is there a sensible default?
-            "window_size": kwargs.get("window_size", 1)  # Is there a sensible default?
+            "window_size": kwargs.get("window_size", 1),  # Is there a sensible default?
         }
         fig = bq.Figure(marks=[line], axes=[xax, yax])
         # Call _update_spectrogram first, if there is an error
@@ -289,11 +307,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label="y")
         line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {
-            "type": "trace2D",
-            "key": key,
-            "line": line
-        }
+        chart_obj = {"type": "trace2D", "key": key, "line": line}
         # Call _update_line_chart first, if there is an error
         # we won't add the chart to self.charts
         self._update_trace(chart_obj)
@@ -316,11 +330,7 @@ class DataBuffer(MutableMapping, Buffer):
         yax = bq.Axis(scale=ys, orientation="vertical", label="Probability")
         bars = bq.Bars(x=x_names, y=[], scales={"x": xs, "y": ys})
         fig = bq.Figure(marks=[bars], axes=[xax, yax])
-        chart_obj = {
-            "type": "histogram",
-            "key": key,
-            "bars": bars
-        }
+        chart_obj = {"type": "histogram", "key": key, "bars": bars}
         # Call _update_histogram first, if there is an error
         # we won't add the chart to self.charts
         self._update_histogram(chart_obj)
@@ -377,7 +387,9 @@ class PandasBuffer(Buffer):
             self.cols = data.columns
 
     def _validate(self, data):
-        assert set(data.columns) == set(self.cols), f"Expected the same columns. Got {data.columns=} and {self.cols}"
+        assert set(data.columns) == set(
+            self.cols
+        ), f"Expected the same columns. Got {data.columns=} and {self.cols}"
 
     def _slice(self, data, n, end=False):
         return data.iloc[-n:] if end else data.iloc[:n]
@@ -412,8 +424,10 @@ class NumpyBuffer(Buffer):
         # don't validate empty data
         if data.shape[-1] == 0:
             return
-        assert data.shape[:-1] == self.cols, ("Expected a fixed number of cols to be able to concatenate "
-                                              f"got {data.shape=} with {self.cols=}")
+        assert data.shape[:-1] == self.cols, (
+            "Expected a fixed number of cols to be able to concatenate "
+            f"got {data.shape=} with {self.cols=}"
+        )
 
     def _slice(self, data, n, end=False):
         return data[..., -n:] if end else data[..., :n]
