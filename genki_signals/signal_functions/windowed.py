@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 import scipy
 
-from genki_signals.buffers import NumpyBuffer, DataBuffer
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.buffers import NumpyBuffer
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 def upsample(signal, factor):
@@ -13,7 +13,7 @@ def upsample(signal, factor):
     return signal.repeat(factor, axis=-1)
 
 
-class SampleRate(Signal):
+class SampleRate(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName = "timestamp",
@@ -31,7 +31,7 @@ class SampleRate(Signal):
         return rate * self.unit_multiplier
 
 
-class WindowedSignal(Signal, ABC):
+class WindowedSignalFunction(SignalFunction, ABC):
     def __init__(
         self,
         window_size: int,
@@ -74,7 +74,7 @@ class WindowedSignal(Signal, ABC):
         raise NotImplementedError
 
 
-class FourierTransform(WindowedSignal):
+class FourierTransform(WindowedSignalFunction):
     """
     Computes a windowed spectrogram from a raw signal
     """
@@ -116,7 +116,7 @@ class FourierTransform(WindowedSignal):
         return sig_fft
 
 
-class Delay(Signal):
+class Delay(SignalFunction):
     """Delays signal by n samples"""
 
     def __init__(self, input_signal: SignalName, n: int, name: str):

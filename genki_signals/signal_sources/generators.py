@@ -1,10 +1,10 @@
 import numpy as np
 from scipy import signal
 
-from genki_signals.data_sources.base import DataSource
+from genki_signals.signal_sources.base import SignalSource
 
 
-class SineWave(DataSource):
+class SineWave(SignalSource):
     def __init__(self, amplitude, frequency, phase):
         self.amplitude = amplitude
         self.frequency = frequency
@@ -17,7 +17,7 @@ class SineWave(DataSource):
         return f"SineWave(amplitude={self.amplitude}, frequency={self.frequency}, phase={self.phase})"
 
 
-class SquareWave(DataSource):
+class SquareWave(SignalSource):
     def __init__(self, amplitude, frequency, phase):
         self.amplitude = amplitude
         self.frequency = frequency
@@ -32,7 +32,7 @@ class SquareWave(DataSource):
         return f"SquareWave(amplitude={self.amplitude}, frequency={self.frequency}, phase={self.phase})"
 
 
-class TriangleWave(DataSource):
+class TriangleWave(SignalSource):
     def __init__(self, amplitude, frequency, phase):
         self.amplitude = amplitude
         self.frequency = frequency
@@ -47,7 +47,7 @@ class TriangleWave(DataSource):
         return f"TriangleWave(amplitude={self.amplitude}, frequency={self.frequency}, phase={self.phase})"
 
 
-class RandomNoise(DataSource):
+class RandomNoise(SignalSource):
     def __init__(self, amplitude=1):
         self.amplitude = amplitude
 

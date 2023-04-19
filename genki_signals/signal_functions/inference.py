@@ -15,8 +15,8 @@ from onnxruntime import InferenceSession
 
 from genki_signals.buffers import PandasBuffer, NumpyBuffer
 from genki_signals.is_touching_models import StateGruInferenceOnly
-from genki_signals.signals.windowed import upsample, WindowedSignal
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.signal_functions.windowed import upsample, WindowedSignalFunction
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 from genki_signals.post_processing import (
     prepare_predictions,
     group_dist_heuristic,
@@ -26,7 +26,7 @@ from genki_signals.post_processing import (
 logger = logging.getLogger(__name__)
 
 
-class Inference(Signal):
+class Inference(SignalFunction):
     """
     Run real-time inference using an ONNX model
     """
@@ -63,7 +63,7 @@ class Inference(Signal):
         return output[0, ..., None]
 
 
-class WindowedInference(WindowedSignal):
+class WindowedInference(WindowedSignalFunction):
     def __init__(self, model, input_signal: SignalName, name: str, **kwargs):
         super().__init__(**kwargs)
         self.name = name
@@ -79,7 +79,7 @@ class WindowedInference(WindowedSignal):
         return output[0]
 
 
-class ObjectTracker(WindowedSignal):
+class ObjectTracker(WindowedSignalFunction):
     def __init__(
         self, input_signal: SignalName, name: str, callback: Callable, **kwargs
     ):
@@ -130,7 +130,7 @@ def load_model(base_path: Path | str) -> tuple:
     return joblib.load(_model_path(path))
 
 
-class WindowedModel(Signal):
+class WindowedModel(SignalFunction):
     def __init__(
         self,
         win_size: int,
@@ -257,7 +257,7 @@ class WindowedModel(Signal):
         )
 
 
-class WindowedModelTorch(Signal):
+class WindowedModelTorch(SignalFunction):
     """Runs `StateGruInferenceOnly` in real time
 
     Note that this returns multiple outputs as a dictionary, the actual predication and the probabilites

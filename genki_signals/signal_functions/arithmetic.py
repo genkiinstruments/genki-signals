@@ -4,10 +4,10 @@ import numpy as np
 from scipy import integrate
 
 from genki_signals.buffers import NumpyBuffer
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
-class Scale(Signal):
+class Scale(SignalFunction):
     def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
         self.name = name
         self.scale_factor = scale_factor
@@ -17,7 +17,7 @@ class Scale(Signal):
         return x * self.scale_factor
 
 
-class Sum(Signal):
+class Sum(SignalFunction):
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         self.name = name
         self.input_signals = [input_a, input_b]
@@ -26,7 +26,7 @@ class Sum(Signal):
         return a + b
 
 
-class Difference(Signal):
+class Difference(SignalFunction):
     """Find the difference between 2 signals"""
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
@@ -37,7 +37,7 @@ class Difference(Signal):
         return a - b
 
 
-class Multiply(Signal):
+class Multiply(SignalFunction):
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         self.name = name
         self.input_signals = [input_a, input_b]
@@ -46,7 +46,7 @@ class Multiply(Signal):
         return a * b
 
 
-class Integrate(Signal):
+class Integrate(SignalFunction):
     """Integrates a signal with respect to another signal (usually time)"""
 
     def __init__(
@@ -79,7 +79,7 @@ class Integrate(Signal):
         return val
 
 
-class Differentiate(Signal):
+class Differentiate(SignalFunction):
     """
     Differentiates a signal with respect to another signal (usually time).
     If input_b is None, the discrete difference of input_a is used.
@@ -111,7 +111,7 @@ class Differentiate(Signal):
         return da / db
 
 
-class MovingAverage(Signal):
+class MovingAverage(SignalFunction):
     """Returns the moving average of a signal"""
 
     def __init__(self, input_signal: SignalName, length: int, name: str):

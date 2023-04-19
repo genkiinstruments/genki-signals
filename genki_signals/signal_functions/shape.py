@@ -1,11 +1,11 @@
 import numpy as np
 
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
-class ExtractDimension(Signal):
+class ExtractDimension(SignalFunction):
     """
-    Signal to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
+    SignalFunction to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
     """
 
     def __init__(self, input_signal: SignalName, dim: int, name: str = None):
@@ -19,9 +19,9 @@ class ExtractDimension(Signal):
         return v[self.dim : self.dim + 1]
 
 
-class Concatenate(Signal):
+class Concatenate(SignalFunction):
     """
-    Signal to concatenate multiple signals together
+    SignalFunction to concatenate multiple signals together
     """
 
     def __init__(self, input_signals: list[SignalName], name: str, axis: int = 0):
@@ -39,7 +39,7 @@ class Concatenate(Signal):
         return np.concatenate(to_concat, axis=self.axis)
 
 
-class Reshape(Signal):
+class Reshape(SignalFunction):
     def __init__(self, input_signal: SignalName, shape: tuple[int], name: str):
         self.name = name
         self.shape = shape

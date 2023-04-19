@@ -5,7 +5,7 @@ from typing import NewType
 SignalName = NewType("signal", str)
 
 
-class Signal(abc.ABC):
+class SignalFunction(abc.ABC):
     """ """
 
     @abc.abstractmethod

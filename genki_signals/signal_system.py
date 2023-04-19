@@ -5,9 +5,9 @@ from genki_signals.buffers import DataBuffer
 logger = logging.getLogger(__name__)
 
 
-class System:
+class SignalSystem:
     """
-    A System is a DataSource with a list of derived signals. The system
+    A SignalSystem is a SignalSource with a list of derived signals. The system
     collects data points as they arrive from the source, and computes derived signals.
     """
 

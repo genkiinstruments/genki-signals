@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from genki_signals.filters import FirFilter, ButterFilter
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
-class GaussianSmooth(Signal):
+class GaussianSmooth(SignalFunction):
     """Smooths signal with a gaussian kernel"""
 
     def __init__(
@@ -35,7 +35,7 @@ class GaussianSmooth(Signal):
         return self.filter.process(x).squeeze()
 
 
-class HighPassFilter(Signal):
+class HighPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
@@ -56,7 +56,7 @@ class HighPassFilter(Signal):
         return val
 
 
-class BandPassFilter(Signal):
+class BandPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
@@ -77,7 +77,7 @@ class BandPassFilter(Signal):
         return val
 
 
-class LowPassFilter(Signal):
+class LowPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
