@@ -1,7 +1,7 @@
 import abc
 
 
-class DataSource(abc.ABC):
+class SignalSource(abc.ABC):
     @abc.abstractmethod
     def __call__(self, t):
         pass

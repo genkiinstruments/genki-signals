@@ -3,12 +3,12 @@ from pathlib import Path
 import pandas as pd
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.data_sources.base import SamplerBase
+from genki_signals.signal_sources.base import SamplerBase
 
 
-class DataFrameDataSource(SamplerBase):
+class DataFrameSignalSource(SamplerBase):
     """
-    A way to use a pandas DataFrame that has been loaded into memory as a DataSource.
+    A way to use a pandas DataFrame that has been loaded into memory as a SignalSource.
     The way this works is, on each call to read(), the same number of lines are read from the DataFrame.
     """
 
@@ -53,7 +53,7 @@ class DataFrameDataSource(SamplerBase):
         return list(self.next_chunk.keys())
 
 
-class FileDataSource(DataFrameDataSource):
+class FileSignalSource(DataFrameSignalSource):
     def __init__(self, filename, lines_per_read=5, line_offset=0):
         self.path = Path(filename)
 
@@ -65,7 +65,7 @@ class FileDataSource(DataFrameDataSource):
             data = pd.read_parquet(self.path)
         else:
             raise Exception(
-                f"Suffix {self.path.suffix} not supported for FileDataSource (Path: {self.path})"
+                f"Suffix {self.path.suffix} not supported for FileSignalSource (Path: {self.path})"
             )
         data = data.iloc[line_offset:]
         super().__init__(data, lines_per_read)
@@ -77,6 +77,6 @@ class FileDataSource(DataFrameDataSource):
         return self.__repr__()
 
 
-class SessionDataSource(DataFrameDataSource):
+class SessionSignalSource(DataFrameSignalSource):
     def __init__(self, session, lines_per_read=-1):
         super().__init__(session.df, lines_per_read)

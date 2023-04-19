@@ -9,8 +9,8 @@ import string
 import numpy as np
 import pandas as pd
 
-from .data_sources import DataFrameDataSource
-from . import signals as s
+from .signal_sources import DataFrameSignalSource
+from . import signal_functions as s
 from .system import SignalSystem
 
 
@@ -29,7 +29,7 @@ def test(n_cols=10, n_rows=10000, lines_per_read=5):
         s.LowPassFilter("h_filt", "h", 2, 10),
         s.Multiply("i", "j", "j * i"),
     ]
-    source = DataFrameDataSource(df, lines_per_read=lines_per_read)
+    source = DataFrameSignalSource(df, lines_per_read=lines_per_read)
     system = SignalSystem(source, derived)
 
     with system:

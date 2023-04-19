@@ -8,12 +8,12 @@ import logging
 
 from genki_signals.dead_reckoning import calc_per_t_power, combine_power
 from genki_signals.filters import FirFilter
-from genki_signals.signals.base import Signal, SignalName
+from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 logger = logging.getLogger(__name__)
 
 
-class Norm(Signal):
+class Norm(SignalFunction):
     """
     Euclidian norm of a vector signal
     """
@@ -27,7 +27,7 @@ class Norm(Signal):
         return np.sqrt((vec**2).sum(axis=shape[:-1]))
 
 
-class EulerOrientation(Signal):
+class EulerOrientation(SignalFunction):
     """
     Convert quaternion representation to Euler axis/angle representation
     """
@@ -44,7 +44,7 @@ class EulerOrientation(Signal):
         return np.concatenate([angle * 360 / (2 * np.pi), normed], axis=0)
 
 
-class EulerAngle(Signal):
+class EulerAngle(SignalFunction):
     """
     Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
     """
@@ -72,7 +72,7 @@ class EulerAngle(Signal):
         return np.stack([roll, pitch, yaw])
 
 
-class Gravity(Signal):
+class Gravity(SignalFunction):
     """
     Compute gravity vector from a quaternion orientation signal
     """
@@ -90,7 +90,7 @@ class Gravity(Signal):
         return np.stack([grav_x, grav_y, grav_z])
 
 
-class Rotate(Signal):
+class Rotate(SignalFunction):
     """
     Compute a rotated version of a 3D signal with a quaternion input signal
     """
@@ -145,7 +145,7 @@ def calc_angle_from_org(xy_vectors: np.ndarray, xy_org: np.ndarray) -> np.ndarra
     return np.rad2deg(vector_angle)
 
 
-class OrientationXy(Signal):
+class OrientationXy(SignalFunction):
     """Angle from the initial orientation of the device to the current orientation in the xy-plane
 
     Algorithm description:
@@ -179,7 +179,7 @@ class OrientationXy(Signal):
         return out
 
 
-class MadgwickOrientation(Signal):
+class MadgwickOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
     using Madgwick algorithm. Includes gyro debiasing.
@@ -230,7 +230,7 @@ class OffsetIdentity:
         return x
 
 
-class FusionOrientation(Signal):
+class FusionOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
     using Fusion algorithm. Includes gyro debiasing.
@@ -270,9 +270,9 @@ class FusionOrientation(Signal):
         return qs
 
 
-class GravityProjection(Signal):
+class GravityProjection(SignalFunction):
     """
-    Signal to compute a projection of a 3D signal onto the 2D subspace
+    SignalFunction to compute a projection of a 3D signal onto the 2D subspace
     orthogonal to gravity.
     """
 
@@ -312,9 +312,9 @@ class GravityProjection(Signal):
         return X_P[:, 1:0]  # Swap names for consistency with x/y on trackpad
 
 
-class AngleBetween(Signal):
+class AngleBetween(SignalFunction):
     """
-    Signal to compute the angle between two 2D vector signals
+    SignalFunction to compute the angle between two 2D vector signals
     """
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
@@ -328,7 +328,7 @@ class AngleBetween(Signal):
         return np.arccos(np.clip(dot_prod / (v1_norm * v2_norm), -1, 1))
 
 
-class DeadReckoning(Signal):
+class DeadReckoning(SignalFunction):
     """Perform real time dead reckoning using acceleration and gyro"""
 
     def __init__(
@@ -381,7 +381,7 @@ class DeadReckoning(Signal):
         return 1.0 * (probability < self.threshold)
 
 
-class ZeroCrossing(Signal):
+class ZeroCrossing(SignalFunction):
     """Returns the zero crossing of signals as 1 and otherwise 0"""
 
     def __init__(self, input_signal: SignalName, name: str):

@@ -1,9 +1,9 @@
 from genki_signals.buffers import DataBuffer
-from genki_signals.data_sources.base import DataSource, SamplerBase
+from genki_signals.signal_sources.base import SignalSource, SamplerBase
 import numpy as np
 
 
-class MouseDataSource(DataSource):
+class MouseSignalSource(SignalSource):
     def __init__(self):
         import pynput
 
@@ -13,7 +13,7 @@ class MouseDataSource(DataSource):
         return np.array(self.mouse.position)
 
 
-class KeyboardDataSource(DataSource):
+class KeyboardSignalSource(SignalSource):
     def __init__(self, keys):
         import pynput
 
@@ -49,12 +49,12 @@ class KeyboardDataSource(DataSource):
         return {f"pressing_{key}": value for key, value in self.is_pressing.items()}
 
     def __repr__(self):
-        return f"KeyboardDataSource({self.keys})"
+        return f"KeyboardSignalSource({self.keys})"
 
 
-class CameraDataSource(DataSource):
+class CameraSignalSource(SignalSource):
     """
-    A class to use a camera as a secondary DataSource.
+    A class to use a camera as a secondary SignalSource.
     The recorded frames are in RGB format and have shape (1, height, width, 3)
     """
 
@@ -87,7 +87,7 @@ class CameraDataSource(DataSource):
             return {"image": self.last_frame}
 
 
-class MicDataSource(SamplerBase):
+class MicSignalSource(SamplerBase):
     """Primary data source to read data from microphone."""
 
     def __init__(self, chunk_size=1024):

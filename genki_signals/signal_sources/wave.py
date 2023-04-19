@@ -1,11 +1,11 @@
 """
-A DataSource is an input to a SignalSystem
+A SignalSource is an input to a SignalSystem
 
-DataSources are expected to collect some data into a queue, usually by
-using a separate thread for writing. A concrete DataSource just needs to
+SignalSources are expected to collect some data into a queue, usually by
+using a separate thread for writing. A concrete SignalSource just needs to
 implement start() and stop() for writer setup and cleanup, respectively.
 
-The base class DataSource implements read() which gives the user all data
+The base class SignalSource implements read() which gives the user all data
 points that have been written to the buffer since the last call to read().
 Data is returned as a list of dicts, the keys of the dicts should be consistent
 across reads. The base class also implements functionality for recording data
@@ -20,7 +20,7 @@ import numpy as np
 from genki_wave.data import DataPackage, RawDataPackage, SpectrogramDataPackage
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.data_sources.base import DataSource, SamplerBase
+from genki_signals.signal_sources.base import SignalSource, SamplerBase
 
 logger = logging.getLogger(__name__)
 
@@ -33,13 +33,13 @@ def _dict_to_array(data):
     return np.array(list(data.values()))
 
 
-class WaveDataSource(DataSource, SamplerBase):
+class WaveSignalSource(SignalSource, SamplerBase):
     """
     A data source to get data from a Wave. It can be either via bluetooth or
     godot connection. It can include one or more 'secondary sources', e.g.
     mouse, trackpad, keyboard, etc. In those cases, the Wave dictates the timestamp
     schedule, and the secondary sources are only checked for curent state when
-    the WaveDataSource receives data.
+    the WaveSignalSource receives data.
     """
 
     def __call__(self, t):
