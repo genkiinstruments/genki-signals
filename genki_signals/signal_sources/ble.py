@@ -1,26 +1,47 @@
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_sources.base import SignalSource, SamplerBase
-import numpy as np
-from bleak import  BleakClient
-import asyncio
-import struct
-from queue import Queue
-import time
-
 from genki_wave.utils import get_or_create_event_loop
-import threading
 from genki_wave.protocols import CommunicateCancel, prepare_protocol_as_bleak_callback_asyncio
-from typing import Callable
+import abc
+from bleak import  BleakClient, BleakScanner
+import asyncio
+from queue import Queue
+import threading
+from typing import Callable, Type
 
-CHARACTERISTIC_UUID = "19b10001-e8f2-537e-4f6c-d104768a1214"
+async def find_ble_address(device_name: str = None):
+    devices = await BleakScanner.discover()
+    details = []
+    for d in devices:
+        if d.name == device_name:
+            return str(d.address)
+        details.append(d.details)
+    return details
 
-class ArduinoSignalSource(SignalSource, SamplerBase):
+
+class BLEProtocol():
+    def __init__(self):
+        get_or_create_event_loop()
+        self._queue = asyncio.Queue()
+
+    @abc.abstractmethod
+    async def data_received(self, data) -> None:
+        pass
+
+    @property
+    def queue(self) -> asyncio.Queue:
+        return self._queue
+    
+
+class BLESignalSource(SignalSource, SamplerBase):
 
     def __call__(self, t):
         return self.latest_point
 
-    def __init__(self, ble_address, other_sources=[]):
+    def __init__(self, ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], other_sources=[]):
         self.ble_address = ble_address
+        self.char_uuid = char_uuid
+        self.protocol = protocol
         self.sources = other_sources
         self.buffer = Queue()
 
@@ -32,16 +53,18 @@ class ArduinoSignalSource(SignalSource, SamplerBase):
         return data
 
     def start(self):
-        self.arduino = ArduinoListener(ble_address=self.ble_address, callback=self.process_data)
+        if self.is_active():
+            self.stop()
+        self.listener = BLEListener(self.ble_address, self.char_uuid, self.protocol, self.process_data)
         for source in self.sources:
             source.start()
-        self.arduino.start()
+        self.listener.start()
 
     def stop(self):
-        self.arduino.stop()
+        self.listener.stop()
         for source in self.sources:
             source.stop()
-        self.arduino.join(timeout=1)
+        self.listener.join(timeout=1)
 
 
     def process_data(self, data):
@@ -53,7 +76,7 @@ class ArduinoSignalSource(SignalSource, SamplerBase):
         self.latest_point = data
 
     def is_active(self):
-        return hasattr(self, "arduino") and self.arduino.is_alive()
+        return hasattr(self, "listener") and self.listener.is_alive()
     
     def _repr_markdown_(self):
         active_text = "active" if self.is_active() else "not active"
@@ -63,15 +86,17 @@ class ArduinoSignalSource(SignalSource, SamplerBase):
         return self._repr_markdown_()
 
 
-class ArduinoListener(threading.Thread):
-    def __init__(self, ble_address, callback):
+class BLEListener(threading.Thread):
+    def __init__(self, ble_address, char_uuid, protocol, callback):
         self.ble_address = ble_address
+        self.char_uuid = char_uuid
+        self.protocol = protocol
         self.callback = callback
         super().__init__()
 
     def run(self):
         self.comm = CommunicateCancel()
-        task = arduino_bluetooth_task(self.ble_address, self.comm, self.callback)
+        task = bluetooth_task(self.ble_address, self.char_uuid, self.protocol, self.comm, self.callback)
         loop = get_or_create_event_loop()
         loop.run_until_complete(task)
 
@@ -85,14 +110,15 @@ class ArduinoListener(threading.Thread):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
 
-async def arduino_bluetooth_task(ble_address: str, comm: CommunicateCancel, process_data: Callable) -> None:
-    protocol = ArduinoProtocol()
-    callback = prepare_protocol_as_bleak_callback_asyncio(protocol)
-    print(f"Connecting to Arduino at address {ble_address}")
-    async with BleakClient(ble_address) as client:
-        await client.start_notify(CHARACTERISTIC_UUID, callback)
 
-        print("Connected to Arduino")
+async def bluetooth_task(ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], comm: CommunicateCancel, process_data: Callable) -> None:
+    protocol = protocol()
+    callback = prepare_protocol_as_bleak_callback_asyncio(protocol)
+    print(f"Connecting to device at address {ble_address}")
+    async with BleakClient(ble_address) as client:
+        await client.start_notify(char_uuid, callback)
+
+        print("Connected to device!")
         comm.is_connected = True
         while True:
             package = await protocol.queue.get()
@@ -104,19 +130,4 @@ async def arduino_bluetooth_task(ble_address: str, comm: CommunicateCancel, proc
             
             process_data(package)
 
-        await client.stop_notify(CHARACTERISTIC_UUID)
-
-class ArduinoProtocol():
-
-    def __init__(self):
-        get_or_create_event_loop()
-        self._queue = asyncio.Queue()
-
-    async def data_received(self, data) -> None:
-        values = struct.unpack('<6f', data)
-        data_dict = {"timestamp": np.array(time.time()), "acc": values[:3], "gyro": values[3:]}
-        await self.queue.put(data_dict)
-
-    @property
-    def queue(self) -> asyncio.Queue:
-        return self._queue
+        await client.stop_notify(char_uuid)

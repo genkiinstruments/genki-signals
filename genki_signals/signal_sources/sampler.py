@@ -4,7 +4,7 @@ from queue import Queue
 from typing import Callable
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.data_sources.base import SamplerBase
+from genki_signals.signal_sources.base import SamplerBase
 
 
 class BusyThread(threading.Thread):
