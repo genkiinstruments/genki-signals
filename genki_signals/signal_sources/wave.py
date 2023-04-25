@@ -12,6 +12,7 @@ across reads. The base class also implements functionality for recording data
 into csv files.
 """
 import logging
+import pickle
 import sys
 import time
 from queue import Queue
@@ -108,12 +109,15 @@ class WaveSignalSource(SignalSource, SamplerBase):
         self.is_recording = False
 
     def _flush_to_file(self):
-        df = self._recording_buffer.to_dataframe()
         if self._has_written_file:
-            df.to_csv(self.recording_filename, header=False, index=False, mode="a")
+            with open(self.recording_filename, "rb") as f:
+                data = pickle.load(f)
+                data.extend(self._recording_buffer)
         else:
-            df.to_csv(self.recording_filename, index=False)
+            data = self._recording_buffer
             self._has_written_file = True
+        with open(self.recording_filename, "wb") as f:
+            pickle.dump(data, f)
         self._recording_buffer.clear()
 
     def process_data(self, data):

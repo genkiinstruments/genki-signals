@@ -104,13 +104,13 @@ class Sampler(SamplerBase):
 
     def _flush_to_file(self):
         if self._has_written_file:
-            with open(self.recording_filename, "r") as f:
+            with open(self.recording_filename, "rb") as f:
                 data = pickle.load(f)
                 data.extend(self._recording_buffer)
         else:
             data = self._recording_buffer
             self._has_written_file = True
-        with open(self.recording_filename, "w") as f:
+        with open(self.recording_filename, "wb") as f:
             pickle.dump(data, f)
         self._recording_buffer.clear()
 
