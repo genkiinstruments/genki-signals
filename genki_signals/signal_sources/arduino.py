@@ -1,5 +1,5 @@
 from genki_signals.buffers import DataBuffer
-from genki_signals.data_sources.base import DataSource, SamplerBase
+from genki_signals.signal_sources.base import SignalSource, SamplerBase
 import numpy as np
 from bleak import  BleakClient
 import asyncio
@@ -14,7 +14,7 @@ from typing import Callable
 
 CHARACTERISTIC_UUID = "19b10001-e8f2-537e-4f6c-d104768a1214"
 
-class ArduinoDataSource(DataSource, SamplerBase):
+class ArduinoSignalSource(SignalSource, SamplerBase):
 
     def __call__(self, t):
         return self.latest_point
