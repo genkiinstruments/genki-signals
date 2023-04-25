@@ -1,3 +1,6 @@
+import os
+import wave
+
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_sources.base import SignalSource, SamplerBase
 import numpy as np
@@ -103,6 +106,7 @@ class MicSignalSource(SamplerBase):
         self.is_active = False
         self.signal_names = ["audio"]
         self.wavefile = None
+        self.is_recording = False
 
     def start(self):
 
@@ -116,6 +120,7 @@ class MicSignalSource(SamplerBase):
         )
         self.stream.start_stream()
         self.is_active = True
+        self.is_recording = False
 
     def stop(self):
         self.stream.stop_stream()
@@ -138,9 +143,17 @@ class MicSignalSource(SamplerBase):
         return value
 
     def start_recording(self, filename):
-        import wave
+        if self.is_recording:
+            raise RuntimeError("Already recording")
+        if os.path.exists(filename):
+            raise RuntimeError("File already exists")
+
         self.wavefile = wave.open(filename, 'wb')
         self.wavefile.setnchannels(self.mic_info["maxInputChannels"])
         self.wavefile.setsampwidth(self.pa.get_sample_size(self.format))
         self.wavefile.setframerate(self.sample_rate)
         self.is_recording = True
+
+    def stop_recording(self):
+        self.wavefile.close()
+        self.is_recording = False

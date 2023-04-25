@@ -70,7 +70,6 @@ class BLESignalSource(SignalSource, SamplerBase):
             source.stop()
         self.listener.join(timeout=1)
 
-
     def process_data(self, data):
         for source in self.sources:
             secondary_data = source.read_current()
