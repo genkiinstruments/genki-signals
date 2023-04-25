@@ -1,14 +1,17 @@
 import abc
 import asyncio
-from bleak import  BleakClient, BleakScanner
-from queue import Queue
 import threading
+from queue import Queue
 from typing import Callable, Type
 
-from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SignalSource, SamplerBase
-from genki_wave.protocols import CommunicateCancel, prepare_protocol_as_bleak_callback_asyncio
+from bleak import BleakClient, BleakScanner
+from genki_wave.protocols import (CommunicateCancel,
+                                  prepare_protocol_as_bleak_callback_asyncio)
 from genki_wave.utils import get_or_create_event_loop
+
+from genki_signals.buffers import DataBuffer
+from genki_signals.signal_sources.base import SamplerBase, SignalSource
+
 
 async def find_ble_address(device_name: str = None):
     devices = await BleakScanner.discover()
