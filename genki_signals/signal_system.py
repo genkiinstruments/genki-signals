@@ -1,6 +1,14 @@
+import json
 import logging
+import os
+import sys
+from datetime import datetime
+import getpass
+from pathlib import Path
 
 from genki_signals.buffers import DataBuffer
+from genki_signals.recorders import PickleRecorder, WavFileRecorder
+from genki_signals.signal_sources import MicSignalSource
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +20,8 @@ class SignalSystem:
     """
 
     def __init__(self, data_source, derived_signals=None):
+        self.recorder = None
+        self.is_recording = False
         self.source = data_source
         if derived_signals is None:
             derived_signals = []
@@ -33,6 +43,29 @@ class SignalSystem:
     def __exit__(self, *args):
         self.stop()
 
+    def start_recording(self, path, recorder=None, **metadata):
+        path = Path(path)
+        if os.path.exists(path):
+            raise Exception(f"File {path} already exists")
+        os.mkdir(path)
+        metadata["session_name"] = path.name
+        metadata["system_user"] = getpass.getuser()
+        metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        metadata["argv"] = sys.argv
+        metadata["platform"] = sys.platform
+        with open(path / "metadata.json") as f:
+            json.dump(metadata, f)
+        with open(path / "signal_functions.json") as f:
+            json.dump([s.to_dict() for s in self.derived_signals], f)
+        if recorder is None:
+            if isinstance(self.source, MicSignalSource):
+                recorder = WavFileRecorder(path / "raw_data.wav", self.source.sample_rate,
+                                           self.source.n_channels, self.source.sample_width)
+            else:
+                recorder = PickleRecorder(path / "raw_data.pickle")
+        self.recorder = recorder
+        self.is_recording = True
+
     def _compute_derived(self, data: DataBuffer):
         for signal in self.derived_signals:
             inputs = tuple(data[name] for name in signal.input_signals)
@@ -51,6 +84,8 @@ class SignalSystem:
         Return all new data points received since the last call to read()
         """
         data = self.source.read()
+        if self.is_recording:
+            self.recorder.write(data)
         if len(data) > 0:
             self._compute_derived(data)
         return data

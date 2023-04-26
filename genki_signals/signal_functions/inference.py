@@ -309,6 +309,8 @@ class WindowedModelTorch(SignalFunction):
 
 __all__ = [
     "Inference",
+    "WindowedInference",
+    "ObjectTracker",
     "WindowedModel",
     "WindowedModelTorch",
 ]

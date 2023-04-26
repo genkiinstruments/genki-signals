@@ -351,8 +351,20 @@ class DataBuffer(MutableMapping, Buffer):
         return cls(maxlen=maxlen, data={k: df[k].values for k in df.columns})
 
     def to_dataframe(self):
-        # TODO
-        raise NotImplementedError
+        flat_data = {}
+        for k, v in self._data.items():
+            if v.ndim == 1:
+                flat_data[k] = v
+            elif v.ndim == 2:
+                for i in range(v.shape[0]):
+                    flat_data[f"{k}_{i}"] = v[i]
+            elif v.ndim == 3:
+                for i in range(v.shape[0]):
+                    for j in range(v.shape[1]):
+                        flat_data[f"{k}_{i}_{j}"] = v[i, j]
+            else:
+                raise ValueError(f"Can't flatten data with ndim={v.ndim}")
+        return pd.DataFrame(flat_data)
 
     def to_arrow(self):
         # TODO
