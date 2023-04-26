@@ -19,9 +19,7 @@ class GaussianSmooth(SignalFunction):
         self.width_in_sec = width_in_sec
         self.sample_rate = sample_rate
         self.filter = None
-        self.filter_factory = (
-            FirFilter.create_half_gaussian if half else FirFilter.create_gaussian
-        )
+        self.filter_factory = FirFilter.create_half_gaussian if half else FirFilter.create_gaussian
         self.input_signals = [input_signal]
 
     def __call__(self, x):
@@ -29,9 +27,7 @@ class GaussianSmooth(SignalFunction):
             x = x[:, None]
         if self.filter is None:
             # TODO: Make this work for other filters (n_channels), also can we abstract?
-            self.filter = self.filter_factory(
-                self.width_in_sec, self.sample_rate, n_channels=x.shape[-1]
-            )
+            self.filter = self.filter_factory(self.width_in_sec, self.sample_rate, n_channels=x.shape[-1])
         return self.filter.process(x).squeeze()
 
 
@@ -45,9 +41,7 @@ class HighPassFilter(SignalFunction):
         name: str,
     ):
         self.name = name
-        self.filter = ButterFilter(
-            order, cutoff_freq, "highpass", sample_rate=sample_rate
-        )
+        self.filter = ButterFilter(order, cutoff_freq, "highpass", sample_rate=sample_rate)
         self.input_signals = [input_signal]
 
     def __call__(self, val):
@@ -66,9 +60,7 @@ class BandPassFilter(SignalFunction):
         name: str,
     ):
         self.name = name
-        self.filter = ButterFilter(
-            order, cutoff_freq, "bandpass", sample_rate=sample_rate
-        )
+        self.filter = ButterFilter(order, cutoff_freq, "bandpass", sample_rate=sample_rate)
         self.input_signals = [input_signal]
 
     def __call__(self, val):
@@ -87,9 +79,7 @@ class LowPassFilter(SignalFunction):
         name: str,
     ):
         self.name = name
-        self.filter = ButterFilter(
-            order, cutoff_freq, "lowpass", sample_rate=sample_rate
-        )
+        self.filter = ButterFilter(order, cutoff_freq, "lowpass", sample_rate=sample_rate)
         self.input_signals = [input_signal]
 
     def __call__(self, val):

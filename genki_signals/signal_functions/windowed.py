@@ -46,9 +46,7 @@ class WindowedSignalFunction(SignalFunction, ABC):
         self.input_buffer = NumpyBuffer(None)
         self.output_buffer = NumpyBuffer(None, n_cols=output_shape)
         if upsample:
-            self.output_buffer.extend(
-                default_value * np.ones((*output_shape, window_size - 1))
-            )
+            self.output_buffer.extend(default_value * np.ones((*output_shape, window_size - 1)))
         self.default_value = default_value
         self.upsample = upsample
 

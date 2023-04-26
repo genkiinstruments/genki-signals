@@ -1,16 +1,13 @@
 import logging
+import re
 from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
-import re
 
+import bqplot as bq
+import cv2
 import numpy as np
 import pandas as pd
-import bqplot as bq
-
-import cv2
 from ipywidgets import Image
-from IPython.display import display
-
 
 logger = logging.getLogger(__name__)
 
@@ -88,11 +85,7 @@ class Buffer(ABC):
             raise IndexError("Pop from empty buffer")
         data_out = self._slice(self._data, n)
         n_to_keep = self._data.shape[-1] - n
-        self._data = (
-            self._slice(self._data, n_to_keep, end=True)
-            if n_to_keep > 0
-            else self._empty()
-        )
+        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
         return data_out
 
     def popleft_all(self):
@@ -387,9 +380,7 @@ class PandasBuffer(Buffer):
             self.cols = data.columns
 
     def _validate(self, data):
-        assert set(data.columns) == set(
-            self.cols
-        ), f"Expected the same columns. Got {data.columns=} and {self.cols}"
+        assert set(data.columns) == set(self.cols), f"Expected the same columns. Got {data.columns=} and {self.cols}"
 
     def _slice(self, data, n, end=False):
         return data.iloc[-n:] if end else data.iloc[:n]
@@ -425,8 +416,7 @@ class NumpyBuffer(Buffer):
         if data.shape[-1] == 0:
             return
         assert data.shape[:-1] == self.cols, (
-            "Expected a fixed number of cols to be able to concatenate "
-            f"got {data.shape=} with {self.cols=}"
+            "Expected a fixed number of cols to be able to concatenate " f"got {data.shape=} with {self.cols=}"
         )
 
     def _slice(self, data, n, end=False):

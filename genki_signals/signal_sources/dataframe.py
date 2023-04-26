@@ -28,16 +28,12 @@ class DataFrameSignalSource(SamplerBase):
         if self.lines_per_read < 0:
             data = self.data
         else:
-            data = self.data.iloc[
-                self.current_line : self.current_line + self.lines_per_read
-            ]
+            data = self.data.iloc[self.current_line : self.current_line + self.lines_per_read]
         self.next_chunk = DataBuffer.from_dataframe(data)
 
     def read(self):
         if not hasattr(self, "current_line"):
-            raise Exception(
-                "Tried to call read() from a data source that has not been started."
-            )
+            raise Exception("Tried to call read() from a data source that has not been started.")
         chunk = self.next_chunk
         self.current_line += len(list(chunk.values())[0])
         self._load_chunk()
@@ -58,9 +54,7 @@ class FileSignalSource(DataFrameSignalSource):
         elif self.path.suffix == ".parquet":
             data = pd.read_parquet(self.path)
         else:
-            raise Exception(
-                f"Suffix {self.path.suffix} not supported for FileSignalSource (Path: {self.path})"
-            )
+            raise Exception(f"Suffix {self.path.suffix} not supported for FileSignalSource (Path: {self.path})")
         data = data.iloc[line_offset:]
         super().__init__(data, lines_per_read)
 

@@ -6,7 +6,6 @@ from genki_signals.buffers import DataBuffer
 
 
 class Recorder(abc.ABC):
-
     @abc.abstractmethod
     def write(self, data: DataBuffer):
         pass
@@ -53,7 +52,7 @@ class WavFileRecorder(Recorder):
         self.wavefile.setframerate(frame_rate)
 
     def write(self, data: DataBuffer):
-        self.wavefile.writeframes(data['audio'].to_bytes())
+        self.wavefile.writeframes(data["audio"].to_bytes())
 
     def stop(self):
         self.wavefile.close()
@@ -69,7 +68,7 @@ class CsvFileRecorder(Recorder):
     def _flush_to_file(self):
         df = self._recording_buffer.to_dataframe()
         if self._has_written_file:
-            df.to_csv(self.path, mode='a', header=False, index=False)
+            df.to_csv(self.path, mode="a", header=False, index=False)
         else:
             df.to_csv(self.path, index=False)
             self._has_written_file = True

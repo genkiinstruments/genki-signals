@@ -64,9 +64,7 @@ class Integrate(SignalFunction):
 
     def __call__(self, a, b):
         if self.trapezoid:
-            val = self.state + integrate.cumulative_trapezoid(
-                y=a, x=b, initial=0.0, axis=-1
-            )
+            val = self.state + integrate.cumulative_trapezoid(y=a, x=b, initial=0.0, axis=-1)
         else:
             prepend_b = b[..., 0:1] if self.last_b is None else self.last_b
             db = np.diff(b, prepend=prepend_b)

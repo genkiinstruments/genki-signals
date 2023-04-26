@@ -19,22 +19,16 @@ class KeyboardSignalSource(SignalSource):
         import pynput
 
         self.keys = keys
-        self.listener = pynput.keyboard.Listener(
-            on_press=self.on_press, on_release=self.on_release
-        )
+        self.listener = pynput.keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.is_pressing = None
 
     def on_press(self, key):
-        key_name = (
-            str(key).replace("'", "").split(".")[-1]
-        )  # transforms keyboard.Key and keyboard.KeyCode to strings
+        key_name = str(key).replace("'", "").split(".")[-1]  # transforms keyboard.Key and keyboard.KeyCode to strings
         if key_name in self.is_pressing:
             self.is_pressing[key_name] = 1
 
     def on_release(self, key):
-        key_name = (
-            str(key).replace("'", "").split(".")[-1]
-        )  # transforms keyboard.Key and keyboard.KeyCode to strings
+        key_name = str(key).replace("'", "").split(".")[-1]  # transforms keyboard.Key and keyboard.KeyCode to strings
         if key_name in self.is_pressing:
             self.is_pressing[key_name] = 0
 
