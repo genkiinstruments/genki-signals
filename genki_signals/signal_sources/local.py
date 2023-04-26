@@ -1,9 +1,7 @@
-import os
-import wave
+import numpy as np
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_sources.base import SignalSource, SamplerBase
-import numpy as np
 
 
 class MouseSignalSource(SignalSource):
@@ -100,14 +98,13 @@ class MicSignalSource(SamplerBase):
         self.mic_info = self.pa.get_default_input_device_info()
         self.sample_rate = int(self.mic_info["defaultSampleRate"])
         self.format = pyaudio.paInt16
-        self.n_channels = (self.mic_info["maxInputChannels"])
-        self.sample_width = (self.pa.get_sample_size(self.format))
+        self.n_channels = self.mic_info["maxInputChannels"]
+        self.sample_width = self.pa.get_sample_size(self.format)
         self.chunk_size = chunk_size
         self.stream = None
         self.buffer = DataBuffer(maxlen=None)
         self.is_active = False
         self.signal_names = ["audio"]
-        self.wavefile = None
 
     def start(self):
 
