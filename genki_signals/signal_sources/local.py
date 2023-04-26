@@ -100,13 +100,14 @@ class MicSignalSource(SamplerBase):
         self.mic_info = self.pa.get_default_input_device_info()
         self.sample_rate = int(self.mic_info["defaultSampleRate"])
         self.format = pyaudio.paInt16
+        self.n_channels = (self.mic_info["maxInputChannels"])
+        self.sample_width = (self.pa.get_sample_size(self.format))
         self.chunk_size = chunk_size
         self.stream = None
         self.buffer = DataBuffer(maxlen=None)
         self.is_active = False
         self.signal_names = ["audio"]
         self.wavefile = None
-        self.is_recording = False
 
     def start(self):
 
@@ -120,7 +121,6 @@ class MicSignalSource(SamplerBase):
         )
         self.stream.start_stream()
         self.is_active = True
-        self.is_recording = False
 
     def stop(self):
         self.stream.stop_stream()
@@ -133,27 +133,9 @@ class MicSignalSource(SamplerBase):
 
         data = np.frombuffer(in_data, dtype=np.int16)
         self.buffer.extend({"audio": data})
-        if self.is_recording:
-            self.wavefile.writeframes(in_data)
         return in_data, paContinue
 
     def read(self):
         value = self.buffer.copy()
         self.buffer.clear()
         return value
-
-    def start_recording(self, filename):
-        if self.is_recording:
-            raise RuntimeError("Already recording")
-        if os.path.exists(filename):
-            raise RuntimeError("File already exists")
-
-        self.wavefile = wave.open(filename, 'wb')
-        self.wavefile.setnchannels(self.mic_info["maxInputChannels"])
-        self.wavefile.setsampwidth(self.pa.get_sample_size(self.format))
-        self.wavefile.setframerate(self.sample_rate)
-        self.is_recording = True
-
-    def stop_recording(self):
-        self.wavefile.close()
-        self.is_recording = False

@@ -21,12 +21,6 @@ class DataFrameSignalSource(SamplerBase):
         self.current_line = 0
         self._load_chunk()
 
-    def start_recording(self, *args):
-        raise Exception(
-            "Recording from {self.__class__.__name__} to a file is not supported \
-                    and probably not something you want do be doing?"
-        )
-
     def stop(self):
         pass
 

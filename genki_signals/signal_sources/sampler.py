@@ -44,11 +44,6 @@ class Sampler(SamplerBase):
         self._busy_loop = None
         self.sample_rate = sample_rate
         self.sleep_time = sleep_time
-        self.is_recording = False
-        self.recording_filename = None
-        self.rec_buffer_size = rec_buffer_size
-        self._recording_buffer = None
-        self._has_written_file = False
 
     def start(self):
         for source in self.sources.values():
@@ -80,10 +75,6 @@ class Sampler(SamplerBase):
             else:
                 data[name] = d
         self.buffer.put(data)
-        if self.is_recording:
-            self._recording_buffer.append(data)
-            if len(self._recording_buffer) > self.rec_buffer_size:
-                self._flush_to_file()
 
     def read(self):
         data = DataBuffer()
@@ -91,28 +82,6 @@ class Sampler(SamplerBase):
             d = self.buffer.get()
             data.append(d)
         return data
-
-    def start_recording(self, filename):
-        self._recording_buffer = DataBuffer()
-        self.recording_filename = filename
-        self.is_recording = True
-        self._has_written_file = False
-
-    def stop_recording(self):
-        self._flush_to_file()
-        self.is_recording = False
-
-    def _flush_to_file(self):
-        if self._has_written_file:
-            with open(self.recording_filename, "rb") as f:
-                data = pickle.load(f)
-                data.extend(self._recording_buffer)
-        else:
-            data = self._recording_buffer
-            self._has_written_file = True
-        with open(self.recording_filename, "wb") as f:
-            pickle.dump(data, f)
-        self._recording_buffer.clear()
 
     def __repr__(self):
         return f"Sampler({self.sources}, {self.sample_rate=})"
