@@ -16,9 +16,7 @@ class Scaler(pl.LightningModule):
 
 
 class SimpleGruModel(pl.LightningModule):
-    def __init__(
-        self, input_size, hidden_size, output_size, lr, scaler_mean, scaler_std
-    ):
+    def __init__(self, input_size, hidden_size, output_size, lr, scaler_mean, scaler_std):
         super().__init__()
         self.gru = nn.GRU(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
@@ -26,9 +24,7 @@ class SimpleGruModel(pl.LightningModule):
         self.lr = lr
         self.loss_func = nn.CrossEntropyLoss()
         self.scaler = Scaler(scaler_mean, scaler_std)
-        self.val_acc = torchmetrics.Accuracy(
-            num_classes=output_size, mdmc_average="global"
-        )
+        self.val_acc = torchmetrics.Accuracy(num_classes=output_size, mdmc_average="global")
         self.save_hyperparameters()
 
     def forward(self, x, h0=None):

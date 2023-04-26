@@ -16,7 +16,6 @@ CHARACTERISTIC_UUID = "19b10001-e8f2-537e-4f6c-d104768a1214"
 
 
 class ArduinoSignalSource(SignalSource, SamplerBase):
-
     def __call__(self, t):
         return self.latest_point
 
@@ -54,7 +53,7 @@ class ArduinoSignalSource(SignalSource, SamplerBase):
 
     def is_active(self):
         return hasattr(self, "arduino") and self.arduino.is_alive()
-    
+
     def _repr_markdown_(self):
         active_text = "active" if self.is_active() else "not active"
         return f"{self.__class__.__name__}, **{active_text}**, address: `{self.ble_address}`"
@@ -102,20 +101,19 @@ async def arduino_bluetooth_task(ble_address: str, comm: CommunicateCancel, proc
                 print("Got a cancel message, exiting.")
                 comm.cancel = True
                 break
-            
+
             process_data(package)
 
         await client.stop_notify(CHARACTERISTIC_UUID)
 
 
 class ArduinoProtocol:
-
     def __init__(self):
         get_or_create_event_loop()
         self._queue = asyncio.Queue()
 
     async def data_received(self, data) -> None:
-        values = struct.unpack('<6f', data)
+        values = struct.unpack("<6f", data)
         data_dict = {"timestamp": np.array(time.time()), "acc": values[:3], "gyro": values[3:]}
         await self.queue.put(data_dict)
 

@@ -5,8 +5,7 @@ from queue import Queue
 from typing import Callable, Type
 
 from bleak import BleakClient, BleakScanner
-from genki_wave.protocols import (CommunicateCancel,
-                                  prepare_protocol_as_bleak_callback_asyncio)
+from genki_wave.protocols import CommunicateCancel, prepare_protocol_as_bleak_callback_asyncio
 from genki_wave.utils import get_or_create_event_loop
 
 from genki_signals.buffers import DataBuffer
@@ -23,7 +22,7 @@ async def find_ble_address(device_name: str = None):
     return details
 
 
-class BLEProtocol():
+class BLEProtocol:
     def __init__(self):
         get_or_create_event_loop()
         self._queue = asyncio.Queue()
@@ -35,10 +34,9 @@ class BLEProtocol():
     @property
     def queue(self) -> asyncio.Queue:
         return self._queue
-    
+
 
 class BLESignalSource(SignalSource, SamplerBase):
-
     def __call__(self, t):
         return self.latest_point
 
@@ -80,7 +78,7 @@ class BLESignalSource(SignalSource, SamplerBase):
 
     def is_active(self):
         return hasattr(self, "listener") and self.listener.is_alive()
-    
+
     def _repr_markdown_(self):
         active_text = "active" if self.is_active() else "not active"
         return f"{self.__class__.__name__}, **{active_text}**, address: `{self.ble_address}`"
@@ -114,7 +112,9 @@ class BLEListener(threading.Thread):
         self.stop()
 
 
-async def bluetooth_task(ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], comm: CommunicateCancel, process_data: Callable) -> None:
+async def bluetooth_task(
+    ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], comm: CommunicateCancel, process_data: Callable
+) -> None:
     protocol = protocol()
     callback = prepare_protocol_as_bleak_callback_asyncio(protocol)
     print(f"Connecting to device at address {ble_address}")
@@ -130,7 +130,7 @@ async def bluetooth_task(ble_address: str, char_uuid: str, protocol: Type[BLEPro
                 print("Got a cancel message, exiting.")
                 comm.cancel = True
                 break
-            
+
             process_data(package)
 
         await client.stop_notify(char_uuid)

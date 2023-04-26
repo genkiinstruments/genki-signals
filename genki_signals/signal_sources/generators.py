@@ -24,9 +24,7 @@ class SquareWave(SignalSource):
         self.phase = phase
 
     def __call__(self, t):
-        return self.amplitude * signal.square(
-            2 * np.pi * self.frequency * t + self.phase
-        )
+        return self.amplitude * signal.square(2 * np.pi * self.frequency * t + self.phase)
 
     def __repr__(self):
         return f"SquareWave(amplitude={self.amplitude}, frequency={self.frequency}, phase={self.phase})"
@@ -39,9 +37,7 @@ class TriangleWave(SignalSource):
         self.phase = phase
 
     def __call__(self, t):
-        return self.amplitude * signal.sawtooth(
-            2 * np.pi * self.frequency * t + self.phase, 0.5
-        )
+        return self.amplitude * signal.sawtooth(2 * np.pi * self.frequency * t + self.phase, 0.5)
 
     def __repr__(self):
         return f"TriangleWave(amplitude={self.amplitude}, frequency={self.frequency}, phase={self.phase})"

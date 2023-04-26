@@ -59,8 +59,9 @@ class SignalSystem:
             json.dump([s.to_dict() for s in self.derived_signals], f)
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
-                recorder = WavFileRecorder(path / "raw_data.wav", self.source.sample_rate,
-                                           self.source.n_channels, self.source.sample_width)
+                recorder = WavFileRecorder(
+                    path / "raw_data.wav", self.source.sample_rate, self.source.n_channels, self.source.sample_width
+                )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")
         self.recorder = recorder

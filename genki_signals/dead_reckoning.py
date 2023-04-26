@@ -63,8 +63,6 @@ def zero_velocity_from_linacc_and_gyro(
     pow_linacc = calc_per_t_power(linacc)
     pow_linacc = gaussian_smooth_offline(pow_linacc, sigma)
 
-    probability, pow_combined = combine_power(
-        pow_gyro, pow_linacc, bias, c_acc, c_gyro, beta
-    )
+    probability, pow_combined = combine_power(pow_gyro, pow_linacc, bias, c_acc, c_gyro, beta)
 
     return probability, pow_combined

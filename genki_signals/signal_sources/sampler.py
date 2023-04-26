@@ -32,9 +32,7 @@ class BusyThread(threading.Thread):
 
 
 class Sampler(SamplerBase):
-    def __init__(
-        self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"
-    ):
+    def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
         self.sources = sources
         self.is_active = False
         self.buffer = Queue()
@@ -49,9 +47,7 @@ class Sampler(SamplerBase):
             if hasattr(source, "start"):
                 source.start()
         self.start_time = time.time()
-        self._busy_loop = BusyThread(
-            1 / self.sample_rate, self._callback, sleep_time=self.sleep_time
-        )
+        self._busy_loop = BusyThread(1 / self.sample_rate, self._callback, sleep_time=self.sleep_time)
         self._busy_loop.start()
         self.is_active = True
 

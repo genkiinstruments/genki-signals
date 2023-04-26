@@ -67,9 +67,7 @@ class BaParams:
         return signal.filtfilt(self.b, self.a, x, axis=0)
 
 
-def init_filter(
-    filter_coeff: SosParams | BaParams, n_channels: int, x_init: np.ndarray | float
-) -> np.ndarray:
+def init_filter(filter_coeff: SosParams | BaParams, n_channels: int, x_init: np.ndarray | float) -> np.ndarray:
     zi = filter_coeff.init_zi()
     zi = np.stack([zi] * n_channels, axis=-1)
     zi *= x_init
@@ -88,9 +86,7 @@ def filter_response(
 
 def _handle_scalar(x_in: float, n_channels: int) -> np.ndarray:
     # Single element, n_channels=1
-    assert (
-        n_channels == 1
-    ), f"Expected `n_channels=1` when getting a scalar, got `{n_channels=}`"
+    assert n_channels == 1, f"Expected `n_channels=1` when getting a scalar, got `{n_channels=}`"
     x = np.array([[x_in]])
     return x
 
@@ -101,15 +97,11 @@ def _handle_array(x_in: np.ndarray, n_channels: int) -> np.ndarray:
         x = x_in.reshape(-1, 1)
     elif x_in.ndim == 1:
         # Single element with shape (n_channels,)
-        assert (
-            len(x_in) == n_channels
-        ), f"Expected `{len(x_in)=}` to be the same as `{n_channels=}`"
+        assert len(x_in) == n_channels, f"Expected `{len(x_in)=}` to be the same as `{n_channels=}`"
         x = np.expand_dims(x_in, axis=0)
     elif x_in.ndim == 2:
         # Batch of elements with shape (n, n_channels)
-        assert (
-            x_in.shape[1] == n_channels
-        ), f"Expected `{x_in.shape[1]=}` to be the same as `{n_channels=}`"
+        assert x_in.shape[1] == n_channels, f"Expected `{x_in.shape[1]=}` to be the same as `{n_channels=}`"
         x = x_in
     else:
         raise ValueError(f"Unsupported number of dims `{x_in.ndim=}`")
@@ -199,9 +191,7 @@ class ButterFilter(Filter):
         fs: int,
         n_channels: int = 1,
     ):
-        sos = signal.butter(
-            order, cutoff_freq, btype=filter_type, fs=fs, analog=False, output="sos"
-        )
+        sos = signal.butter(order, cutoff_freq, btype=filter_type, fs=fs, analog=False, output="sos")
         super().__init__(SosParams(sos), n_channels)
         self._fs = fs
         self._cutoff_freq = cutoff_freq
@@ -236,9 +226,7 @@ class FirFilter(Filter):
         self._fs = fs
         self.order = len(kernel)
         if not np.isclose(np.sum(kernel), 1.0):
-            warnings.warn(
-                "The weights of the kernel do not sum to 1.0. Usually this is not desirable."
-            )
+            warnings.warn("The weights of the kernel do not sum to 1.0. Usually this is not desirable.")
         super().__init__(BaParams(kernel, np.array([1])), n_channels)
 
     @classmethod
@@ -257,9 +245,7 @@ class FirFilter(Filter):
         return cls(kernel, fs, n_channels)
 
     @classmethod
-    def create_half_gaussian(
-        cls, width_95p_in_sec: float, fs: int, n_channels: int = 1
-    ):
+    def create_half_gaussian(cls, width_95p_in_sec: float, fs: int, n_channels: int = 1):
         """Sigma in seconds"""
         sigma = width_95p_in_sec / 2 * fs
         kernel = gaussian_kernel1d(sigma)

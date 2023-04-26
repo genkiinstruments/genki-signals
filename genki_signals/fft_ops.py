@@ -67,12 +67,8 @@ class DetrendCustom(nn.Module):
 
     def _vec_slope(self, x: Tensor, y: Tensor) -> Tensor:
         """`vectorized_slope_of_linear_fit`"""
-        assert (
-            y.shape[1] == x.shape[0]
-        ), f"lengths of arrays don't match {y.shape=}, {x.shape=}"
-        beta = (self._m(y * x) - self._m(x) * self._m(y)) / (
-            self._m(x * x) - self._m(x) ** 2
-        )
+        assert y.shape[1] == x.shape[0], f"lengths of arrays don't match {y.shape=}, {x.shape=}"
+        beta = (self._m(y * x) - self._m(x) * self._m(y)) / (self._m(x * x) - self._m(x) ** 2)
         alpha = self._m(y) - beta * self._m(x)
         return torch.stack([beta, alpha])
 
@@ -149,22 +145,14 @@ class FftCustom(nn.Module):
 
     def __init__(self, sig_len, fs, window=None, fft_type="native"):
         super().__init__()
-        self.window = (
-            window
-            if window is not None
-            else torch.from_numpy(tukey(sig_len, alpha=0.25, sym=False)).float()
-        )
+        self.window = window if window is not None else torch.from_numpy(tukey(sig_len, alpha=0.25, sym=False)).float()
         assert sig_len % 2 == 0, "sig_len needs to be a multiple of 2"
-        assert (
-            len(self.window) == sig_len
-        ), f"{len(self.window)=} and {sig_len} need to be the same"
+        assert len(self.window) == sig_len, f"{len(self.window)=} and {sig_len} need to be the same"
 
         self.scaling = 1 / (fs * (self.window * self.window).sum())
 
         if fft_type not in self.fft_types:
-            raise ValueError(
-                f"Expected `fft_type` to be in {self.fft_types}, got {fft_type}"
-            )
+            raise ValueError(f"Expected `fft_type` to be in {self.fft_types}, got {fft_type}")
         self.fft = FftMag() if fft_type == "native" else FftMagMatMul(len(self.window))
 
     def forward(self, x):
@@ -174,9 +162,7 @@ class FftCustom(nn.Module):
         # Taken from `spectrogram`, mode='psd'. Only the part for multiples of 2, because we ensure that the length is a
         # power of 2
         # The below is equivalent to `x_psd[..., 1:-1] *= 2`. In place multiplication is not supported by ONNX
-        x_psd = torch.concat(
-            [x_psd[..., :1], 2 * x_psd[..., 1:-1], x_psd[..., -1:]], dim=-1
-        )
+        x_psd = torch.concat([x_psd[..., :1], 2 * x_psd[..., 1:-1], x_psd[..., -1:]], dim=-1)
         return x_psd * self.scaling
 
 
@@ -217,9 +203,7 @@ class FftBucketizer(nn.Module):
         super().__init__()
         f = torch.fft.rfftfreq(win_size, 1 / fs)
         self._no_sum_idx = no_sum_idx
-        self.slices = [
-            idx_from_start_and_end(f, start, end) for start, end in pairwise(bins)
-        ]
+        self.slices = [idx_from_start_and_end(f, start, end) for start, end in pairwise(bins)]
 
     def forward(self, x: Tensor) -> Tensor:
         out = []
@@ -299,9 +283,7 @@ class SpectrogramFeaturesTorch(nn.Module):
     ):
         super().__init__()
         self.detrend = DetrendCustom(mode=detrend_mode) if not export else nn.Identity()
-        self.fft = (
-            FftCustom(win_size, fs, fft_type=fft_type) if not export else nn.Identity()
-        )
+        self.fft = FftCustom(win_size, fs, fft_type=fft_type) if not export else nn.Identity()
         self.bucket = FftBucketizer(win_size, fs) if not export else nn.Identity()
 
         self.flatten = nn.Flatten(start_dim=1, end_dim=-1)

@@ -1,13 +1,8 @@
 import pytorch_lightning as pl
-import torch
-import torch.nn.functional as F
-import wandb
-from more_itertools import zip_equal
 from torch import nn, Tensor
-from torchmetrics import Accuracy, ConfusionMatrix, MatthewsCorrCoef
-from torchmetrics.wrappers import MultioutputWrapper
 
 from genki_signals.fft_ops import SpectrogramFeaturesTorch
+from genki_signals.models.letter_detection_model import Scaler
 
 
 class StateGruInferenceOnly(pl.LightningModule):
@@ -70,9 +65,7 @@ class StateGruInferenceOnly(pl.LightningModule):
         out = self.sp_features(x)
         out = self.scaler(out)
 
-        out, state = self.rnn(
-            out, prev_state
-        )  # out.shape = (batch_size, seq_len, hidden_dim)
+        out, state = self.rnn(out, prev_state)  # out.shape = (batch_size, seq_len, hidden_dim)
         out = self.relu(out)
         out = self.fc(out)  # out.shape = (batch_size, seq_len, output_dim)
         out = self.normalization(out)
