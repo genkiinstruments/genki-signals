@@ -3,7 +3,16 @@ from pathlib import Path
 import pandas as pd
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SamplerBase
+from genki_signals.signal_sources.base import SamplerBase, SignalSource
+
+
+class BufferSignalSource(SignalSource):
+    def __init__(self, buffer, lines_per_call=1):
+        self.buffer = buffer.copy()
+        self.lines_per_call = lines_per_call
+
+    def __call__(self, t):
+        return self.buffer.popleft(self.lines_per_call)
 
 
 class DataFrameSignalSource(SamplerBase):
@@ -63,8 +72,3 @@ class FileSignalSource(DataFrameSignalSource):
 
     def _repr_markdown_(self):
         return self.__repr__()
-
-
-class SessionSignalSource(DataFrameSignalSource):
-    def __init__(self, session, lines_per_read=-1):
-        super().__init__(session.df, lines_per_read)

@@ -45,7 +45,7 @@ class WaveSignalSource(SignalSource, SamplerBase):
     def __call__(self, t):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False, spectrogram=False):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):
         if ble_address is None and not godot:
             raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
@@ -57,6 +57,7 @@ class WaveSignalSource(SignalSource, SamplerBase):
         self.latest_point = None
         self.lead = True
         self.spectrogram = spectrogram
+        self.sample_rate = sample_rate
 
     def read(self):
         data = DataBuffer()

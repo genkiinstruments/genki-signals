@@ -1,13 +1,9 @@
-import json
 import logging
-import os
-import sys
-from datetime import datetime
-import getpass
 from pathlib import Path
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.recorders import PickleRecorder, WavFileRecorder
+from genki_signals.session import Session
 from genki_signals.signal_sources import MicSignalSource
 
 logger = logging.getLogger(__name__)
@@ -45,18 +41,8 @@ class SignalSystem:
 
     def start_recording(self, path, recorder=None, **metadata):
         path = Path(path)
-        if os.path.exists(path):
-            raise Exception(f"File {path} already exists")
-        os.mkdir(path)
-        metadata["session_name"] = path.name
-        metadata["system_user"] = getpass.getuser()
-        metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        metadata["argv"] = sys.argv
-        metadata["platform"] = sys.platform
-        with open(path / "metadata.json") as f:
-            json.dump(metadata, f)
-        with open(path / "signal_functions.json") as f:
-            json.dump([s.to_dict() for s in self.derived_signals], f)
+        session = Session.create_session(path, self, metadata)
+
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
                 recorder = WavFileRecorder(
