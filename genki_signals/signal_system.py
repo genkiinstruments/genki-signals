@@ -15,13 +15,11 @@ class SignalSystem:
     collects data points as they arrive from the source, and computes derived signals.
     """
 
-    def __init__(self, data_source, derived_signals=None):
+    def __init__(self, data_source, signal_functions=None):
         self.recorder = None
         self.is_recording = False
         self.source = data_source
-        if derived_signals is None:
-            derived_signals = []
-        self.derived_signals = derived_signals
+        self.signal_functions = [] if signal_functions is None else signal_functions
         self.is_active = False
 
     def start(self):
@@ -54,7 +52,7 @@ class SignalSystem:
         self.is_recording = True
 
     def _compute_derived(self, data: DataBuffer):
-        for signal in self.derived_signals:
+        for signal in self.signal_functions:
             inputs = tuple(data[name] for name in signal.input_signals)
 
             # TODO: error reporting here? Remove ill-behaved signals?
@@ -78,4 +76,4 @@ class SignalSystem:
         return data
 
     def add_derived_signal(self, signal):
-        self.derived_signals.append(signal)
+        self.signal_functions.append(signal)
