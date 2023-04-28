@@ -43,7 +43,9 @@ class Session:
         self.base_path = base_path
         self.session_name = self.base_path.name
         self._raw_data_path = None
-        self._data_extension = None
+        self._datafile_extension = None
+        self._metadata = None
+        self._data = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.session_name}>"
@@ -65,7 +67,7 @@ class Session:
 
         metadata["session_name"] = path.name
         metadata["system_user"] = getpass.getuser()
-        metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        metadata["timestamp"] = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         metadata["argv"] = sys.argv
         metadata["platform"] = sys.platform
         metadata["data_source"] = system.source.__class__.__name__
@@ -84,15 +86,15 @@ class Session:
     # ==========
 
     def _load_data(self):
-        if self._data_extension == ".pickle":
+        if self.datafile_extension in [".pickle", ".pkl"]:
             with open(self.raw_data_path, "rb") as FILE:
                 self._data = pickle.load(FILE)
-        elif self._data_extension == ".wav":
+        elif self.datafile_extension == ".wav":
             wavefile = wave.open(self.raw_data_path, "rb")
             data = wavefile.readframes(wavefile.getnframes())
             self._data = DataBuffer({"audio": data})
         else:
-            raise NotImplementedError(f"Loading data from {self._data_extension} is not implemented")
+            raise NotImplementedError(f"Loading data from {self._datafile_extension} is not implemented")
 
     def _load_metadata(self):
         self._metadata = read_json_file(self.metadata_path)
@@ -100,24 +102,32 @@ class Session:
     def _write_metadata(self):
         write_json_file(self.metadata_path, self.metadata)
 
+    def _find_raw_data_file(self):
+        found = glob.glob(str(self.base_path / "raw_data.*"))
+        if len(found) == 0:
+            raise FileNotFoundError("No raw data file found")
+        elif len(found) > 1:
+            raise FileNotFoundError("Multiple raw data files found")
+        else:
+            raw_data_path = Path(found[0])
+            self._raw_data_path = raw_data_path
+            self._datafile_extension = raw_data_path.suffix
+
     # ===================
     #  Data/Metadata API
     # ===================
 
     @property
+    def datafile_extension(self):
+        if self._datafile_extension is None:
+            self._find_raw_data_file()
+        return self._datafile_extension
+
+    @property
     def raw_data_path(self):
-        if hasattr(self, "_raw_data_path"):
-            return self._raw_data_path
-        else:
-            found = glob.glob(str(self.base_path / "raw_data.*"))
-            if len(found) == 0:
-                raise FileNotFoundError("No raw data file found")
-            elif len(found) > 1:
-                raise FileNotFoundError("Multiple raw data files found")
-            else:
-                self._raw_data_path = found[0]
-                self._data_extension = Path(self._raw_data_path).suffix
-                return self._raw_data_path
+        if self._raw_data_path is None:
+            self._find_raw_data_file()
+        return self._raw_data_path
 
     @property
     def metadata_path(self):
@@ -125,13 +135,13 @@ class Session:
 
     @property
     def metadata(self):
-        if not hasattr(self, "_metadata"):
+        if self._metadata is None:
             self._load_metadata()
         return self._metadata
 
     @property
     def data(self):
-        if not hasattr(self, "_data"):
+        if self._data is None:
             self._load_data()
         return self._data
 

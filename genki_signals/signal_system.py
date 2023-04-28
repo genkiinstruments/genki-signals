@@ -28,6 +28,8 @@ class SignalSystem:
 
     def stop(self):
         self.source.stop()
+        if self.is_recording:
+            self.stop_recording()
         self.is_active = False
 
     def __enter__(self):
@@ -50,6 +52,11 @@ class SignalSystem:
                 recorder = PickleRecorder(path / "raw_data.pickle")
         self.recorder = recorder
         self.is_recording = True
+
+    def stop_recording(self):
+        self.recorder.stop()
+        self.recorder = None
+        self.is_recording = False
 
     def _compute_derived(self, data: DataBuffer):
         for signal in self.signal_functions:
