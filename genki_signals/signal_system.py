@@ -41,7 +41,7 @@ class SignalSystem:
 
     def start_recording(self, path, recorder=None, **metadata):
         path = Path(path)
-        session = Session.create_session(path, self, metadata)
+        Session.create_session(path, self, metadata)
 
         if recorder is None:
             if isinstance(self.source, MicSignalSource):

@@ -42,7 +42,6 @@ class Session:
     def __init__(self, base_path: Path):
         self.base_path = base_path
         self.session_name = self.base_path.name
-        self._load_metadata()
         self._raw_data_path = None
         self._data_extension = None
 
@@ -76,6 +75,7 @@ class Session:
         self = cls(path)
 
         write_json_file(self.metadata_path, metadata)
+        self._load_metadata()
 
         return self
 
@@ -92,9 +92,7 @@ class Session:
             data = wavefile.readframes(wavefile.getnframes())
             self._data = DataBuffer({"audio": data})
         else:
-            raise NotImplementedError(
-                f"Loading data from {self._data_extension} is not implemented"
-            )
+            raise NotImplementedError(f"Loading data from {self._data_extension} is not implemented")
 
     def _load_metadata(self):
         self._metadata = read_json_file(self.metadata_path)
