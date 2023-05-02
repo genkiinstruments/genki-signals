@@ -118,9 +118,7 @@ def _half_plane(data: np.ndarray) -> np.ndarray:
         >>> _half_plane(x)
         array([ 1, -1,  1])
     """
-    assert (
-        data.ndim == 2 and data.shape[0] == 2
-    ), f"Expected a matrix of 2D vectors. Got a matrix {data.shape=}"
+    assert data.ndim == 2 and data.shape[0] == 2, f"Expected a matrix of 2D vectors. Got a matrix {data.shape=}"
     return (data[1] >= 0).astype(int) * 2 - 1
 
 
@@ -219,9 +217,7 @@ def ahrs(
     rejection_timeout_sec: float = 3,
 ) -> imufusion.Ahrs:
     _ahrs = imufusion.Ahrs()
-    _ahrs.settings = imufusion.Settings(
-        gain, mag_rejection, acc_rejection, int(rejection_timeout_sec * sample_rate)
-    )
+    _ahrs.settings = imufusion.Settings(gain, mag_rejection, acc_rejection, int(rejection_timeout_sec * sample_rate))
     return _ahrs
 
 
@@ -264,9 +260,7 @@ class FusionOrientation(SignalFunction):
             self.ahrs.update_no_magnetometer(gyro_i, acc[i], self.dt)
             qs[i] = self.ahrs.quaternion.array
             if np.sum(qs[i] ** 2) > 1 + 1e-3:
-                logger.warn(
-                    f"Fusion orientation '{self.name}' computed invalid quaternion: {qs[i]}"
-                )
+                logger.warn(f"Fusion orientation '{self.name}' computed invalid quaternion: {qs[i]}")
         return qs
 
 
@@ -283,9 +277,7 @@ class GravityProjection(SignalFunction):
         name: str,
     ):
         self.name = name
-        self.qr_fact = np.vectorize(
-            np.linalg.qr, signature="(n, m, r)->(n, m, r),(n, r, r)"
-        )
+        self.qr_fact = np.vectorize(np.linalg.qr, signature="(n, m, r)->(n, m, r),(n, r, r)")
         self.input_signals = [input_signal, gravity_signal]
 
     def __call__(self, G, x):
@@ -297,9 +289,7 @@ class GravityProjection(SignalFunction):
         # component s.t. the vector is orthogonal to G. For the second vector, we
         # similarly 0 and 1 for the first two components. We end up with
         # the vectors [1, 0, -g_x / g_z] and [0, 1, -g_y / g_z].
-        A = np.dstack(
-            [ones, zeros, zeros, ones, -G[:, 0] / G[:, 2], -G[:, 1] / G[:, 2]]
-        ).reshape(-1, 3, 2)
+        A = np.dstack([ones, zeros, zeros, ones, -G[:, 0] / G[:, 2], -G[:, 1] / G[:, 2]]).reshape(-1, 3, 2)
         # The QR factorization of A gives us Q, a 3x2 matrix with orthogonal
         # columns that span the subspace orthogonal to G.
         Qv, Rv = self.qr_fact(A)

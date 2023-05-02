@@ -45,11 +45,9 @@ class WaveSignalSource(SignalSource, SamplerBase):
     def __call__(self, t):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False, spectrogram=False):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):
         if ble_address is None and not godot:
-            raise ValueError(
-                "Either ble_address must be provided or godot set to True."
-            )
+            raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
         self.wave = None
         self._signal_names = None
@@ -59,6 +57,7 @@ class WaveSignalSource(SignalSource, SamplerBase):
         self.latest_point = None
         self.lead = True
         self.spectrogram = spectrogram
+        self.sample_rate = sample_rate
 
     def read(self):
         data = DataBuffer()
@@ -123,15 +122,11 @@ class WaveSignalSource(SignalSource, SamplerBase):
     def signal_names(self):
         seconds_waited = 0
         while self._signal_names is None:
-            logger.warning(
-                f"{self.__class__.__name__} started but no package arrived, waiting."
-            )
+            logger.warning(f"{self.__class__.__name__} started but no package arrived, waiting.")
             time.sleep(1)
             seconds_waited += 1
             if seconds_waited >= 5:
-                logger.error(
-                    f"{self.__class__.__name__} waited for package for {seconds_waited} seconds. Exiting."
-                )
+                logger.error(f"{self.__class__.__name__} waited for package for {seconds_waited} seconds. Exiting.")
                 self.stop()
                 sys.exit(1)
         return self._signal_names

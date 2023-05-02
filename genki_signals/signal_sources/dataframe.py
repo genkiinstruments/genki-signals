@@ -3,7 +3,16 @@ from pathlib import Path
 import pandas as pd
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SamplerBase
+from genki_signals.signal_sources.base import SamplerBase, SignalSource
+
+
+class BufferSignalSource(SignalSource):
+    def __init__(self, buffer, lines_per_call=1):
+        self.buffer = buffer.copy()
+        self.lines_per_call = lines_per_call
+
+    def __call__(self, t):
+        return self.buffer.popleft(self.lines_per_call)
 
 
 class DataFrameSignalSource(SamplerBase):
@@ -21,12 +30,6 @@ class DataFrameSignalSource(SamplerBase):
         self.current_line = 0
         self._load_chunk()
 
-    def start_recording(self, *args):
-        raise Exception(
-            "Recording from {self.__class__.__name__} to a file is not supported \
-                    and probably not something you want do be doing?"
-        )
-
     def stop(self):
         pass
 
@@ -34,16 +37,12 @@ class DataFrameSignalSource(SamplerBase):
         if self.lines_per_read < 0:
             data = self.data
         else:
-            data = self.data.iloc[
-                self.current_line : self.current_line + self.lines_per_read
-            ]
+            data = self.data.iloc[self.current_line : self.current_line + self.lines_per_read]
         self.next_chunk = DataBuffer.from_dataframe(data)
 
     def read(self):
         if not hasattr(self, "current_line"):
-            raise Exception(
-                "Tried to call read() from a data source that has not been started."
-            )
+            raise Exception("Tried to call read() from a data source that has not been started.")
         chunk = self.next_chunk
         self.current_line += len(list(chunk.values())[0])
         self._load_chunk()
@@ -64,9 +63,7 @@ class FileSignalSource(DataFrameSignalSource):
         elif self.path.suffix == ".parquet":
             data = pd.read_parquet(self.path)
         else:
-            raise Exception(
-                f"Suffix {self.path.suffix} not supported for FileSignalSource (Path: {self.path})"
-            )
+            raise Exception(f"Suffix {self.path.suffix} not supported for FileSignalSource (Path: {self.path})")
         data = data.iloc[line_offset:]
         super().__init__(data, lines_per_read)
 
@@ -75,8 +72,3 @@ class FileSignalSource(DataFrameSignalSource):
 
     def _repr_markdown_(self):
         return self.__repr__()
-
-
-class SessionSignalSource(DataFrameSignalSource):
-    def __init__(self, session, lines_per_read=-1):
-        super().__init__(session.df, lines_per_read)

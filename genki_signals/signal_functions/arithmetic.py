@@ -18,12 +18,12 @@ class Scale(SignalFunction):
 
 
 class Sum(SignalFunction):
-    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
+    def __init__(self, inputs: list[SignalName], name: str):
         self.name = name
-        self.input_signals = [input_a, input_b]
+        self.input_names = inputs
 
-    def __call__(self, a, b):
-        return a + b
+    def __call__(self, *inputs):
+        return sum(inputs)
 
 
 class Difference(SignalFunction):
@@ -64,9 +64,7 @@ class Integrate(SignalFunction):
 
     def __call__(self, a, b):
         if self.trapezoid:
-            val = self.state + integrate.cumulative_trapezoid(
-                y=a, x=b, initial=0.0, axis=-1
-            )
+            val = self.state + integrate.cumulative_trapezoid(y=a, x=b, initial=0.0, axis=-1)
         else:
             prepend_b = b[..., 0:1] if self.last_b is None else self.last_b
             db = np.diff(b, prepend=prepend_b)

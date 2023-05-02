@@ -57,9 +57,7 @@ class Inference(SignalFunction):
                 },
             )
         else:
-            output, output_extra = self.session.run(
-                ["output", "output_extra"], {"input": x.astype(np.float32)}
-            )
+            output, output_extra = self.session.run(["output", "output_extra"], {"input": x.astype(np.float32)})
         return output[0, ..., None]
 
 
@@ -73,28 +71,20 @@ class WindowedInference(WindowedSignalFunction):
 
     def windowed_fn(self, x):
         x = x.T[np.newaxis, ...]
-        output, output_extra = self.session.run(
-            ["output", "output_extra"], {"input": x.astype(np.float32)}
-        )
+        output, output_extra = self.session.run(["output", "output_extra"], {"input": x.astype(np.float32)})
         return output[0]
 
 
 class ObjectTracker(WindowedSignalFunction):
-    def __init__(
-        self, input_signal: SignalName, name: str, callback: Callable, **kwargs
-    ):
+    def __init__(self, input_signal: SignalName, name: str, callback: Callable, **kwargs):
         super().__init__(**kwargs)
         self.name = name
         self.callback = callback
 
         min_group_size, min_trigger_idx = (3, 8)
         max_disappeared = 3
-        dist_func = partial(
-            group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False
-        )
-        self._tracker = GroupTracker(
-            dist_func, max_disappeared, min_group_size, min_trigger_idx
-        )
+        dist_func = partial(group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False)
+        self._tracker = GroupTracker(dist_func, max_disappeared, min_group_size, min_trigger_idx)
 
         self.input_signals = [input_signal]
 
@@ -228,33 +218,23 @@ class WindowedModel(SignalFunction):
             self.data_buffer.popleft(self.hop_length)
 
         while len(self.lookback_buffer) >= self.lookback_length:
-            x = self.lookback_buffer.view(
-                self.lookback_length
-            )  # (lookback_length, num_features)
+            x = self.lookback_buffer.view(self.lookback_length)  # (lookback_length, num_features)
             self.lookback_buffer.popleft(1)
             y = self.predict(x)  # (1, num_classes)
-            y_upsampled = [
-                y[0]
-            ] * self.hop_length  # one prediction per window, upsample to each sample
+            y_upsampled = [y[0]] * self.hop_length  # one prediction per window, upsample to each sample
             self.prediction_buffer.extend(y_upsampled)
 
         preds_cur = [
-            self.prediction_buffer.popleft()
-            if self.prediction_buffer
-            else [0] * len(self.output_names)
+            self.prediction_buffer.popleft() if self.prediction_buffer else [0] * len(self.output_names)
             for _ in range(len(data))
         ]
         # need the if statement since predictions are only made after the lookback buffer is big enough
 
         if len(self.prediction_buffer) + len(self.data_buffer) > self.win_size:
-            logger.warning(
-                "Predictions out of sync, prediction_buffer contains old outputs"
-            )
+            logger.warning("Predictions out of sync, prediction_buffer contains old outputs")
 
         y_pred = np.argmax(preds_cur, axis=1)
-        return pd.DataFrame(
-            data=np.c_[preds_cur, y_pred], columns=self.output_names + ["y_pred"]
-        )
+        return pd.DataFrame(data=np.c_[preds_cur, y_pred], columns=self.output_names + ["y_pred"])
 
 
 class WindowedModelTorch(SignalFunction):
@@ -292,23 +272,21 @@ class WindowedModelTorch(SignalFunction):
             y = self.model.predict(x)
 
             # TODO(robert): See if we can just run this on a low frequency using the new system capabilites?
-            y_upsampled = upsample(
-                y.numpy(), self.hop_length
-            )  # one prediction per window, upsample to each sample
+            y_upsampled = upsample(y.numpy(), self.hop_length)  # one prediction per window, upsample to each sample
             self.prediction_buffer.extend(y_upsampled)
 
         preds_cur = self.prediction_buffer.popleft(len(data))
         preds_cur_dict = dict(zip_equal(self.output_names, preds_cur.T))
 
         out = {self.name: np.argmax(preds_cur, axis=1), **preds_cur_dict}
-        assert len(out) == len(
-            self.outputs
-        ), "Expected the number of current outputs and the defined outputs to be eq."
+        assert len(out) == len(self.outputs), "Expected the number of current outputs and the defined outputs to be eq."
         return out
 
 
 __all__ = [
     "Inference",
+    "WindowedInference",
+    "ObjectTracker",
     "WindowedModel",
     "WindowedModelTorch",
 ]
