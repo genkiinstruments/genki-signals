@@ -33,17 +33,18 @@ class Inference(SignalFunction):
 
     def __init__(
         self,
-        model,
         input_signal: SignalName,
-        stateful: bool,
         name: str,
+        model_filename,
+        stateful: bool,
         init_state=None,
     ):
-        self.name = name
+        super().__init__(
+            input_signal, name=name, params={"model": model_filename, "stateful": stateful, "init_state": init_state}
+        )
         self.stateful = stateful
         self.state = init_state
-        self.session = InferenceSession(model)
-        self.input_signals = [input_signal]
+        self.session = InferenceSession(model_filename)
 
     def __call__(self, x):
         # x shape (6, 16, t)
@@ -61,13 +62,11 @@ class Inference(SignalFunction):
         return output[0, ..., None]
 
 
-class WindowedInference(WindowedSignalFunction):
-    def __init__(self, model, input_signal: SignalName, name: str, **kwargs):
-        super().__init__(**kwargs)
-        self.name = name
-        self.model = model
-        self.session = InferenceSession(model)
-        self.input_signals = [input_signal]
+class WindowedInference(WindowedSignalFunction, SignalFunction):
+    def __init__(self, input_signal: SignalName, name: str, model_filename, **kwargs):
+        super().__init__(input_signal, name=name, params={"model_filename": model_filename, **kwargs})
+        self.init_windowing(**kwargs)
+        self.session = InferenceSession(model_filename)
 
     def windowed_fn(self, x):
         x = x.T[np.newaxis, ...]
@@ -77,16 +76,14 @@ class WindowedInference(WindowedSignalFunction):
 
 class ObjectTracker(WindowedSignalFunction):
     def __init__(self, input_signal: SignalName, name: str, callback: Callable, **kwargs):
-        super().__init__(**kwargs)
-        self.name = name
+        super().__init__(input_signal, name=name, params={"callback": callback, **kwargs})
+        self.init_windowing(**kwargs)
         self.callback = callback
 
         min_group_size, min_trigger_idx = (3, 8)
         max_disappeared = 3
         dist_func = partial(group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False)
         self._tracker = GroupTracker(dist_func, max_disappeared, min_group_size, min_trigger_idx)
-
-        self.input_signals = [input_signal]
 
     def windowed_fn(self, x):
         output = torch.tensor(x[None])

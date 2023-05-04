@@ -20,10 +20,9 @@ class SampleRate(SignalFunction):
         name: str = "sample_rate",
         unit_multiplier: float = 1,
     ):
-        self.name = name
+        super().__init__(input_signal, name=name, params={"unit_multiplier": unit_multiplier})
         self.unit_multiplier = unit_multiplier
         self.last_ts = 0
-        self.input_signals = [input_signal]
 
     def __call__(self, signal):
         rate = 1 / np.diff(signal, prepend=self.last_ts)
@@ -31,8 +30,8 @@ class SampleRate(SignalFunction):
         return rate * self.unit_multiplier
 
 
-class WindowedSignalFunction(SignalFunction, ABC):
-    def __init__(
+class WindowedSignalFunction(ABC):
+    def init_windowing(
         self,
         window_size: int,
         output_shape: tuple[int],
@@ -72,7 +71,7 @@ class WindowedSignalFunction(SignalFunction, ABC):
         raise NotImplementedError
 
 
-class FourierTransform(WindowedSignalFunction):
+class FourierTransform(WindowedSignalFunction, SignalFunction):
     """
     Computes a windowed spectrogram from a raw signal
     """
@@ -87,7 +86,13 @@ class FourierTransform(WindowedSignalFunction):
         window_type: str = "hann",
         **kwargs,
     ):
-        self.name = name
+        super().__init__(input_signal, name=name, params={
+            "window_size": window_size,
+            "window_overlap": window_overlap,
+            "detrend_type": detrend_type,
+            "window_type": window_type,
+            **kwargs,
+        })
         self.win_size = window_size
         self.no_buckets = window_size // 2 + 1
         self.detrend_type = detrend_type
@@ -95,15 +100,13 @@ class FourierTransform(WindowedSignalFunction):
             self.window_fn = scipy.signal.windows.hann
         else:
             raise ValueError(f"Unknown window type: {window_type}")
-        super().__init__(
+        self.init_windowing(
             window_size=window_size,
             window_overlap=window_overlap,
             output_shape=(self.no_buckets,),
             default_value=0 + 0j,
             **kwargs,
         )
-
-        self.input_signals = [input_signal]
 
     def windowed_fn(self, sig):
         sig = scipy.signal.detrend(sig, type=self.detrend_type)
@@ -118,10 +121,9 @@ class Delay(SignalFunction):
     """Delays signal by n samples"""
 
     def __init__(self, input_signal: SignalName, n: int, name: str):
-        self.name = name
+        super().__init__(input_signal, name=name, params={"n": n})
         self.n = n
         self.buffer = None
-        self.input_signals = [input_signal]
 
     def __call__(self, sig):
         if self.buffer is None:
