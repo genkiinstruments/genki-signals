@@ -190,7 +190,6 @@ class MadgwickOrientation(SignalFunction):
         self.madgwick = Madgwick(gain=gain, frequency=sample_rate, q0=self.Q)
         self.offset = imufusion.Offset(int(sample_rate))  # gyro debiasing
         self.synced = False
-        self.params = {"gain": gain, "sample_rate": sample_rate, "q0": q0}
 
     def __call__(self, gyro, acc):
         acc = acc * 9.8
