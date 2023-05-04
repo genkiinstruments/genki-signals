@@ -77,7 +77,6 @@ class Gravity(SignalFunction):
     def __init__(self, input_signal: SignalName, name: str):
         super().__init__(input_signal, name=name)
 
-
     def __call__(self, qs):
         qw, qx, qy, qz = qs[0], qs[1], qs[2], qs[3]
 
@@ -236,8 +235,10 @@ class FusionOrientation(SignalFunction):
         use_offset: bool = True,
     ):
         super().__init__(
-            gyro_signal, acc_signal, name=name,
-            params={"sample_rate": sample_rate, "gain": gain, "use_offset": use_offset}
+            gyro_signal,
+            acc_signal,
+            name=name,
+            params={"sample_rate": sample_rate, "gain": gain, "use_offset": use_offset},
         )
         self.ahrs = ahrs(
             gain,
@@ -329,16 +330,21 @@ class DeadReckoning(SignalFunction):
         threshold: float = 0.5,
         half: bool = True,
     ):
-        super().__init__(input_gyro, input_acc, name=name, params={
-            "len_sec": len_sec,
-            "sample_rate": sample_rate,
-            "bias": bias,
-            "c_acc": c_acc,
-            "c_gyro": c_gyro,
-            "beta": beta,
-            "threshold": threshold,
-            "half": half,
-        })
+        super().__init__(
+            input_gyro,
+            input_acc,
+            name=name,
+            params={
+                "len_sec": len_sec,
+                "sample_rate": sample_rate,
+                "bias": bias,
+                "c_acc": c_acc,
+                "c_gyro": c_gyro,
+                "beta": beta,
+                "threshold": threshold,
+                "half": half,
+            },
+        )
         self.filter_gyro = (
             FirFilter.create_half_gaussian(len_sec, sample_rate)
             if half

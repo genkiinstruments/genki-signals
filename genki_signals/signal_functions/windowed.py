@@ -86,13 +86,17 @@ class FourierTransform(WindowedSignalFunction, SignalFunction):
         window_type: str = "hann",
         **kwargs,
     ):
-        super().__init__(input_signal, name=name, params={
-            "window_size": window_size,
-            "window_overlap": window_overlap,
-            "detrend_type": detrend_type,
-            "window_type": window_type,
-            **kwargs,
-        })
+        super().__init__(
+            input_signal,
+            name=name,
+            params={
+                "window_size": window_size,
+                "window_overlap": window_overlap,
+                "detrend_type": detrend_type,
+                "window_type": window_type,
+                **kwargs,
+            },
+        )
         self.win_size = window_size
         self.no_buckets = window_size // 2 + 1
         self.detrend_type = detrend_type

@@ -23,6 +23,7 @@ class Sum(SignalFunction):
 
 class Difference(SignalFunction):
     """Find the difference between 2 signals"""
+
     def __call__(self, a, b):
         return a - b
 
@@ -104,7 +105,7 @@ class MovingAverage(SignalFunction):
     def __call__(self, x):
         output = np.zeros(x.shape)
         for i in range(x.shape[-1]):
-            self.buffer.extend(x[..., i: i + 1])
+            self.buffer.extend(x[..., i : i + 1])
             output[i] = np.mean(self.buffer.view(), axis=-1)
         return output
 
