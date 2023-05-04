@@ -10,16 +10,17 @@ from pathlib import Path
 import wave
 
 from genki_signals.buffers import DataBuffer
+from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
 
 
 def read_json_file(p: Path | str):
     with open(p, "r") as FILE:
-        return json.load(FILE)
+        return json.load(FILE, object_hook=decode_signal_fn)
 
 
 def write_json_file(p: Path | str, data: dict | list):
     with open(p, "w") as FILE:
-        json.dump(data, FILE, indent=4)
+        json.dump(data, FILE, indent=4, default=encode_signal_fn)
 
 
 class Session:

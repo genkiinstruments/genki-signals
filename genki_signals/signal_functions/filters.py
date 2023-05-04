@@ -10,17 +10,18 @@ class GaussianSmooth(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
+        name: str,
         width_in_sec: float,
         sample_rate: int,
-        name: str,
         half: bool = False,
     ):
-        self.name = name
+        super().__init__(
+            input_signal, name=name, params={"width_in_sec": width_in_sec, "sample_rate": sample_rate, "half": half}
+        )
         self.width_in_sec = width_in_sec
         self.sample_rate = sample_rate
         self.filter = None
         self.filter_factory = FirFilter.create_half_gaussian if half else FirFilter.create_gaussian
-        self.input_signals = [input_signal]
 
     def __call__(self, x):
         if x.ndim == 1:
@@ -35,14 +36,15 @@ class HighPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
+        name: str,
         order: int,
         cutoff_freq: float,
         sample_rate: int,
-        name: str,
     ):
-        self.name = name
-        self.filter = ButterFilter(order, cutoff_freq, "highpass", sample_rate=sample_rate)
-        self.input_signals = [input_signal]
+        super().__init__(
+            input_signal, name=name, params={"order": order, "cutoff_freq": cutoff_freq, "sample_rate": sample_rate}
+        )
+        self.filter = ButterFilter(order, cutoff_freq, "highpass", fs=sample_rate)
 
     def __call__(self, val):
         if len(val) > 0:
@@ -54,14 +56,15 @@ class BandPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
+        name: str,
         order: int,
         cutoff_freq: float,
         sample_rate: int,
-        name: str,
     ):
-        self.name = name
-        self.filter = ButterFilter(order, cutoff_freq, "bandpass", sample_rate=sample_rate)
-        self.input_signals = [input_signal]
+        super().__init__(
+            input_signal, name=name, params={"order": order, "cutoff_freq": cutoff_freq, "sample_rate": sample_rate}
+        )
+        self.filter = ButterFilter(order, cutoff_freq, "bandpass", fs=sample_rate)
 
     def __call__(self, val):
         if len(val) > 0:
@@ -73,14 +76,15 @@ class LowPassFilter(SignalFunction):
     def __init__(
         self,
         input_signal: SignalName,
+        name: str,
         order: int,
         cutoff_freq: float,
         sample_rate: int,
-        name: str,
     ):
-        self.name = name
-        self.filter = ButterFilter(order, cutoff_freq, "lowpass", sample_rate=sample_rate)
-        self.input_signals = [input_signal]
+        super().__init__(
+            input_signal, name=name, params={"order": order, "cutoff_freq": cutoff_freq, "sample_rate": sample_rate}
+        )
+        self.filter = ButterFilter(order, cutoff_freq, "lowpass", fs=sample_rate)
 
     def __call__(self, val):
         if len(val) > 0:

@@ -9,19 +9,14 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 class Scale(SignalFunction):
     def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
-        self.name = name
+        super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
-        self.input_signals = [input_signal]
 
     def __call__(self, x):
         return x * self.scale_factor
 
 
 class Sum(SignalFunction):
-    def __init__(self, inputs: list[SignalName], name: str):
-        self.name = name
-        self.input_names = inputs
-
     def __call__(self, *inputs):
         return sum(inputs)
 
@@ -29,19 +24,11 @@ class Sum(SignalFunction):
 class Difference(SignalFunction):
     """Find the difference between 2 signals"""
 
-    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_a, input_b]
-
     def __call__(self, a, b):
         return a - b
 
 
 class Multiply(SignalFunction):
-    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_a, input_b]
-
     def __call__(self, a, b):
         return a * b
 
@@ -56,11 +43,10 @@ class Integrate(SignalFunction):
         name: str,
         use_trapz: bool = True,
     ):
-        self.name = name
-        self.state = 0.0
+        super().__init__(input_a, input_b, name=name, params={"use_trapz": use_trapz})
         self.trapezoid = use_trapz
+        self.state = 0.0
         self.last_b = None
-        self.input_signals = [input_a, input_b]
 
     def __call__(self, a, b):
         if self.trapezoid:
@@ -84,10 +70,10 @@ class Differentiate(SignalFunction):
     """
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
-        self.name = name
+        input_signals = [input_a] if input_b is None else [input_a, input_b]
+        super().__init__(*input_signals, name=name)
         self.last_a = None
         self.last_b = None
-        self.input_signals = [input_a] if input_b is None else [input_a, input_b]
 
     def __call__(self, a, b=None):
         if b is None:  # I.e. use discrete difference
@@ -112,10 +98,9 @@ class Differentiate(SignalFunction):
 class MovingAverage(SignalFunction):
     """Returns the moving average of a signal"""
 
-    def __init__(self, input_signal: SignalName, length: int, name: str):
-        self.name = name
+    def __init__(self, input_signal: SignalName, name: str, length: int):
+        super().__init__(input_signal, name=name, params={"length": length})
         self.buffer = NumpyBuffer(maxlen=length)
-        self.input_signals = [input_signal]
 
     def __call__(self, x):
         output = np.zeros(x.shape)
