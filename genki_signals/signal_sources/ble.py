@@ -47,13 +47,11 @@ class BLESignalSource(SignalSource, SamplerBase):
         self.char_uuid = char_uuid
         self.protocol = protocol
         self.sources = other_sources
-        self.buffer = Queue()
+        self.buffer = DataBuffer()
 
     def read(self):
-        data = DataBuffer()
-        while not self.buffer.empty():
-            d = self.buffer.get()
-            data.append(d)
+        data = self.buffer.copy()
+        self.buffer.clear()
         return data
 
     def start(self):
@@ -76,7 +74,7 @@ class BLESignalSource(SignalSource, SamplerBase):
             secondary_data = source.read_current()
             secondary_data.pop("timestamp", None)
             data.update(**secondary_data)
-        self.buffer.put(data)
+        self.buffer.extend(data)
         self.latest_point = data
 
     def is_active(self):
