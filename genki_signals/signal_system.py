@@ -1,5 +1,7 @@
+import time
 import logging
 from pathlib import Path
+from threading import Thread
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.recorders import PickleRecorder, WavFileRecorder
@@ -15,16 +17,33 @@ class SignalSystem:
     collects data points as they arrive from the source, and computes derived signals.
     """
 
-    def __init__(self, data_source, signal_functions=None):
+    def __init__(self, data_source, signal_functions=None, update_rate=25):
+        self.data_feeds = []
         self.recorder = None
         self.is_recording = False
         self.source = data_source
         self.signal_functions = [] if signal_functions is None else signal_functions
         self.is_active = False
+        self.update_rate = update_rate
+
+    def __repr__(self):
+        return f"SignalSystem({self.source}, {self.signal_functions})"
+
+    def _busy_loop(self):
+        while self.is_active:
+            new_data = self._read()
+            for feed in self.data_feeds:
+                feed(new_data)
+            time.sleep(1 / self.update_rate)
+
+    def add_data_feed(self, feed):
+        self.data_feeds.append(feed)
 
     def start(self):
-        self.is_active = True
         self.source.start()
+        t = Thread(target=self._busy_loop)
+        t.start()
+        self.is_active = True
 
     def stop(self):
         self.source.stop()
@@ -71,7 +90,7 @@ class SignalSystem:
                 logger.exception(f"Error computing derived signal {signal.name}")
                 raise e
 
-    def read(self):
+    def _read(self):
         """
         Return all new data points received since the last call to read()
         """
