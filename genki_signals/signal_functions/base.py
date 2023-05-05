@@ -16,7 +16,7 @@ class SignalFunction(abc.ABC):
         pass
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.name}>"
+        return f"<{self.__class__.__name__}: {self.name}, inputs: {self.input_signals}, params: {self.params}>"
 
     @classmethod
     def config_json(cls):
