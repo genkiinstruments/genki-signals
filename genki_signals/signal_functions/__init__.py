@@ -17,3 +17,4 @@ from .geometry import *  # noqa: F401, F403
 from .inference import *  # noqa: F401, F403
 from .windowed import *  # noqa: F401, F403
 from .shape import *  # noqa: F401, F403
+from .waveforms import *  # noqa: F401, F403
