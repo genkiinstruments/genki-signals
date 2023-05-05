@@ -18,13 +18,14 @@ class SignalSystem:
     """
 
     def __init__(self, data_source, signal_functions=None, update_rate=25):
-        self.data_feeds = []
-        self.recorder = None
-        self.is_recording = False
         self.source = data_source
         self.signal_functions = [] if signal_functions is None else signal_functions
-        self.is_active = False
         self.update_rate = update_rate
+        self.is_active = False
+        self.data_feeds = []
+        self.main_thread = None
+        self.recorder = None
+        self.is_recording = False
 
     def __repr__(self):
         return f"SignalSystem({self.source}, {self.signal_functions})"
@@ -41,15 +42,18 @@ class SignalSystem:
 
     def start(self):
         self.source.start()
-        t = Thread(target=self._busy_loop)
-        t.start()
+        self.main_thread = Thread(target=self._busy_loop)
+        self.main_thread.start()
         self.is_active = True
 
     def stop(self):
-        self.source.stop()
+        self.is_active = False
+        self.main_thread.join()
+        # We need to call stop_recording here, after the main thread has stopped,
+        # otherwise we might send data to the feeds that will not be recorded.
         if self.is_recording:
             self.stop_recording()
-        self.is_active = False
+        self.source.stop()
 
     def __enter__(self):
         self.start()
