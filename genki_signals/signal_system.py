@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 class SignalSystem:
     """
-    A SignalSystem is a SignalSource with a list of derived signals. The system
-    collects data points as they arrive from the source, and computes derived signals.
+    A SignalSystem is a SignalSource with a list of signal functions. The system
+    collects data points as they arrive from the source, and computes signal_functions.
+    The system update_rate is the rate at which the system will check for new data points,
+    specified in Hz. Note that the update_rate will not be exact, as it is limited by the
+    use of time.sleep(), so an error of up to 15% is possible.
     """
 
     def __init__(self, data_source, signal_functions=None, update_rate=25):
