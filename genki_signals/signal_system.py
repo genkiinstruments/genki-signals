@@ -22,7 +22,7 @@ class SignalSystem:
         self.signal_functions = [] if signal_functions is None else signal_functions
         self.update_rate = update_rate
         self.is_active = False
-        self.data_feeds = []
+        self.data_feeds = {}
         self.main_thread = None
         self.recorder = None
         self.is_recording = False
@@ -33,12 +33,15 @@ class SignalSystem:
     def _busy_loop(self):
         while self.is_active:
             new_data = self._read()
-            for feed in self.data_feeds:
+            for feed in self.data_feeds.values():
                 feed(new_data)
             time.sleep(1 / self.update_rate)
 
-    def add_data_feed(self, feed):
-        self.data_feeds.append(feed)
+    def register_data_feed(self, feed_id, callback):
+        self.data_feeds[feed_id] = callback
+
+    def deregister_data_feed(self, feed_id):
+        self.data_feeds.pop(feed_id)
 
     def start(self):
         self.source.start()
