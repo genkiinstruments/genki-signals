@@ -52,7 +52,7 @@ class Video(PlottableWidget):
 
 
 class Line(PlottableWidget):
-    """A line plot of signals w.r.t. some 1D signal."""
+    """A line plot of signal w.r.t. some 1D signal."""
 
     def __init__(
         self,
