@@ -33,6 +33,24 @@ class Multiply(SignalFunction):
         return a * b
 
 
+class Exponentiate(SignalFunction):
+    def __init__(self, input_signal: SignalName, exponent: float, name: str):
+        super().__init__(input_signal, name=name, params={"exponent": exponent})
+        self.exponent = exponent
+
+    def __call__(self, x):
+        return x**self.exponent
+
+
+class Logarithmize(SignalFunction):
+    def __init__(self, input_signal: SignalName, base: float, name: str):
+        super().__init__(input_signal, name=name, params={"base": base})
+        self.base = base
+
+    def __call__(self, x):
+        return np.log(x) / np.log(self.base)
+
+
 class Integrate(SignalFunction):
     """Integrates a signal with respect to another signal (usually time)"""
 
