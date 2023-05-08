@@ -8,7 +8,7 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class Scale(SignalFunction):
-    def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
+    def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
         super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
 
@@ -34,7 +34,7 @@ class Multiply(SignalFunction):
 
 
 class Exponentiate(SignalFunction):
-    def __init__(self, input_signal: SignalName, exponent: float, name: str):
+    def __init__(self, input_signal: SignalName, name: str, exponent: float = np.e):
         super().__init__(input_signal, name=name, params={"exponent": exponent})
         self.exponent = exponent
 
@@ -43,7 +43,7 @@ class Exponentiate(SignalFunction):
 
 
 class Logarithmize(SignalFunction):
-    def __init__(self, input_signal: SignalName, base: float, name: str):
+    def __init__(self, input_signal: SignalName, name: str, base: float = np.e):
         super().__init__(input_signal, name=name, params={"base": base})
         self.base = base
 
