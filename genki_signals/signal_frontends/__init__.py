@@ -1,1 +1,1 @@
-from .visualization import WidgetFrontend, Line, Video
+from .visualization import WidgetFrontend, Line, Scatter, Bar, Histogram, Video

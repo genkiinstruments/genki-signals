@@ -20,6 +20,7 @@ class FrontendBase(ABC):
     def __del__(self):
         self.system.deregister_data_feed(id(self))
 
+
 class WebFrontend(FrontendBase):
     def __init__(self, system: SignalSystem, port):
         super().__init__(system)
@@ -31,7 +32,7 @@ class WebFrontend(FrontendBase):
         @self.app.route("/")
         def index(self):
             return "index.html"
-        
+
         @self.socket.on("connect")
         def connect():
             print("connected!")
@@ -43,7 +44,6 @@ class WebFrontend(FrontendBase):
             print(response)
 
         print(f"opened server on http://localhost:{self.port}")
-
 
     def update(self, data: DataBuffer):
         data_dict = {}
@@ -62,14 +62,3 @@ class WebFrontend(FrontendBase):
 
     def run(self):
         self.app.run(port=self.port)
-
-
-
-
-
-
-
-
-
-
-
