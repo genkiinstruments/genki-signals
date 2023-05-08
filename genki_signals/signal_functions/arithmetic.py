@@ -42,7 +42,7 @@ class Exponentiate(SignalFunction):
         return x**self.exponent
 
 
-class Logarithmize(SignalFunction):
+class Logarithm(SignalFunction):
     def __init__(self, input_signal: SignalName, name: str, base: float = np.e):
         super().__init__(input_signal, name=name, params={"base": base})
         self.base = base
