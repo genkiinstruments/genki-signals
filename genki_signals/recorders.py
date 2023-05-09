@@ -1,3 +1,6 @@
+"""
+This module contains classes for recording data.
+"""
 import abc
 import pickle
 import wave

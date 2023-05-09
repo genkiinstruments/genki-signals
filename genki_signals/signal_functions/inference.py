@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 class Inference(SignalFunction):
     """
-    Run real-time inference using an ONNX model
+    Run real-time inference using an ONNX model. Operates on a single input signal, and one sample at a time.
+    If stateful=True, the model is run as an RNN, and the state is passed in as a parameter and stored between calls.
     """
 
     def __init__(
@@ -56,9 +57,13 @@ class Inference(SignalFunction):
 
 
 class WindowedInference(WindowedSignalFunction, SignalFunction):
-    def __init__(self, input_signal: SignalName, name: str, model_filename, **kwargs):
-        super().__init__(input_signal, name=name, params={"model_filename": model_filename, **kwargs})
-        self.init_windowing(**kwargs)
+    """
+    Run real-time inference using an ONNX model. Operates on a single input signal, and on a
+    window of samples at a time, window_kwargs specify the windowing parameters (window_length and window_overlap).
+    """
+    def __init__(self, input_signal: SignalName, name: str, model_filename, **window_kwargs):
+        super().__init__(input_signal, name=name, params={"model_filename": model_filename, **window_kwargs})
+        self.init_windowing(**window_kwargs)
         self.session = InferenceSession(model_filename)
 
     def windowed_fn(self, x):
@@ -68,6 +73,11 @@ class WindowedInference(WindowedSignalFunction, SignalFunction):
 
 
 class ObjectTracker(WindowedSignalFunction):
+    """
+    Run object tracking with the output of a WindowedInference signal function.
+    This SignalFunction may have side effects, and cannot be serialized. The
+    callback is called once for each new object detected.
+    """
     def __init__(self, input_signal: SignalName, name: str, callback: Callable, **kwargs):
         super().__init__(input_signal, name=name, params={"callback": callback, **kwargs})
         self.init_windowing(**kwargs)

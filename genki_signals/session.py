@@ -1,3 +1,8 @@
+"""
+A "Session" in Genki Signals is a collection of data recorded in a single session.
+It contains the raw data recorded, as well as metadata about the session, including
+which signal functions were used, and their parameters.
+"""
 from __future__ import annotations
 
 import getpass

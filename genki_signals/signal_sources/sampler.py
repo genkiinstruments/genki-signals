@@ -32,6 +32,9 @@ class BusyThread(threading.Thread):
 
 
 class Sampler(SamplerBase):
+    """
+    A data source that samples data from other sources at a given rate.
+    """
     def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
         self.sources = sources
         self.is_active = False
