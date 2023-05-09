@@ -3,7 +3,7 @@ import abc
 
 class SignalSource(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, t):
+    def __call__(self):
         pass
 
 

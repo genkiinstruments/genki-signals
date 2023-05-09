@@ -16,7 +16,7 @@ CHARACTERISTIC_UUID = "19b10001-e8f2-537e-4f6c-d104768a1214"
 
 
 class ArduinoSignalSource(SignalSource, SamplerBase):
-    def __call__(self, t):
+    def __call__(self):
         return self.latest_point
 
     def __init__(self, ble_address, other_sources=None):

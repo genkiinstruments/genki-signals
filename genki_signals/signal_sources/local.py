@@ -10,7 +10,7 @@ class MouseSignalSource(SignalSource):
 
         self.mouse = pynput.mouse.Controller()
 
-    def __call__(self, t):
+    def __call__(self):
         return np.array(self.mouse.position)
 
 
@@ -40,7 +40,7 @@ class KeyboardSignalSource(SignalSource):
         self.listener.stop()
         self.listener.join()
 
-    def __call__(self, t):
+    def __call__(self):
         return {f"pressing_{key}": value for key, value in self.is_pressing.items()}
 
     def __repr__(self):
@@ -72,7 +72,7 @@ class CameraSignalSource(SignalSource):
     def stop(self):
         self.cap.release()
 
-    def __call__(self, t):
+    def __call__(self):
         ret, frame = self.cap.read()
         if ret:
             frame = self.cv.resize(frame, self.resolution)

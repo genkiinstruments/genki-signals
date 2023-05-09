@@ -64,7 +64,7 @@ class Sampler(SamplerBase):
     def _callback(self, t):
         data = {self.timestamp_key: t}
         for name, source in self.sources.items():
-            d = source(t - self.start_time)
+            d = source()
             if isinstance(d, dict):
                 data.update(d)
             else:
