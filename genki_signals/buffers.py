@@ -157,7 +157,7 @@ class DataBuffer(MutableMapping, Buffer):
 
     def _init_cols_if_needed(self, data):
         if len(self) == 0:
-            self._data = {k: np.empty((*v.shape[:-1], 0)) for k, v in data.items()}
+            self._data = {k: np.empty((*v.shape[:-1], 0), dtype=v.dtype) for k, v in data.items()}
 
     # ========================
     #  Buffer operations

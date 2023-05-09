@@ -36,7 +36,7 @@ class BLEProtocol:
 
 
 class BLESignalSource(SignalSource, SamplerBase):
-    def __call__(self, t):
+    def __call__(self):
         return self.latest_point
 
     def __init__(self, ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], other_sources=[]):

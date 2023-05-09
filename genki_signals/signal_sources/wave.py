@@ -42,7 +42,7 @@ class WaveSignalSource(SignalSource, SamplerBase):
     the WaveSignalSource receives data.
     """
 
-    def __call__(self, t):
+    def __call__(self):
         return self.latest_point
 
     def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):
