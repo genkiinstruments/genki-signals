@@ -53,7 +53,7 @@ class CameraSignalSource(SignalSource):
     The recorded frames are in RGB format and have shape (1, height, width, 3)
     """
 
-    def __init__(self, camera_id=0, resolution=(640, 480)):
+    def __init__(self, camera_id=0, resolution=(720, 480)):
         super().__init__()
         import cv2
 
