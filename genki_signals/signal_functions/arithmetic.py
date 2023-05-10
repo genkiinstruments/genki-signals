@@ -30,6 +30,9 @@ class Sum(SignalFunction):
 class Difference(SignalFunction):
     """Find the difference between 2 signals"""
 
+    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
+        super().__init__(input_a, input_b, name=name)
+
     def __call__(self, a, b):
         return a - b
 
@@ -42,6 +45,16 @@ class Multiply(SignalFunction):
 
     def __call__(self, a, b):
         return a * b
+
+
+class Abs(SignalFunction):
+    """Find the absolute value of a signal"""
+
+    def __init__(self, input_signal: SignalName, name: str):
+        super().__init__(input_signal, name=name)
+
+    def __call__(self, x):
+        return abs(x)
 
 
 class Pow(SignalFunction):
