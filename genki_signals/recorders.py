@@ -44,12 +44,12 @@ class PickleRecorder(Recorder):
 
 
 class WavFileRecorder(Recorder):
-    def __init__(self, path, n_channels, sample_width, frame_rate):
+    def __init__(self, path, frame_rate, n_channels, sample_width):
         self.path = path
         self.wavefile = wave.open(self.path, "wb")
+        self.wavefile.setframerate(frame_rate)
         self.wavefile.setnchannels(n_channels)
         self.wavefile.setsampwidth(sample_width)
-        self.wavefile.setframerate(frame_rate)
 
     def write(self, data: DataBuffer):
         self.wavefile.writeframes(data["audio"].tobytes())

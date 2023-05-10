@@ -49,8 +49,8 @@ class SignalSystem:
     def start(self):
         self.source.start()
         self.main_thread = Thread(target=self._busy_loop)
-        self.main_thread.start()
         self.is_active = True
+        self.main_thread.start()
 
     def stop(self):
         self.is_active = False
@@ -75,7 +75,7 @@ class SignalSystem:
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
                 recorder = WavFileRecorder(
-                    path / "raw_data.wav", self.source.sample_rate, self.source.n_channels, self.source.sample_width
+                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels, self.source.sample_width
                 )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")
