@@ -93,7 +93,9 @@ class Line(PlottableWidget):
 
         x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
         y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
-        self.x_axis = bq.Axis(scale=x_scale, label=f"{self.x_key}_{self.x_idx}" if self.x_idx != None else self.x_key)
+        self.x_axis = bq.Axis(
+            scale=x_scale, label=f"{self.x_key}_{self.x_idx}" if self.x_idx is not None else self.x_key
+        )
         self.y_axis = bq.Axis(scale=y_scale, orientation="vertical", label=self.y_key)
         self.line = bq.Lines(x=[], y=[], scales={"x": x_scale, "y": y_scale})
 
@@ -102,8 +104,8 @@ class Line(PlottableWidget):
     def update(self, data: DataBuffer):
         self.buffer.extend(
             {
-                "x_key": data[self.x_key] if self.x_idx == None else data[self.x_key][self.x_idx],
-                "y_key": data[self.y_key] if self.y_idx == None else data[self.y_key][self.y_idx],
+                "x_key": data[self.x_key] if self.x_idx is None else data[self.x_key][self.x_idx],
+                "y_key": data[self.y_key] if self.y_idx is None else data[self.y_key][self.y_idx],
             }
         )
 
@@ -154,11 +156,11 @@ class Scatter(PlottableWidget):
 
         x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
         y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
-        self.x_axis = bq.Axis(scale=x_scale, label=self.x_key if self.x_idx == None else f"{self.x_key}_{self.x_idx}")
+        self.x_axis = bq.Axis(scale=x_scale, label=self.x_key if self.x_idx is None else f"{self.x_key}_{self.x_idx}")
         self.y_axis = bq.Axis(
             scale=y_scale,
             orientation="vertical",
-            label=self.y_key if self.y_idx == None else f"{self.y_key}_{self.y_idx}",
+            label=self.y_key if self.y_idx is None else f"{self.y_key}_{self.y_idx}",
         )
         self.scatter = bq.Scatter(x=[], y=[], scales={"x": x_scale, "y": y_scale})
 
@@ -167,8 +169,8 @@ class Scatter(PlottableWidget):
     def update(self, data: DataBuffer):
         self.buffer.extend(
             {
-                "x_key": data[self.x_key] if self.x_idx == None else data[self.x_key][self.x_idx],
-                "y_key": data[self.y_key] if self.y_idx == None else data[self.y_key][self.y_idx],
+                "x_key": data[self.x_key] if self.x_idx is None else data[self.x_key][self.x_idx],
+                "y_key": data[self.y_key] if self.y_idx is None else data[self.y_key][self.y_idx],
             }
         )
         with self.scatter.hold_sync():
@@ -213,7 +215,7 @@ class Histogram(PlottableWidget):
         self.widget = bq.Figure(marks=[self.hist], axes=[self.x_axis, self.y_axis], padding_y=0)
 
     def update(self, data: DataBuffer):
-        self.buffer.extend({"y_key": data[self.y_key] if self.y_idx == None else data[self.y_key][self.y_idx]})
+        self.buffer.extend({"y_key": data[self.y_key] if self.y_idx is None else data[self.y_key][self.y_idx]})
         with self.hist.hold_sync():
             self.hist.sample = self.buffer["y_key"]
 
@@ -224,8 +226,8 @@ class Bar(PlottableWidget):
     def __init__(
         self,
         y_access: str | tuple[str, list[int]],
-        y_range: tuple[float, float] = (None, None),
         x_names: list[str] = None,
+        y_range: tuple[float, float] = (None, None),
     ):
         """
         Args:
@@ -241,14 +243,33 @@ class Bar(PlottableWidget):
         y_range = {"min": y_range[0], "max": y_range[1]}
 
         self.y_key, self.y_idx = y_access
+        self.x_names = x_names
 
-        x_scale = bq.OrdinalScale(domain=x_names)
+        x_scale = bq.OrdinalScale()
         y_scale = bq.LinearScale(**y_range)
         self.x_axis = bq.Axis(scale=x_scale, label="indices")
         self.y_axis = bq.Axis(scale=y_scale, orientation="vertical", label=self.y_key)
-        self.bars = bq.Bars(x=x_names, y=[], scales={"x": x_scale, "y": y_scale})
+        self.bars = bq.Bars(x=self.x_names or [], y=[], scales={"x": x_scale, "y": y_scale})
         self.widget = bq.Figure(marks=[self.bars], axes=[self.x_axis, self.y_axis])
 
     def update(self, data: DataBuffer):
         with self.bars.hold_sync():
-            self.bars.y = data[self.y_key][..., -1] if self.y_idx == None else data[self.y_key][self.y_idx][..., -1]
+            data = data[self.y_key] if self.y_idx is None else data[self.y_key][self.y_idx]
+            if self.x_names is None:  # we cannot know how many bars there are beforehand
+                self.bars.x = list(range(data.shape[0]))
+            self.bars.y = data[..., -1]
+
+
+# TODO: Implement WebFrontend
+# class WebFrontend(FrontendBase):
+#     def __init__(self, system: SignalSystem, port):
+#         super().__init__(system)
+#         self.port = port
+
+#         self.app = Flask(__name__)
+
+#     def update(self, data: DataBuffer):
+#         self.socket.emit("data", data)
+
+#     def run(self):
+#         self.app.run(port=self.port)
