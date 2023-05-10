@@ -36,7 +36,7 @@ class BLEProtocol:
 
 
 class BLESignalSource(SignalSource, SamplerBase):
-    def __call__(self, t):
+    def __call__(self):
         return self.latest_point
 
     def __init__(self, ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], other_sources=[]):
@@ -70,8 +70,8 @@ class BLESignalSource(SignalSource, SamplerBase):
             secondary_data = source.read_current()
             secondary_data.pop("timestamp", None)
             data.update(**secondary_data)
-        self.buffer.extend(data)
-        self.latest_point = self.buffer._slice(self.buffer._data, 1, True)  # Change to iloc
+        self.buffer.append(data)
+        self.latest_point = data
 
     def is_active(self):
         return hasattr(self, "listener") and self.listener.is_alive()
@@ -115,6 +115,7 @@ def protocol_as_bleak_callback_asyncio(protocol: BLEProtocol) -> Callable:
         await protocol.packet_received(data)
 
     return _inner
+
 
 async def bluetooth_task(
     ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], comm: CommunicateCancel, process_data: Callable
