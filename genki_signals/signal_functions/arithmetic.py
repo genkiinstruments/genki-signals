@@ -11,7 +11,8 @@ class Scale(SignalFunction):
     """
     Scale an input signal by a constant factor
     """
-   def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
+
+    def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
         super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
 
@@ -21,6 +22,7 @@ class Scale(SignalFunction):
 
 class Sum(SignalFunction):
     """Sum multiple signals"""
+
     def __call__(self, *inputs):
         return sum(inputs)
 
@@ -34,6 +36,7 @@ class Difference(SignalFunction):
 
 class Multiply(SignalFunction):
     """Multiply 2 signals"""
+
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
         super().__init__(input_a, input_b, name=name)
 
@@ -48,7 +51,7 @@ class Pow(SignalFunction):
 
     def __call__(self, x):
         return x**self.exponent
-    
+
 
 class Exp(SignalFunction):
     def __init__(self, input_signal: SignalName, name: str, base: float = np.e):
@@ -143,9 +146,10 @@ class MovingAverage(SignalFunction):
             self.buffer.extend(x[..., i : i + 1])
             output[i] = np.mean(self.buffer.view(), axis=-1)
         return output
-    
+
+
 class Clip(SignalFunction):
-    """ Limit the values of a signal """
+    """Limit the values of a signal"""
 
     def __init__(self, input_signal: SignalName, name: str, min_value: float, max_value: float):
         super().__init__(input_signal, name=name, params={"min_value": min_value, "max_value": max_value})
@@ -154,7 +158,7 @@ class Clip(SignalFunction):
 
     def __call__(self, x):
         return np.clip(x, self.min_value, self.max_value)
-    
+
 
 __all__ = [
     "Scale",

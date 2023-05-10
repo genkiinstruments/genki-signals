@@ -18,9 +18,7 @@ class ExtractDimension(SignalFunction):
 
 
 class Concatenate(SignalFunction):
-    """
-    SignalFunction to concatenate multiple signals together
-    """
+    """SignalFunction to concatenate multiple signals together"""
 
     def __init__(self, *input_signals: SignalName, name: str, axis: int = 0):
         super().__init__(*input_signals, name=name, params={"axis": axis})
@@ -34,10 +32,10 @@ class Concatenate(SignalFunction):
             else:
                 to_concat.append(col_data)
         return np.concatenate(to_concat, axis=self.axis)
-    
+
 
 class Stack(SignalFunction):
-    """ SignalFunction to stack multiple signals along a given axis """
+    """SignalFunction to stack multiple signals along a given axis"""
 
     def __init__(self, *input_signals: SignalName, name: str, axis: int = 0):
         super().__init__(*input_signals, name=name, params={"axis": axis})
@@ -60,8 +58,8 @@ class Reshape(SignalFunction):
 
     def __call__(self, v):
         return v.reshape(self.shape + (-1,))
-    
-    
+
+
 __all__ = [
     "ExtractDimension",
     "Concatenate",
