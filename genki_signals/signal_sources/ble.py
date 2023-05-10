@@ -110,9 +110,9 @@ class BLEListener(threading.Thread):
 
 
 def protocol_as_bleak_callback_asyncio(protocol: BLEProtocol) -> Callable:
-    async def _inner(sender: str, data: bytearray) -> None:
+    async def _inner(sender: str, packet: bytearray) -> None:
         # NOTE: `bleak` expects a function with this signature
-        await protocol.packet_received(data)
+        await protocol.packet_received(packet)
 
     return _inner
 
