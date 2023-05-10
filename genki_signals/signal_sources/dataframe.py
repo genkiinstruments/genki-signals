@@ -11,7 +11,7 @@ class BufferSignalSource(SignalSource):
         self.buffer = buffer.copy()
         self.lines_per_call = lines_per_call
 
-    def __call__(self, t):
+    def __call__(self):
         return self.buffer.popleft(self.lines_per_call)
 
 

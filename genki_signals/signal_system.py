@@ -17,7 +17,7 @@ class SignalSystem:
     collects data points as they arrive from the source, and computes signal_functions.
     The system update_rate is the rate at which the system will check for new data points,
     specified in Hz. Note that the update_rate will not be exact, as it is limited by the
-    use of time.sleep(), so an error of up to 15% is possible.
+    use of time.sleep(), so an error of up to 15% is expected.
     """
 
     def __init__(self, data_source, signal_functions=None, update_rate=25):
@@ -48,9 +48,9 @@ class SignalSystem:
         self.data_feeds.pop(feed_id)
 
     def start(self):
-        self.is_active = True
         self.source.start()
         self.main_thread = Thread(target=self._busy_loop)
+        self.is_active = True
         self.main_thread.start()
 
     def stop(self):
@@ -76,7 +76,7 @@ class SignalSystem:
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
                 recorder = WavFileRecorder(
-                    path / "raw_data.wav", self.source.sample_rate, self.source.n_channels, self.source.sample_width
+                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels, self.source.sample_width
                 )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")

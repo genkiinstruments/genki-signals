@@ -1,3 +1,6 @@
+"""
+This module contains classes for recording data.
+"""
 import abc
 import pickle
 import wave
@@ -23,7 +26,7 @@ class PickleRecorder(Recorder):
         self._recording_buffer = DataBuffer()
 
     def write(self, data: DataBuffer):
-        self._recording_buffer.append(data)
+        self._recording_buffer.extend(data)
         if len(self._recording_buffer) > self.rec_buffer_size:
             self._flush_to_file()
 
@@ -44,15 +47,15 @@ class PickleRecorder(Recorder):
 
 
 class WavFileRecorder(Recorder):
-    def __init__(self, path, n_channels, sample_width, frame_rate):
+    def __init__(self, path, frame_rate, n_channels, sample_width):
         self.path = path
         self.wavefile = wave.open(self.path, "wb")
+        self.wavefile.setframerate(frame_rate)
         self.wavefile.setnchannels(n_channels)
         self.wavefile.setsampwidth(sample_width)
-        self.wavefile.setframerate(frame_rate)
 
     def write(self, data: DataBuffer):
-        self.wavefile.writeframes(data["audio"].to_bytes())
+        self.wavefile.writeframes(data["audio"].tobytes())
 
     def stop(self):
         self.wavefile.close()
