@@ -36,8 +36,9 @@ class SignalSystem:
     def _busy_loop(self):
         while self.is_active:
             new_data = self._read()
-            for feed in self.data_feeds.values():
-                feed(new_data)
+            if len(new_data) > 0:
+                for feed in self.data_feeds.values():
+                    feed(new_data)
             time.sleep(1 / self.update_rate)
 
     def register_data_feed(self, feed_id, callback):
