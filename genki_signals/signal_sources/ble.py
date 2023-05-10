@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import threading
+from queue import Queue
 from typing import Callable, Type
 
 from bleak import BleakClient, BleakScanner
@@ -61,12 +62,14 @@ class BLESignalSource(SignalSource, SamplerBase):
         self.char_uuid = char_uuid
         self.protocol = protocol
         self.sources = other_sources
-        self.buffer = DataBuffer()
+        self.buffer = Queue()
 
     def read(self):
-        values = self.buffer.copy()
-        self.buffer.clear()
-        return values
+        data = DataBuffer()
+        while not self.buffer.empty():
+            sample = self.buffer.get()
+            data.append(sample)
+        return data
 
     def start(self):
         if self.is_active():
@@ -87,7 +90,7 @@ class BLESignalSource(SignalSource, SamplerBase):
             secondary_data = source.read_current()
             secondary_data.pop("timestamp", None)
             data.update(**secondary_data)
-        self.buffer.append(data)
+        self.buffer.put(data)
         self.latest_point = data
 
     def is_active(self):
