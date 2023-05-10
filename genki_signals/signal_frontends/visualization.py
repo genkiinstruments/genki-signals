@@ -16,7 +16,7 @@ class WidgetFrontend(FrontendBase):
     def __init__(self, system: SignalSystem, widgets: list[PlottableWidget] = None):
         super().__init__(system)
 
-        self.update_callbacks = {id(widget): widget.update for widget in widgets or []}
+        self.update_callbacks = {id(widget): lambda d: widget.update(d.as_dict()) for widget in widgets or []}
 
     def register_update_callback(self, id, update_fn):
         self.update_callbacks[id] = update_fn
@@ -224,8 +224,8 @@ class Bar(PlottableWidget):
     def __init__(
         self,
         y_access: str | tuple[str, list[int]],
+        x_names: list[str],
         y_range: tuple[float, float] = (None, None),
-        x_names: list[str] = None,
     ):
         """
         Args:
@@ -244,7 +244,7 @@ class Bar(PlottableWidget):
 
         x_scale = bq.OrdinalScale(domain=x_names)
         y_scale = bq.LinearScale(**y_range)
-        self.x_axis = bq.Axis(scale=x_scale, label="indices")
+        self.x_axis = bq.Axis(scale=x_scale)
         self.y_axis = bq.Axis(scale=y_scale, orientation="vertical", label=self.y_key)
         self.bars = bq.Bars(x=x_names, y=[], scales={"x": x_scale, "y": y_scale})
         self.widget = bq.Figure(marks=[self.bars], axes=[self.x_axis, self.y_axis])
