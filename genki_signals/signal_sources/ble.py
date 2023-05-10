@@ -12,22 +12,37 @@ from genki_signals.signal_sources.base import SamplerBase, SignalSource
 
 
 async def find_ble_address(device_name: str = None):
+    """
+        A function to find ble addresses of devices
+
+        Args:
+            device_name: The name of the device
+
+        Returns:
+            If device_name is given:
+                returns ble address of device with device name: device_name
+            Else:
+                returns all devices
+    """
     devices = await BleakScanner.discover()
-    details = []
-    for d in devices:
-        if d.name == device_name:
-            return str(d.address)
-        details.append(d.details)
-    return details
+    if device_name is None:
+        return [device.details for device in devices]
+    for device in devices:
+        if device.name == device_name:
+            return str(device.address)
+    return None
 
 
 class BLEProtocol:
+    """A protocol to receive BLE packets and prepare them for the BLESignalSource"""
+
     def __init__(self):
         get_or_create_event_loop()
         self._queue = asyncio.Queue()
 
     @abc.abstractmethod
     async def packet_received(self, packet) -> None:
+        """method to receive BLE packets and put each sample in self.queue"""
         pass
 
     @property
@@ -36,6 +51,8 @@ class BLEProtocol:
 
 
 class BLESignalSource(SignalSource, SamplerBase):
+    """Signal source to receive samples over a BLE connection"""
+
     def __call__(self):
         return self.latest_point
 
