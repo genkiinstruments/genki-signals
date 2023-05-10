@@ -5,6 +5,9 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class SineWave(SignalFunction):
+    """
+    Generate a sine wave from an input signal (usually time)
+    """
     def __init__(self, input_signal: SignalName, name: str, amplitude: float, frequency: float, phase: float):
         super().__init__(input_signal, name=name, params={"amplitude": amplitude, "frequency": frequency, "phase": phase})
         self.amplitude = amplitude
@@ -16,6 +19,9 @@ class SineWave(SignalFunction):
 
 
 class SquareWave(SignalFunction):
+    """
+    Generate a square wave from an input signal (usually time)
+    """
     def __init__(self, input_signal: SignalName, name: str, amplitude: float, frequency: float, phase: float):
         super().__init__(input_signal, name=name, params={"amplitude": amplitude, "frequency": frequency, "phase": phase})
         self.amplitude = amplitude
@@ -27,6 +33,9 @@ class SquareWave(SignalFunction):
 
 
 class TriangleWave(SignalFunction):
+    """
+    Generate a triangular wave from an input signal (usually time)
+    """
     def __init__(self, input_signal: SignalName, name: str, amplitude: float, frequency: float, phase: float):
         super().__init__(input_signal, name=name, params={"amplitude": amplitude, "frequency": frequency, "phase": phase})
         self.amplitude = amplitude

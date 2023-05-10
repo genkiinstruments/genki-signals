@@ -8,6 +8,9 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class Scale(SignalFunction):
+    """
+    Scale an input signal by a constant factor
+    """
     def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
         super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
@@ -17,6 +20,7 @@ class Scale(SignalFunction):
 
 
 class Sum(SignalFunction):
+    """Sum multiple signals"""
     def __call__(self, *inputs):
         return sum(inputs)
 

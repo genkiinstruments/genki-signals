@@ -31,7 +31,7 @@ class Norm(SignalFunction):
 
 class EulerOrientation(SignalFunction):
     """
-    Convert quaternion representation to Euler axis/angle representation
+    Convert quaternion representation of 3D pose to Euler axis/angle representation
     """
 
     def __init__(self, input_signal: SignalName, name: str):
@@ -47,7 +47,7 @@ class EulerOrientation(SignalFunction):
 
 class EulerAngle(SignalFunction):
     """
-    Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
+    Convert quaternion representation of 3D pose to Euler angles (roll/pitch/yaw) representation
     """
 
     def __init__(self, input_signal: SignalName, name: str):
@@ -74,7 +74,7 @@ class EulerAngle(SignalFunction):
 
 class Gravity(SignalFunction):
     """
-    Compute gravity vector from a quaternion orientation signal
+    Compute gravity vector from a quaternion signal representing 3D pose
     """
 
     def __init__(self, input_signal: SignalName, name: str):
@@ -91,7 +91,7 @@ class Gravity(SignalFunction):
 
 class Rotate(SignalFunction):
     """
-    Compute a rotated version of a 3D signal with a quaternion input signal
+    Compute a rotated version of a 3D input signal with a quaternion input signal representing 3D pose
     """
 
     def __init__(
@@ -174,7 +174,7 @@ class OrientationXy(SignalFunction):
 class MadgwickOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
-    using Madgwick algorithm. Includes gyro debiasing.
+    using Madgwick's algorithm. Includes gyro debiasing.
     """
 
     def __init__(
@@ -224,7 +224,7 @@ class OffsetIdentity:
 class FusionOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
-    using Fusion algorithm. Includes gyro debiasing.
+    using the Fusion algorithm. Includes gyro debiasing.
     """
 
     def __init__(
@@ -265,7 +265,7 @@ class FusionOrientation(SignalFunction):
 
 class GravityProjection(SignalFunction):
     """
-    SignalFunction to compute a projection of a 3D signal onto the 2D subspace
+    Compute a projection of a 3D input signal onto the 2D subspace
     orthogonal to gravity.
     """
 
@@ -302,7 +302,7 @@ class GravityProjection(SignalFunction):
 
 class AngleBetween(SignalFunction):
     """
-    SignalFunction to compute the angle between two 2D vector signals
+    Compute the angle between two 2D vector input signals
     """
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
@@ -316,7 +316,7 @@ class AngleBetween(SignalFunction):
 
 
 class DeadReckoning(SignalFunction):
-    """Perform real time dead reckoning using acceleration and gyro"""
+    """Perform real time dead reckoning using acceleration and gyro input signals"""
 
     def __init__(
         self,
@@ -382,7 +382,7 @@ class DeadReckoning(SignalFunction):
 
 
 class ZeroCrossing(SignalFunction):
-    """Returns the zero crossing of signals as 1 and otherwise 0"""
+    """Returns the zero crossings of an input signal as 1 and otherwise 0"""
 
     def __init__(self, input_signal: SignalName, name: str):
         super().__init__(input_signal, name=name)
