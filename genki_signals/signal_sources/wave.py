@@ -1,16 +1,3 @@
-"""
-A SignalSource is an input to a SignalSystem
-
-SignalSources are expected to collect some data into a queue, usually by
-using a separate thread for writing. A concrete SignalSource just needs to
-implement start() and stop() for writer setup and cleanup, respectively.
-
-The base class SignalSource implements read() which gives the user all data
-points that have been written to the buffer since the last call to read().
-Data is returned as a list of dicts, the keys of the dicts should be consistent
-across reads. The base class also implements functionality for recording data
-into csv files.
-"""
 import logging
 import sys
 import time
@@ -35,14 +22,11 @@ def _dict_to_array(data):
 
 class WaveSignalSource(SignalSource, SamplerBase):
     """
-    A data source to get data from a Wave. It can be either via bluetooth or
-    godot connection. It can include one or more 'secondary sources', e.g.
-    mouse, trackpad, keyboard, etc. In those cases, the Wave dictates the timestamp
-    schedule, and the secondary sources are only checked for curent state when
-    the WaveSignalSource receives data.
+    A data source to get data from a Genki Wave smart ring. It can be either via bluetooth (BLE) or
+    godot connection.
     """
 
-    def __call__(self, t):
+    def __call__(self):
         return self.latest_point
 
     def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):

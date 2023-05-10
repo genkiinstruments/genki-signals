@@ -96,7 +96,12 @@ class Buffer(ABC):
 
 
 class DataBuffer(MutableMapping, Buffer):
-    """ """
+    """
+    A buffer that stores data in a dict of numpy arrays.
+    The arrays can have an arbitrary number of dimensions with any shapes, but
+    the last dimension is synced across the arrays and is the buffer dimension.
+    If maxlen is set, the buffer will be sliced to that length along the last dimension.
+    """
 
     # ========================
     #  Direct dict operations
@@ -157,7 +162,7 @@ class DataBuffer(MutableMapping, Buffer):
 
     def _init_cols_if_needed(self, data):
         if len(self) == 0:
-            self._data = {k: np.empty((*v.shape[:-1], 0)) for k, v in data.items()}
+            self._data = {k: np.empty((*v.shape[:-1], 0), dtype=v.dtype) for k, v in data.items()}
 
     # ========================
     #  Buffer operations

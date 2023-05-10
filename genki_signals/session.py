@@ -1,3 +1,8 @@
+"""
+A "Session" in Genki Signals is a collection of data recorded in a single session.
+It contains the raw data recorded, as well as metadata about the session, including
+which signal functions were used, and their parameters.
+"""
 from __future__ import annotations
 
 import getpass
@@ -8,18 +13,20 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import wave
+import numpy as np
 
 from genki_signals.buffers import DataBuffer
+from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
 
 
 def read_json_file(p: Path | str):
     with open(p, "r") as FILE:
-        return json.load(FILE)
+        return json.load(FILE, object_hook=decode_signal_fn)
 
 
 def write_json_file(p: Path | str, data: dict | list):
     with open(p, "w") as FILE:
-        json.dump(data, FILE, indent=4)
+        json.dump(data, FILE, indent=4, default=encode_signal_fn)
 
 
 class Session:
@@ -52,8 +59,8 @@ class Session:
 
     @classmethod
     def from_filename(cls, path: Path | str):
-        """Instantiate Session, `path` should be a directory containing
-        raw_data.pickle and metadata.json."""
+        """Instantiate Session, `path` should be a directory containing a
+        raw_data file and metadata.json."""
         return cls(Path(path))
 
     @classmethod
@@ -90,9 +97,9 @@ class Session:
             with open(self.raw_data_path, "rb") as FILE:
                 self._data = pickle.load(FILE)
         elif self.datafile_extension == ".wav":
-            wavefile = wave.open(self.raw_data_path, "rb")
+            wavefile = wave.open(self.raw_data_path.as_posix(), "rb")
             data = wavefile.readframes(wavefile.getnframes())
-            self._data = DataBuffer({"audio": data})
+            self._data = DataBuffer(data={"audio": np.frombuffer(data, np.int16)})
         else:
             raise NotImplementedError(f"Loading data from {self._datafile_extension} is not implemented")
 

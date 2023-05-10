@@ -1,5 +1,7 @@
+import time
 import logging
 from pathlib import Path
+from threading import Thread
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.recorders import PickleRecorder, WavFileRecorder
@@ -11,26 +13,53 @@ logger = logging.getLogger(__name__)
 
 class SignalSystem:
     """
-    A SignalSystem is a SignalSource with a list of derived signals. The system
-    collects data points as they arrive from the source, and computes derived signals.
+    A SignalSystem is a SignalSource with a list of signal functions. The system
+    collects data points as they arrive from the source, and computes signal_functions.
+    The system update_rate is the rate at which the system will check for new data points,
+    specified in Hz. Note that the update_rate will not be exact, as it is limited by the
+    use of time.sleep(), so an error of up to 15% is expected.
     """
 
-    def __init__(self, data_source, signal_functions=None):
-        self.recorder = None
-        self.is_recording = False
+    def __init__(self, data_source, signal_functions=None, update_rate=25):
         self.source = data_source
         self.signal_functions = [] if signal_functions is None else signal_functions
+        self.update_rate = update_rate
         self.is_active = False
+        self.data_feeds = {}
+        self.main_thread = None
+        self.recorder = None
+        self.is_recording = False
+
+    def __repr__(self):
+        return f"SignalSystem({self.source}, {self.signal_functions})"
+
+    def _busy_loop(self):
+        while self.is_active:
+            new_data = self._read()
+            for feed in self.data_feeds.values():
+                feed(new_data)
+            time.sleep(1 / self.update_rate)
+
+    def register_data_feed(self, feed_id, callback):
+        self.data_feeds[feed_id] = callback
+
+    def deregister_data_feed(self, feed_id):
+        self.data_feeds.pop(feed_id)
 
     def start(self):
-        self.is_active = True
         self.source.start()
+        self.main_thread = Thread(target=self._busy_loop)
+        self.is_active = True
+        self.main_thread.start()
 
     def stop(self):
-        self.source.stop()
+        self.is_active = False
+        self.main_thread.join()
+        # We need to call stop_recording here, after the main thread has stopped,
+        # otherwise we might send data to the feeds that will not be recorded.
         if self.is_recording:
             self.stop_recording()
-        self.is_active = False
+        self.source.stop()
 
     def __enter__(self):
         self.start()
@@ -46,7 +75,7 @@ class SignalSystem:
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
                 recorder = WavFileRecorder(
-                    path / "raw_data.wav", self.source.sample_rate, self.source.n_channels, self.source.sample_width
+                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels, self.source.sample_width
                 )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")
@@ -71,7 +100,7 @@ class SignalSystem:
                 logger.exception(f"Error computing derived signal {signal.name}")
                 raise e
 
-    def read(self):
+    def _read(self):
         """
         Return all new data points received since the last call to read()
         """

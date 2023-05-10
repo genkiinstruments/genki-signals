@@ -19,8 +19,7 @@ class Norm(SignalFunction):
     """
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_signal]
+        super().__init__(input_signal, name=name)
 
     def __call__(self, vec):
         shape = vec.shape
@@ -29,12 +28,11 @@ class Norm(SignalFunction):
 
 class EulerOrientation(SignalFunction):
     """
-    Convert quaternion representation to Euler axis/angle representation
+    Convert quaternion representation of 3D pose to Euler axis/angle representation
     """
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_signal]
+        super().__init__(input_signal, name=name)
 
     def __call__(self, qs):
         qw = qs[0:1]
@@ -46,12 +44,11 @@ class EulerOrientation(SignalFunction):
 
 class EulerAngle(SignalFunction):
     """
-    Convert quaternion representation to Euler angles (roll/pitch/yaw) representation
+    Convert quaternion representation of 3D pose to Euler angles (roll/pitch/yaw) representation
     """
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_signal]
+        super().__init__(input_signal, name=name)
 
     def __call__(self, qs):
         qw, qx, qy, qz = qs[0], qs[1], qs[2], qs[3]
@@ -74,12 +71,11 @@ class EulerAngle(SignalFunction):
 
 class Gravity(SignalFunction):
     """
-    Compute gravity vector from a quaternion orientation signal
+    Compute gravity vector from a quaternion signal representing 3D pose
     """
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_signal]
+        super().__init__(input_signal, name=name)
 
     def __call__(self, qs):
         qw, qx, qy, qz = qs[0], qs[1], qs[2], qs[3]
@@ -92,7 +88,7 @@ class Gravity(SignalFunction):
 
 class Rotate(SignalFunction):
     """
-    Compute a rotated version of a 3D signal with a quaternion input signal
+    Compute a rotated version of a 3D input signal with a quaternion input signal representing 3D pose
     """
 
     def __init__(
@@ -101,9 +97,7 @@ class Rotate(SignalFunction):
         orientation_signal: SignalName,
         name: str,
     ):
-        self.name = name
-        self.orientation_signal = orientation_signal
-        self.input_signals = [input_signal, orientation_signal]
+        super().__init__(input_signal, orientation_signal, name=name)
 
     def __call__(self, xs, qs):
         rot = Rotation.from_quat(qs[:, [1, 2, 3, 0]].T)
@@ -159,12 +153,9 @@ class OrientationXy(SignalFunction):
     """
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
-        self.orientatation = input_signal
-
+        super().__init__(input_signal, name=name)
         self.xyz_org = np.array([1, 0, 0])
         self.xy_org = self.xyz_org[:2]
-        self.input_signals = [input_signal]
 
     def __call__(self, qs):
         rotator = qs.copy()
@@ -180,7 +171,7 @@ class OrientationXy(SignalFunction):
 class MadgwickOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
-    using Madgwick algorithm. Includes gyro debiasing.
+    using Madgwick's algorithm. Includes gyro debiasing.
     """
 
     def __init__(
@@ -192,12 +183,13 @@ class MadgwickOrientation(SignalFunction):
         gain: float = 0.033,
         q0: list[float] = None,
     ):
-        self.name = name
+        super().__init__(
+            gyro_signal, acc_signal, name=name, params={"sample_rate": sample_rate, "gain": gain, "q0": q0}
+        )
         self.Q = np.array(q0 or [1.0, 0.0, 0.0, 0.0])
         self.madgwick = Madgwick(gain=gain, frequency=sample_rate, q0=self.Q)
         self.offset = imufusion.Offset(int(sample_rate))  # gyro debiasing
         self.synced = False
-        self.input_signals = [gyro_signal, acc_signal]
 
     def __call__(self, gyro, acc):
         acc = acc * 9.8
@@ -229,7 +221,7 @@ class OffsetIdentity:
 class FusionOrientation(SignalFunction):
     """
     Create quaternion orientation representation from raw acc/gyro signals
-    using Fusion algorithm. Includes gyro debiasing.
+    using the Fusion algorithm. Includes gyro debiasing.
     """
 
     def __init__(
@@ -241,7 +233,12 @@ class FusionOrientation(SignalFunction):
         gain: float = 0.5,
         use_offset: bool = True,
     ):
-        self.name = name
+        super().__init__(
+            gyro_signal,
+            acc_signal,
+            name=name,
+            params={"sample_rate": sample_rate, "gain": gain, "use_offset": use_offset},
+        )
         self.ahrs = ahrs(
             gain,
             sample_rate,
@@ -251,7 +248,6 @@ class FusionOrientation(SignalFunction):
         )
         self.offset = imufusion.Offset(sample_rate) if use_offset else OffsetIdentity()
         self.dt = 1 / sample_rate
-        self.input_signals = [gyro_signal, acc_signal]
 
     def __call__(self, gyro, acc):
         qs = np.zeros((len(gyro), 4))
@@ -266,7 +262,7 @@ class FusionOrientation(SignalFunction):
 
 class GravityProjection(SignalFunction):
     """
-    SignalFunction to compute a projection of a 3D signal onto the 2D subspace
+    Compute a projection of a 3D input signal onto the 2D subspace
     orthogonal to gravity.
     """
 
@@ -276,9 +272,8 @@ class GravityProjection(SignalFunction):
         gravity_signal: SignalName,
         name: str,
     ):
-        self.name = name
+        super().__init__(input_signal, gravity_signal, name=name)
         self.qr_fact = np.vectorize(np.linalg.qr, signature="(n, m, r)->(n, m, r),(n, r, r)")
-        self.input_signals = [input_signal, gravity_signal]
 
     def __call__(self, G, x):
         ones = np.ones(len(G))
@@ -304,12 +299,11 @@ class GravityProjection(SignalFunction):
 
 class AngleBetween(SignalFunction):
     """
-    SignalFunction to compute the angle between two 2D vector signals
+    Compute the angle between two 2D vector input signals
     """
 
     def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
-        self.name = name
-        self.input_signals = [input_a, input_b]
+        super().__init__(input_a, input_b, name=name)
 
     def __call__(self, v1, v2):
         v1_norm = np.linalg.norm(v1, axis=1)
@@ -319,15 +313,15 @@ class AngleBetween(SignalFunction):
 
 
 class DeadReckoning(SignalFunction):
-    """Perform real time dead reckoning using acceleration and gyro"""
+    """Perform real time dead reckoning using acceleration and gyro input signals"""
 
     def __init__(
         self,
         input_gyro: SignalName,
         input_acc: SignalName,
+        name: str,
         len_sec: float,
         sample_rate: int,
-        name: str,
         bias: float = 0.11,
         c_acc: float = 1.0,
         c_gyro: float = 1 / 300,
@@ -335,7 +329,21 @@ class DeadReckoning(SignalFunction):
         threshold: float = 0.5,
         half: bool = True,
     ):
-        self.name = name
+        super().__init__(
+            input_gyro,
+            input_acc,
+            name=name,
+            params={
+                "len_sec": len_sec,
+                "sample_rate": sample_rate,
+                "bias": bias,
+                "c_acc": c_acc,
+                "c_gyro": c_gyro,
+                "beta": beta,
+                "threshold": threshold,
+                "half": half,
+            },
+        )
         self.filter_gyro = (
             FirFilter.create_half_gaussian(len_sec, sample_rate)
             if half
@@ -351,7 +359,6 @@ class DeadReckoning(SignalFunction):
         self.bias = bias
         self.beta = beta
         self.threshold = threshold
-        self.input_signals = [input_gyro, input_acc]
 
     def __call__(self, gyro, linacc):
         pow_gyro = calc_per_t_power(gyro)
@@ -372,12 +379,11 @@ class DeadReckoning(SignalFunction):
 
 
 class ZeroCrossing(SignalFunction):
-    """Returns the zero crossing of signals as 1 and otherwise 0"""
+    """Returns the zero crossings of an input signal as 1 and otherwise 0"""
 
     def __init__(self, input_signal: SignalName, name: str):
-        self.name = name
+        super().__init__(input_signal, name=name)
         self.state = None
-        self.input_signals = [input_signal]
 
     @staticmethod
     def _calc_curr_state(x):
