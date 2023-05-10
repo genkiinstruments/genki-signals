@@ -1,10 +1,11 @@
 import abc
 import asyncio
 import threading
+from queue import Queue
 from typing import Callable, Type
 
 from bleak import BleakClient, BleakScanner
-from genki_wave.protocols import CommunicateCancel
+from genki_wave.protocols import CommunicateCancel, prepare_protocol_as_bleak_callback_asyncio
 from genki_wave.utils import get_or_create_event_loop
 
 from genki_signals.buffers import DataBuffer
@@ -27,7 +28,7 @@ class BLEProtocol:
         self._queue = asyncio.Queue()
 
     @abc.abstractmethod
-    async def packet_received(self, packet) -> None:
+    async def data_received(self, data) -> None:
         pass
 
     @property
@@ -44,12 +45,14 @@ class BLESignalSource(SignalSource, SamplerBase):
         self.char_uuid = char_uuid
         self.protocol = protocol
         self.sources = other_sources
-        self.buffer = DataBuffer()
+        self.buffer = Queue()
 
     def read(self):
-        values = self.buffer.copy()
-        self.buffer.clear()
-        return values
+        data = DataBuffer()
+        while not self.buffer.empty():
+            d = self.buffer.get()
+            data.append(d)
+        return data
 
     def start(self):
         if self.is_active():
@@ -70,8 +73,8 @@ class BLESignalSource(SignalSource, SamplerBase):
             secondary_data = source.read_current()
             secondary_data.pop("timestamp", None)
             data.update(**secondary_data)
-        self.buffer.extend(data)
-        self.latest_point = self.buffer._slice(self.buffer._data, 1, True)  # Change to iloc
+        self.buffer.put(data)
+        self.latest_point = data
 
     def is_active(self):
         return hasattr(self, "listener") and self.listener.is_alive()
@@ -109,18 +112,11 @@ class BLEListener(threading.Thread):
         self.stop()
 
 
-def protocol_as_bleak_callback_asyncio(protocol: BLEProtocol) -> Callable:
-    async def _inner(sender: str, data: bytearray) -> None:
-        # NOTE: `bleak` expects a function with this signature
-        await protocol.packet_received(data)
-
-    return _inner
-
 async def bluetooth_task(
     ble_address: str, char_uuid: str, protocol: Type[BLEProtocol], comm: CommunicateCancel, process_data: Callable
 ) -> None:
     protocol = protocol()
-    callback = protocol_as_bleak_callback_asyncio(protocol)
+    callback = prepare_protocol_as_bleak_callback_asyncio(protocol)
     print(f"Connecting to device at address {ble_address}")
     async with BleakClient(ble_address) as client:
         await client.start_notify(char_uuid, callback)
