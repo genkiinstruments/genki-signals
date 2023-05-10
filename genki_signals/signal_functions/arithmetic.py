@@ -8,7 +8,10 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class Scale(SignalFunction):
-    def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
+    """
+    Scale an input signal by a constant factor
+    """
+   def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
         super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
 
@@ -17,6 +20,7 @@ class Scale(SignalFunction):
 
 
 class Sum(SignalFunction):
+    """Sum multiple signals"""
     def __call__(self, *inputs):
         return sum(inputs)
 
@@ -29,6 +33,10 @@ class Difference(SignalFunction):
 
 
 class Multiply(SignalFunction):
+    """Multiply 2 signals"""
+    def __init__(self, input_a: SignalName, input_b: SignalName, name: str):
+        super().__init__(input_a, input_b, name=name)
+
     def __call__(self, a, b):
         return a * b
 

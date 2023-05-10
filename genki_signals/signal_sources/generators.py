@@ -7,7 +7,7 @@ class RandomNoise(SignalSource):
     def __init__(self, amplitude=1):
         self.amplitude = amplitude
 
-    def __call__(self, t):
+    def __call__(self):
         return self.amplitude * np.random.randn()
 
     def __repr__(self):

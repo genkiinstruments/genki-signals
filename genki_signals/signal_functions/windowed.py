@@ -14,6 +14,9 @@ def upsample(signal, factor):
 
 
 class SampleRate(SignalFunction):
+    """
+    Calculate the sample rate of an input signal (presumably timestamps)
+    """
     def __init__(
         self,
         input_signal: SignalName = "timestamp",
@@ -31,6 +34,9 @@ class SampleRate(SignalFunction):
 
 
 class WindowedSignalFunction(ABC):
+    """
+    Base class for signal functions that operate on a sliding window of their input signal
+    """
     def init_windowing(
         self,
         window_size: int,
@@ -73,7 +79,8 @@ class WindowedSignalFunction(ABC):
 
 class FourierTransform(WindowedSignalFunction, SignalFunction):
     """
-    Computes a windowed spectrogram from a raw signal
+    Computes a windowed FFT from a raw signal. The output is a complex valued
+    signal with shape (window_size // 2 + 1, t)
     """
 
     def __init__(
@@ -122,7 +129,7 @@ class FourierTransform(WindowedSignalFunction, SignalFunction):
 
 
 class Delay(SignalFunction):
-    """Delays signal by n samples"""
+    """Delay input signal by n samples"""
 
     def __init__(self, input_signal: SignalName, n: int, name: str):
         super().__init__(input_signal, name=name, params={"n": n})

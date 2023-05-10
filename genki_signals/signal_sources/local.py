@@ -5,16 +5,22 @@ from genki_signals.signal_sources.base import SignalSource, SamplerBase
 
 
 class MouseSignalSource(SignalSource):
+    """
+    Signal source that samples the mouse position.
+    """
     def __init__(self):
         import pynput
 
         self.mouse = pynput.mouse.Controller()
 
-    def __call__(self, t):
+    def __call__(self):
         return np.array(self.mouse.position)
 
 
 class KeyboardSignalSource(SignalSource):
+    """
+    Signal source that samples whether a specified set of keys are being pressed or not.
+    """
     def __init__(self, keys):
         import pynput
 
@@ -40,7 +46,7 @@ class KeyboardSignalSource(SignalSource):
         self.listener.stop()
         self.listener.join()
 
-    def __call__(self, t):
+    def __call__(self):
         return {f"pressing_{key}": value for key, value in self.is_pressing.items()}
 
     def __repr__(self):
@@ -49,11 +55,11 @@ class KeyboardSignalSource(SignalSource):
 
 class CameraSignalSource(SignalSource):
     """
-    A class to use a camera as a secondary SignalSource.
+    A signal source that samples the camera.
     The recorded frames are in RGB format and have shape (1, height, width, 3)
     """
 
-    def __init__(self, camera_id=0, resolution=(640, 480)):
+    def __init__(self, camera_id=0, resolution=(720, 480)):
         super().__init__()
         import cv2
 
@@ -72,7 +78,7 @@ class CameraSignalSource(SignalSource):
     def stop(self):
         self.cap.release()
 
-    def __call__(self, t):
+    def __call__(self):
         ret, frame = self.cap.read()
         if ret:
             frame = self.cv.resize(frame, self.resolution)
@@ -83,7 +89,7 @@ class CameraSignalSource(SignalSource):
 
 
 class MicSignalSource(SamplerBase):
-    """Primary data source to read data from microphone."""
+    """Signal source to sample from the microphone."""
 
     def __init__(self, chunk_size=1024):
         import pyaudio

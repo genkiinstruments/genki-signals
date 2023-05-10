@@ -32,6 +32,9 @@ class BusyThread(threading.Thread):
 
 
 class Sampler(SamplerBase):
+    """
+    A data source that samples data from other sources at a given rate.
+    """
     def __init__(self, sources, sample_rate, sleep_time=1e-6, timestamp_key="timestamp"):
         self.sources = sources
         self.is_active = False
@@ -64,7 +67,7 @@ class Sampler(SamplerBase):
     def _callback(self, t):
         data = {self.timestamp_key: t}
         for name, source in self.sources.items():
-            d = source(t - self.start_time)
+            d = source()
             if isinstance(d, dict):
                 data.update(d)
             else:
