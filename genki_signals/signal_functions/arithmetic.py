@@ -11,7 +11,8 @@ class Scale(SignalFunction):
     """
     Scale an input signal by a constant factor
     """
-    def __init__(self, input_signal: SignalName, scale_factor: float, name: str):
+
+    def __init__(self, input_signal: SignalName, name: str, scale_factor: float):
         super().__init__(input_signal, name=name, params={"scale_factor": scale_factor})
         self.scale_factor = scale_factor
 
@@ -21,6 +22,7 @@ class Scale(SignalFunction):
 
 class Sum(SignalFunction):
     """Sum multiple signals"""
+
     def __call__(self, *inputs):
         return sum(inputs)
 
@@ -53,6 +55,33 @@ class Abs(SignalFunction):
 
     def __call__(self, x):
         return abs(x)
+
+
+class Pow(SignalFunction):
+    def __init__(self, input_signal: SignalName, name: str, exponent: float = 2.0):
+        super().__init__(input_signal, name=name, params={"exponent": exponent})
+        self.exponent = exponent
+
+    def __call__(self, x):
+        return x**self.exponent
+
+
+class Exp(SignalFunction):
+    def __init__(self, input_signal: SignalName, name: str, base: float = np.e):
+        super().__init__(input_signal, name=name, params={"base": base})
+        self.base = base
+
+    def __call__(self, x):
+        return self.base**x
+
+
+class Logarithm(SignalFunction):
+    def __init__(self, input_signal: SignalName, name: str, base: float = np.e):
+        super().__init__(input_signal, name=name, params={"base": base})
+        self.base = base
+
+    def __call__(self, x):
+        return np.log(x) / np.log(self.base)
 
 
 class Integrate(SignalFunction):
@@ -132,11 +161,26 @@ class MovingAverage(SignalFunction):
         return output
 
 
+class Clip(SignalFunction):
+    """Limit the values of a signal"""
+
+    def __init__(self, input_signal: SignalName, name: str, min_value: float, max_value: float):
+        super().__init__(input_signal, name=name, params={"min_value": min_value, "max_value": max_value})
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def __call__(self, x):
+        return np.clip(x, self.min_value, self.max_value)
+
+
 __all__ = [
     "Scale",
     "Sum",
     "Difference",
     "Multiply",
+    "Pow",
+    "Exp",
+    "Logarithm",
     "Integrate",
     "Differentiate",
     "MovingAverage",
