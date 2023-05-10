@@ -34,6 +34,23 @@ class Concatenate(SignalFunction):
             else:
                 to_concat.append(col_data)
         return np.concatenate(to_concat, axis=self.axis)
+    
+
+class Stack(SignalFunction):
+    """ SignalFunction to stack multiple signals along a given axis """
+
+    def __init__(self, *input_signals: SignalName, name: str, axis: int = 0):
+        super().__init__(*input_signals, name=name, params={"axis": axis})
+        self.axis = axis
+
+    def __call__(self, *signals):
+        to_stack = []
+        for col_data in signals:
+            if col_data.ndim == 1:
+                to_stack.append(col_data[None])
+            else:
+                to_stack.append(col_data)
+        return np.stack(to_stack, axis=self.axis)
 
 
 class Reshape(SignalFunction):
