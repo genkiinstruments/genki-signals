@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 import numpy as np
 
 from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class ExtractDimension(SignalFunction):
-    """
-    SignalFunction to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
-    """
+    """ SignalFunction to extract a dimension from a signal """
 
-    def __init__(self, input_signal: SignalName, name: str, dim: int):
+    def __init__(self, input_signal: SignalName, name: str, dim: int | tuple[int]):
         super().__init__(input_signal, name=name, params={"dim": dim})
         self.dim = dim
 
     def __call__(self, v):
-        # Slice ensures that the output is 2D i.e. (1, n)
-        return v[self.dim : self.dim + 1]
+        return v[self.dim]
 
 
 class Concatenate(SignalFunction):
@@ -42,13 +41,7 @@ class Stack(SignalFunction):
         self.axis = axis
 
     def __call__(self, *signals):
-        to_stack = []
-        for col_data in signals:
-            if col_data.ndim == 1:
-                to_stack.append(col_data[None])
-            else:
-                to_stack.append(col_data)
-        return np.stack(to_stack, axis=self.axis)
+        return np.stack(signals, axis=self.axis)
 
 
 class Reshape(SignalFunction):
@@ -57,7 +50,8 @@ class Reshape(SignalFunction):
         self.shape = shape
 
     def __call__(self, v):
-        return v.reshape(self.shape + (-1,))
+        time = v.shape[-1] # time axis should not be reshaped
+        return v.reshape(self.shape + (time,))
 
 
 __all__ = [
