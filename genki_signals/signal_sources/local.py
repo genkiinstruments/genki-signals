@@ -68,15 +68,19 @@ class CameraSignalSource(SignalSource):
         self.camera_id = camera_id
         self.resolution = resolution
 
-        self.cap = self.cv.VideoCapture(self.camera_id)
+        self.cap = None
+
         self.last_frame = None
         self.signal_names = ["image"]
 
     def start(self):
-        self.cap.open(self.camera_id)
+        if self.cap is not None:
+            self.cap.release()
+        self.cap = self.cv.VideoCapture(self.camera_id)
 
     def stop(self):
-        self.cap.release()
+        if self.cap is not None:
+            self.cap.release()
 
     def __call__(self):
         ret, frame = self.cap.read()
