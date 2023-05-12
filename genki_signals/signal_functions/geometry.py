@@ -15,15 +15,18 @@ logger = logging.getLogger(__name__)
 
 class Norm(SignalFunction):
     """
-    Euclidian norm of a vector signal
+    Norm of a signal over all but last dimension (time)
     """
 
-    def __init__(self, input_signal: SignalName, name: str):
-        super().__init__(input_signal, name=name)
+    def __init__(self, input_signal: SignalName, name: str, order=2):
+        super().__init__(input_signal, name=name, params={"ord": order})
+        self.order = order
 
     def __call__(self, vec):
-        shape = vec.shape
-        return np.sqrt((vec**2).sum(axis=shape[:-1]))
+        ndim = vec.ndim
+        if ndim == 1:
+            return vec
+        return np.linalg.norm(vec, ord=self.order, axis=tuple(range(vec.ndim - 1)))
 
 
 class EulerOrientation(SignalFunction):

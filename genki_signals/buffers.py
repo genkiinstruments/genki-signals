@@ -3,11 +3,8 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
 
-import bqplot as bq
-import cv2
 import numpy as np
 import pandas as pd
-from ipywidgets import Image
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +107,6 @@ class DataBuffer(MutableMapping, Buffer):
         super().__init__(maxlen, None)
 
         self._data = data if data is not None else {}
-        self.charts = []
         if self.maxlen is not None and len(self) > maxlen:
             self._data = _slice(self._data, self.maxlen, end=True)
 
@@ -171,7 +167,6 @@ class DataBuffer(MutableMapping, Buffer):
     def extend(self, data):
         """Appends data to the buffer and pops off and slices s.t. the length matches maxlen"""
         super().extend(data)
-        self._update_charts()
 
     def _empty(self):
         return {}
@@ -198,147 +193,6 @@ class DataBuffer(MutableMapping, Buffer):
     def append(self, pt):
         pts = {k: np.array([v]).T for k, v in pt.items()}
         self.extend(pts)
-
-    # =========
-    # Plotting
-    # =========
-
-    def plot(self, key, plot_type="chart", **kwargs):
-        if plot_type == "chart":
-            return self._plot_line_chart(key, **kwargs)
-        elif plot_type == "spectrogram":
-            return self._plot_spectrogram(key, **kwargs)
-        elif plot_type == "trace2D":
-            return self._plot_trace(key, **kwargs)
-        elif plot_type == "histogram":
-            return self._plot_histogram(key, **kwargs)
-        elif plot_type == "video":
-            return self._plot_video(key, **kwargs)
-
-    def _update_charts(self):
-        for chart in self.charts:
-            if chart["type"] == "line":
-                self._update_line_chart(chart)
-            elif chart["type"] == "spectrogram":
-                self._update_spectrogram(chart)
-            elif chart["type"] == "trace2D":
-                self._update_trace(chart)
-            elif chart["type"] == "histogram":
-                self._update_histogram(chart)
-            elif chart["type"] == "video":
-                self._update_video(chart)
-
-    def _plot_video(self, key):
-        frame = Image(format="jpeg")
-        obj = {"type": "video", "key": key, "frame": frame}
-        self._update_video(obj)
-        self.charts.append(obj)
-        return frame
-
-    def _update_video(self, obj):
-        key = obj["key"]
-        frame = obj["frame"]
-        value = self[key][..., -1].transpose(2, 1, 0)
-        _, jpeg_image = cv2.imencode(".jpeg", value)
-        frame.value = jpeg_image.tobytes()
-
-    def _plot_line_chart(self, key, x_key=None):
-        xs = bq.LinearScale()
-        ys = bq.LinearScale()
-        xax = bq.Axis(scale=xs, label="t")
-        yax = bq.Axis(scale=ys, orientation="vertical", label=key)
-        line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
-        fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {"type": "line", "key": key, "line": line, "x_key": x_key}
-        # Call _update_line_chart first, if there is an error
-        # we won't add the chart to self.charts
-        self._update_line_chart(chart_obj)
-        self.charts.append(chart_obj)
-        return fig
-
-    def _update_line_chart(self, chart):
-        key = chart["key"]
-        line = chart["line"]
-        x_key = chart["x_key"]
-        if x_key is None:
-            line.x = np.arange(len(self))
-        else:
-            line.x = self[x_key]
-        line.y = self[key]
-
-    def _plot_spectrogram(self, key, **kwargs):
-        xs = bq.LinearScale()
-        ys = bq.LinearScale()
-        xax = bq.Axis(scale=xs, label="Hz")
-        yax = bq.Axis(scale=ys, orientation="vertical", label="db")
-        # data is assumed to be complex-valued array of shape (t, f)
-        # We only use the latest point, and simply plot the magnitude
-        line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
-        chart_obj = {
-            "type": "spectrogram",
-            "key": key,
-            "line": line,
-            "sample_rate": kwargs.get("sample_rate", 1),  # Is there a sensible default?
-            "window_size": kwargs.get("window_size", 1),  # Is there a sensible default?
-        }
-        fig = bq.Figure(marks=[line], axes=[xax, yax])
-        # Call _update_spectrogram first, if there is an error
-        # we won't add the chart to self.charts
-        self._update_spectrogram(chart_obj)
-        self.charts.append(chart_obj)
-        return fig
-
-    def _update_spectrogram(self, chart):
-        key = chart["key"]
-        line = chart["line"]
-        sample_rate = chart["sample_rate"]
-        window_size = chart["window_size"]
-        data = self[key][..., -1]
-        omega = np.fft.rfftfreq(window_size, 1 / sample_rate)
-        line.x = omega
-        line.y = 10 * np.log10(np.maximum(np.abs(data), 1e-20))
-
-    def _plot_trace(self, key):
-        xs = bq.LinearScale()
-        ys = bq.LinearScale()
-        xax = bq.Axis(scale=xs, label="x")
-        yax = bq.Axis(scale=ys, orientation="vertical", label="y")
-        line = bq.Lines(x=[], y=[], scales={"x": xs, "y": ys})
-        fig = bq.Figure(marks=[line], axes=[xax, yax])
-        chart_obj = {"type": "trace2D", "key": key, "line": line}
-        # Call _update_line_chart first, if there is an error
-        # we won't add the chart to self.charts
-        self._update_trace(chart_obj)
-        self.charts.append(chart_obj)
-        return fig
-
-    def _update_trace(self, chart):
-        key = chart["key"]
-        line = chart["line"]
-        # We need to change the x and y axis atomically to avoid flickering in the plot
-        with line.hold_sync():
-            line.x = self[key][0]
-            line.y = -self[key][1]
-
-    def _plot_histogram(self, key, **kwargs):
-        x_names = kwargs.get("class_names", None)
-        xs = bq.OrdinalScale()
-        ys = bq.LinearScale()
-        xax = bq.Axis(scale=xs)
-        yax = bq.Axis(scale=ys, orientation="vertical", label="Probability")
-        bars = bq.Bars(x=x_names, y=[], scales={"x": xs, "y": ys})
-        fig = bq.Figure(marks=[bars], axes=[xax, yax])
-        chart_obj = {"type": "histogram", "key": key, "bars": bars}
-        # Call _update_histogram first, if there is an error
-        # we won't add the chart to self.charts
-        self._update_histogram(chart_obj)
-        self.charts.append(chart_obj)
-        return fig
-
-    def _update_histogram(self, chart):
-        key = chart["key"]
-        bars = chart["bars"]
-        bars.y = self[key][..., -1]
 
     # ==============
     # Serialization
