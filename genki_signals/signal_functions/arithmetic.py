@@ -23,6 +23,9 @@ class Scale(SignalFunction):
 class Sum(SignalFunction):
     """Sum multiple signals"""
 
+    def __init__(self, *inputs: SignalName, name: str):
+        super().__init__(*inputs, name=name)
+
     def __call__(self, *inputs):
         return sum(inputs)
 
