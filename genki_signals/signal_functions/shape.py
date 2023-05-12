@@ -37,11 +37,14 @@ class Concatenate(SignalFunction):
             else:
                 to_concat.append(col_data)
 
+        concat = np.concatenate(to_concat, axis=self.axis)
+
+        # here we know that all np.arrays in to_concat are valid, i.e. have the same ndim atleast
         ndim = to_concat[0].ndim
         if self.axis in [-1, ndim - 1]:
             raise ValueError(f"Cannot concatenate along time axis")
 
-        return np.concatenate(to_concat, axis=self.axis)
+        return concat
 
 
 class Stack(SignalFunction):
@@ -54,6 +57,7 @@ class Stack(SignalFunction):
     def __call__(self, *signals):
         stacked = np.stack(signals, axis=self.axis)
 
+        # np.stack creates a new axis at the specified position, so we need to check if that new axis is the time axis
         ndim = stacked.ndim
         if self.axis in [-1, ndim - 1]:
             raise ValueError(f"Cannot stack along time axis")

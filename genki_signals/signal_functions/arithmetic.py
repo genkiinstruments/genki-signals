@@ -187,4 +187,5 @@ __all__ = [
     "Integrate",
     "Differentiate",
     "MovingAverage",
+    "Clip",
 ]
