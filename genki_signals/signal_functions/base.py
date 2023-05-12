@@ -6,7 +6,7 @@ SignalName = NewType("signal", str)
 
 
 class SignalFunction(abc.ABC):
-    def __init__(self, *input_signals: SignalName, name: str, **params: dict):
+    def __init__(self, *input_signals: SignalName, name: str, params: dict = {}):
         self.name = name
         self.input_signals = input_signals
         self.params = params
