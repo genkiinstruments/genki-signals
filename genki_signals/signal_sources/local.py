@@ -70,7 +70,6 @@ class CameraSignalSource(SignalSource):
 
         self.cap = self.cv.VideoCapture(self.camera_id)
         self.last_frame = None
-        self.signal_names = ["image"]
 
     def start(self):
         self.cap.open(self.camera_id)
@@ -83,9 +82,9 @@ class CameraSignalSource(SignalSource):
         if ret:
             frame = self.cv.resize(frame, self.resolution)
             self.last_frame = frame
-            return {"image": frame}
+            return frame
         else:
-            return {"image": self.last_frame}
+            return self.last_frame
 
 
 class MicSignalSource(SamplerBase):
