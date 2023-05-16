@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import math
 from abc import ABC, abstractmethod
 from typing import Literal
 
 import cv2
 import bqplot as bq
+import ipywidgets
 from ipywidgets import Image
 
 from genki_signals.buffers import DataBuffer
@@ -16,6 +18,7 @@ class WidgetFrontend(FrontendBase):
     def __init__(self, system: SignalSystem, widgets: list[PlottableWidget] = None):
         super().__init__(system)
 
+        self.widgets = widgets or []
         self.update_callbacks = {id(widget): widget.update for widget in widgets or []}
 
     def register_update_callback(self, id, update_fn):
@@ -28,6 +31,19 @@ class WidgetFrontend(FrontendBase):
         for update_fn in self.update_callbacks.values():
             update_fn(data)
 
+    def _ipython_display_(self):
+        n = math.ceil(math.sqrt(len(self.widgets)))
+        rows = []
+        for i in range(n):
+            cols = []
+            for j in range(n):
+                try:
+                    cols.append(self.widgets[i * n + j].widget)
+                except IndexError:
+                    pass
+            rows.append(ipywidgets.HBox(cols))
+        return ipywidgets.VBox(rows)._ipython_display_()
+
 
 class PlottableWidget(ABC):
     def __init__(self):
@@ -36,6 +52,9 @@ class PlottableWidget(ABC):
     @abstractmethod
     def update(self, data: DataBuffer):
         pass
+
+    def _ipython_display_(self):
+        return self.widget._ipython_display_()
 
 
 class Video(PlottableWidget):

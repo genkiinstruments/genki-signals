@@ -29,13 +29,13 @@ class WaveSignalSource(SignalSource, SamplerBase):
     def __call__(self):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100, followers=None):
         if ble_address is None and not godot:
             raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
         self.wave = None
         self._signal_names = None
-        self.followers = []
+        self.followers = followers or []
         self.buffer = Queue()
         self.ble_address = ble_address
         self.latest_point = None
@@ -75,6 +75,7 @@ class WaveSignalSource(SignalSource, SamplerBase):
         self.wave.join()
 
     def process_data(self, data):
+        print("Received data", data)
         if self.spectrogram and isinstance(data, DataPackage):
             return
         if isinstance(data, (DataPackage, RawDataPackage, SpectrogramDataPackage)):
