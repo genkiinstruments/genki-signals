@@ -94,7 +94,7 @@ class CameraSignalSource(SignalSource):
 class MicSignalSource(SamplerBase):
     """Signal source to sample from the microphone."""
 
-    def __init__(self, chunk_size=1024):
+    def __init__(self, chunk_size=1024, input_device_index=None):
         import pyaudio
 
         self.pa = pyaudio.PyAudio()
@@ -108,6 +108,7 @@ class MicSignalSource(SamplerBase):
         self.buffer = DataBuffer(maxlen=None)
         self.is_active = False
         self.signal_names = ["audio"]
+        self.input_device_index = input_device_index
 
     def start(self):
 
@@ -118,6 +119,7 @@ class MicSignalSource(SamplerBase):
             input=True,
             frames_per_buffer=self.chunk_size,
             stream_callback=self.receive,
+            input_device_index=self.input_device_index,
         )
         self.stream.start_stream()
         self.is_active = True
