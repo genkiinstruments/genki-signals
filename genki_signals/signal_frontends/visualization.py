@@ -5,7 +5,9 @@ from typing import Literal
 
 import cv2
 import bqplot as bq
-from ipywidgets import Image
+from ipywidgets import Image, GridBox
+from IPython.display import display
+
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_system import SignalSystem
@@ -13,20 +15,41 @@ from genki_signals.signal_frontends.base import FrontendBase
 
 
 class WidgetFrontend(FrontendBase):
+    """
+    The WidgetFrontend manages updating a set of PlottableWidgets with data from a SignalSystem.
+    It can also contain said widgets and display them as a dashboard in a jupyter notebook.
+    """
     def __init__(self, system: SignalSystem, widgets: list[PlottableWidget] = None):
         super().__init__(system)
 
-        self.update_callbacks = {id(widget): widget.update for widget in widgets or []}
+        self.widgets = widgets or []
+        self.update_callbacks = {id(widget): widget.update for widget in self.widgets}
 
     def register_update_callback(self, id, update_fn):
+        """Register a callback to be called when new data arrives. Ensures that an object is only registered once."""
         self.update_callbacks[id] = update_fn
 
     def deregister_update_callback(self, id):
+        """Deregister a callback."""
         self.update_callbacks.pop(id)
+
+    def add_widget(self, widget: PlottableWidget):
+        """Add a widget to the dashboard."""
+        self.widgets.append(widget)
+        self.register_update_callback(id(widget), widget.update)
+
+    def remove_widget(self, widget: PlottableWidget):
+        """Remove a widget from the dashboard."""
+        self.widgets.remove(widget)
+        self.deregister_update_callback(id(widget))
 
     def update(self, data: DataBuffer):
         for update_fn in self.update_callbacks.values():
             update_fn(data)
+
+    def _ipython_display_(self):
+        return display(GridBox([o.widget for o in self.widgets], layout={"grid_template_columns": "repeat(auto-fill, minmax(400px, 1fr))"}))
+        
 
 
 class PlottableWidget(ABC):
@@ -36,6 +59,9 @@ class PlottableWidget(ABC):
     @abstractmethod
     def update(self, data: DataBuffer):
         pass
+
+    def _ipython_display_(self):
+        return display(self.widget)
 
 
 class Video(PlottableWidget):

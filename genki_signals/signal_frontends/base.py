@@ -13,5 +13,10 @@ class FrontendBase(ABC):
     def update(self, data: DataBuffer):
         pass
 
+    @abstractmethod
+    def _ipython_display_(self):
+        """How to display the frontend in an IPython notebook"""
+        pass
+
     def __del__(self):
         self.system.deregister_data_feed(id(self))
