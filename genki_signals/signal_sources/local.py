@@ -8,6 +8,7 @@ class MouseSignalSource(SignalSource):
     """
     Signal source that samples the mouse position.
     """
+
     def __init__(self):
         import pynput
 
@@ -21,6 +22,7 @@ class KeyboardSignalSource(SignalSource):
     """
     Signal source that samples whether a specified set of keys are being pressed or not.
     """
+
     def __init__(self, keys):
         import pynput
 
