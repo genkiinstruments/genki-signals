@@ -75,7 +75,6 @@ class WaveSignalSource(SignalSource, SamplerBase):
         self.wave.join()
 
     def process_data(self, data):
-        print("Received data", data)
         if self.spectrogram and isinstance(data, DataPackage):
             return
         if isinstance(data, (DataPackage, RawDataPackage, SpectrogramDataPackage)):
