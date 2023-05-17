@@ -6,9 +6,25 @@ from threading import Thread
 from genki_signals.buffers import DataBuffer
 from genki_signals.recorders import PickleRecorder, WavFileRecorder
 from genki_signals.session import Session
+from genki_signals.signal_functions.base import SignalFunction
 from genki_signals.signal_sources import MicSignalSource
 
 logger = logging.getLogger(__name__)
+
+
+def compute_signal_functions(data: DataBuffer, signal_functions: list[SignalFunction]):
+    data = data.copy()
+    for signal in signal_functions:
+        inputs = tuple(data[name] for name in signal.input_signals)
+
+        # TODO: error reporting here? Remove ill-behaved signals?
+        #       * If the signal throws an exception, this context is useful
+        try:
+            output = signal(*inputs)
+            data[signal.name] = output
+        except Exception as e:
+            logger.exception(f"Error computing signal function {signal.name}")
+            raise e
 
 
 class SignalSystem:
@@ -76,7 +92,8 @@ class SignalSystem:
         if recorder is None:
             if isinstance(self.source, MicSignalSource):
                 recorder = WavFileRecorder(
-                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels, self.source.sample_width
+                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels,
+                    self.source.sample_width
                 )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")
@@ -88,19 +105,6 @@ class SignalSystem:
         self.recorder = None
         self.is_recording = False
 
-    def _compute_derived(self, data: DataBuffer):
-        for signal in self.signal_functions:
-            inputs = tuple(data[name] for name in signal.input_signals)
-
-            # TODO: error reporting here? Remove ill-behaved signals?
-            #       * If the signal throws an exception, this context is useful
-            try:
-                output = signal(*inputs)
-                data[signal.name] = output
-            except Exception as e:
-                logger.exception(f"Error computing derived signal {signal.name}")
-                raise e
-
     def _read(self):
         """
         Return all new data points received since the last call to read()
@@ -109,7 +113,7 @@ class SignalSystem:
         if self.is_recording:
             self.recorder.write(data)
         if len(data) > 0:
-            self._compute_derived(data)
+            compute_signal_functions(data, self.signal_functions)
         return data
 
     def add_derived_signal(self, signal):

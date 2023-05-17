@@ -17,6 +17,8 @@ import numpy as np
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
+from genki_signals.signal_sources.dataframe import BufferSignalSource
+from genki_signals.signal_system import SignalSystem, compute_signal_functions
 
 
 def read_json_file(p: Path | str):
@@ -103,6 +105,9 @@ class Session:
         else:
             raise NotImplementedError(f"Loading data from {self._datafile_extension} is not implemented")
 
+    def _compute_data(self):
+        return compute_signal_functions(self.data, self.signal_functions)
+
     def _load_metadata(self):
         self._metadata = read_json_file(self.metadata_path)
 
@@ -145,6 +150,12 @@ class Session:
         if self._metadata is None:
             self._load_metadata()
         return self._metadata
+
+    @property
+    def signal_functions(self):
+        if self._metadata is None:
+            self._load_metadata()
+        return self.metadata.get("signal_functions", [])
 
     @property
     def data(self):
