@@ -80,7 +80,7 @@ def compare_buffers(
         buffers : list[Buffer],
         buffer_names : list[str] | None = None,
         logger_config : dict[str, Any] = None,
-        verbose : bool = True,
+        verbose : bool = False,
 ):
     if buffer_names is None:
         buffer_names = [f"buffer_{i}" for i in range(len(buffers))]
@@ -96,10 +96,10 @@ def compare_buffers(
         if len(stats) == 2:
             diff = {key: (stats[0][key] + eps) / (stats[1][key] + eps) for key in stats[0]}
             df = pd.DataFrame([*stats, diff])
-            df.index = [*buffer_names, "performance ratio"]
+            df["name"] = [*buffer_names, "performance ratio"]
         else:
             df = pd.DataFrame(stats)
-            df.index = buffer_names
+            df["name"] = buffer_names
         shape_of_array = list(test["data"].values())[0].shape
         description = f'packet size: {len(test["data"])}x{shape_of_array}, read_frequency: {test["read_buffer_rate"]}'
         df["test"] = i
@@ -129,7 +129,7 @@ def compare_buffers(
     return pd.concat(tests)
 
 
-def profile_system(system: SignalSystem, t : float = 1.0, verbose : bool = True):
+def profile_system(system: SignalSystem, t : float = 1.0, verbose : bool = False):
     yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
     yappi.start()
     system.start()
@@ -145,12 +145,12 @@ def profile_system(system: SignalSystem, t : float = 1.0, verbose : bool = True)
     df_filtered = df[["name", "ncall", "ttot", "tsub", "tavg"]]
 
     if verbose:
-        print(df.to_string())
+        print(df_filtered.to_string())
 
     return df_filtered
 
 
-def compare_systems(systems: list[SignalSystem], t: float = 1.0, names: list[str] | None = None, verbose: bool = True,):
+def compare_systems(systems: list[SignalSystem], t: float = 1.0, names: list[str] | None = None, verbose: bool = False,):
     if names is None:
         names = [f"system_{i}" for i in range(len(systems))]
     assert len(names) == len(systems)
