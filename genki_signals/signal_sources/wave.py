@@ -29,13 +29,13 @@ class WaveSignalSource(SignalSource, SamplerBase):
     def __call__(self):
         return self.latest_point
 
-    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100):
+    def __init__(self, ble_address=None, godot=False, spectrogram=False, sample_rate=100, followers=None):
         if ble_address is None and not godot:
             raise ValueError("Either ble_address must be provided or godot set to True.")
         self.godot = godot
         self.wave = None
         self._signal_names = None
-        self.followers = []
+        self.followers = followers or {}
         self.buffer = Queue()
         self.ble_address = ble_address
         self.latest_point = None
@@ -64,13 +64,13 @@ class WaveSignalSource(SignalSource, SamplerBase):
                 enable_spectrogram=self.spectrogram,
             )
 
-        for source in self.followers:
+        for source in self.followers.values():
             source.start()
         self.wave.start()
 
     def stop(self):
         self.wave.stop()
-        for source in self.followers:
+        for source in self.followers.values():
             source.stop()
         self.wave.join()
 
@@ -82,10 +82,14 @@ class WaveSignalSource(SignalSource, SamplerBase):
             for key, value in data.items():
                 if isinstance(value, dict):
                     data[key] = _dict_to_array(value)
-            for source in self.followers:
-                secondary_data = source.read_current()
-                secondary_data.pop("timestamp", None)
-                data.update(**secondary_data)
+            for name, source in self.followers.items():
+                d = source()
+                d.pop("timestamp", None)
+                if isinstance(d, dict):
+                    for key, value in d.items():
+                        data[f"{name}_{key}"] = value
+                else:
+                    data[name] = d
             if self._signal_names is None:
                 self._signal_names = list(data.keys())
 
