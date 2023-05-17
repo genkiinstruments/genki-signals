@@ -1,8 +1,12 @@
 import abc
 from inspect import signature
 from typing import NewType
+import logging
+
+from genki_signals.buffers import DataBuffer
 
 SignalName = NewType("signal", str)
+logger = logging.getLogger(__name__)
 
 
 class SignalFunction(abc.ABC):
@@ -32,3 +36,19 @@ class SignalFunction(abc.ABC):
     @property
     def frequency_ratio(self):
         return 1
+
+
+def compute_signal_functions(data: DataBuffer, signal_functions: list[SignalFunction]):
+    data = data.copy()
+    for signal in signal_functions:
+        inputs = tuple(data[name] for name in signal.input_signals)
+
+        # TODO: error reporting here? Remove ill-behaved signals?
+        #       * If the signal throws an exception, this context is useful
+        try:
+            output = signal(*inputs)
+            data[signal.name] = output
+        except Exception as e:
+            logger.exception(f"Error computing signal function {signal.name}")
+            raise e
+    return data
