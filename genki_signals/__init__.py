@@ -11,8 +11,6 @@ from .signal_system import *
 
 from .buffers import Buffer, DataBuffer
 
-from ._version import __version__
-
 
 __doc__ = """
 genki_signals
