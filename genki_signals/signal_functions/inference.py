@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 import logging
-from functools import partial
-from typing import Callable
 
 import numpy as np
-import torch
 from onnxruntime import InferenceSession
 
-from genki_signals.post_processing import (
-    prepare_predictions,
-    group_dist_heuristic,
-    GroupTracker,
-)
 from genki_signals.signal_functions.base import SignalFunction, SignalName
 from genki_signals.signal_functions.windowed import WindowedSignalFunction
 
@@ -72,34 +64,7 @@ class WindowedInference(WindowedSignalFunction, SignalFunction):
         return output[0]
 
 
-class ObjectTracker(WindowedSignalFunction):
-    """
-    Run object tracking with the output of a WindowedInference signal function.
-    This SignalFunction may have side effects, and cannot be serialized. The
-    callback is called once for each new object detected.
-    """
-    def __init__(self, input_signal: SignalName, name: str, callback: Callable, **kwargs):
-        super().__init__(input_signal, name=name, params={"callback": callback, **kwargs})
-        self.init_windowing(**kwargs)
-        self.callback = callback
-
-        min_group_size, min_trigger_idx = (3, 8)
-        max_disappeared = 3
-        dist_func = partial(group_dist_heuristic, match_lower_or_eq_idx=True, enforce_key=False)
-        self._tracker = GroupTracker(dist_func, max_disappeared, min_group_size, min_trigger_idx)
-
-    def windowed_fn(self, x):
-        output = torch.tensor(x[None])
-        groups = prepare_predictions(output, confidence=0.9, confidence_low=0.5)
-        _, new_groups = self._tracker.update(groups)
-
-        for g in new_groups:
-            self.callback(g.key)
-        return output[0].numpy()
-
-
 __all__ = [
     "Inference",
     "WindowedInference",
-    "ObjectTracker",
 ]
