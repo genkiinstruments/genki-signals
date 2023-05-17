@@ -1,2 +1,2 @@
 # README
-Genki signals
+Genki signals realtime signal processing
