@@ -69,7 +69,8 @@ class Sampler(SamplerBase):
         for name, source in self.sources.items():
             d = source()
             if isinstance(d, dict):
-                data.update(d)
+                for key, value in d.items():
+                    data[f"{name}_{key}"] = value
             else:
                 data[name] = d
         self.buffer.put(data)

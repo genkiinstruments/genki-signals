@@ -6,6 +6,12 @@ class SignalSource(abc.ABC):
     def __call__(self):
         pass
 
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
 
 class SamplerBase(abc.ABC):
     @abc.abstractmethod

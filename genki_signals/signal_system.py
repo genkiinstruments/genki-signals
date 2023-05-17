@@ -49,8 +49,8 @@ class SignalSystem:
 
     def start(self):
         self.source.start()
-        self.main_thread = Thread(target=self._busy_loop)
         self.is_active = True
+        self.main_thread = Thread(target=self._busy_loop)
         self.main_thread.start()
 
     def stop(self):
