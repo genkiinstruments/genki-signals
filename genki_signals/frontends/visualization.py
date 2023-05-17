@@ -10,12 +10,12 @@ import ipywidgets
 from ipywidgets import Image
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_system import SignalSystem
-from genki_signals.signal_frontends.base import FrontendBase
+from genki_signals.system import System
+from genki_signals.frontends.base import FrontendBase
 
 
 class WidgetFrontend(FrontendBase):
-    def __init__(self, system: SignalSystem, widgets: list[PlottableWidget] = None):
+    def __init__(self, system: System, widgets: list[PlottableWidget] = None):
         super().__init__(system)
 
         self.widgets = widgets or []
@@ -281,7 +281,7 @@ class Bar(PlottableWidget):
 
 # TODO: Implement WebFrontend
 # class WebFrontend(FrontendBase):
-#     def __init__(self, system: SignalSystem, port):
+#     def __init__(self, system: System, port):
 #         super().__init__(system)
 #         self.port = port
 

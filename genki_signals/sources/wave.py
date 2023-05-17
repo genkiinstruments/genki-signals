@@ -7,7 +7,7 @@ import numpy as np
 from genki_wave.data import DataPackage, RawDataPackage, SpectrogramDataPackage
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SignalSource, SamplerBase
+from genki_signals.sources.base import SignalSource, SamplerBase
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def _dict_to_array(data):
     return np.array(list(data.values()))
 
 
-class WaveSignalSource(SignalSource, SamplerBase):
+class WaveSource(SignalSource, SamplerBase):
     """
     A data source to get data from a Genki Wave smart ring. It can be either via bluetooth (BLE) or
     godot connection.

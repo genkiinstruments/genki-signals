@@ -1,5 +1,5 @@
-from genki_signals.signal_functions.base import SignalFunction
-import genki_signals.signal_functions as s
+from genki_signals.functions.base import SignalFunction
+import genki_signals.functions as f
 
 
 def encode_signal_fn(obj):
@@ -24,6 +24,6 @@ def decode_signal_fn(obj):
     JSON decoder for SignalFunction objects, to be used with json.load.
     """
     if obj.get("__signal_function__"):
-        cls = getattr(s, obj["type"])
+        cls = getattr(f, obj["type"])
         return cls(*obj["inputs"], name=obj["name"], **obj["params"])
     return obj

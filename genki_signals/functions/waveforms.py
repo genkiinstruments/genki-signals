@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 
-from genki_signals.signal_functions.base import SignalFunction, SignalName
+from genki_signals.functions.base import SignalFunction, SignalName
 
 
 class SineWave(SignalFunction):
