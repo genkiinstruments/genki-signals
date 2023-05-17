@@ -180,10 +180,12 @@ __all__ = [
     "Sum",
     "Difference",
     "Multiply",
+    "Abs",
     "Pow",
     "Exp",
     "Logarithm",
     "Integrate",
     "Differentiate",
     "MovingAverage",
+    "Clip",
 ]

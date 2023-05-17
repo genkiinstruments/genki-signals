@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 import imufusion
 import numpy as np
 from ahrs.filters import Madgwick
 from scipy.spatial.transform import Rotation
-import logging
 
 from genki_signals.dead_reckoning import calc_per_t_power, combine_power
 from genki_signals.filters import FirFilter
