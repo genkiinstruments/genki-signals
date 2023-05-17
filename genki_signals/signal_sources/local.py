@@ -1,3 +1,5 @@
+from queue import Queue
+
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
@@ -105,12 +107,11 @@ class MicSignalSource(SamplerBase):
         self.sample_width = self.pa.get_sample_size(self.format)
         self.chunk_size = chunk_size
         self.stream = None
-        self.buffer = DataBuffer(maxlen=None)
+        self.buffer = Queue()
         self.is_active = False
         self.signal_names = ["audio"]
 
     def start(self):
-
         self.stream = self.pa.open(
             format=self.format,
             channels=self.mic_info["maxInputChannels"],
@@ -132,10 +133,12 @@ class MicSignalSource(SamplerBase):
         from pyaudio import paContinue
 
         data = np.frombuffer(in_data, dtype=np.int16)
-        self.buffer.extend({"audio": data})
+        self.buffer.put({"audio": data})
         return in_data, paContinue
 
     def read(self):
-        value = self.buffer.copy()
-        self.buffer.clear()
-        return value
+        data = DataBuffer()
+        while not self.buffer.empty():
+            d = self.buffer.get()
+            data.extend(d)
+        return data
