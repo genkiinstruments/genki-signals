@@ -10,6 +10,7 @@ class MouseSignalSource(SignalSource):
     """
     Signal source that samples the mouse position.
     """
+
     def __init__(self):
         import pynput
 
@@ -23,6 +24,7 @@ class KeyboardSignalSource(SignalSource):
     """
     Signal source that samples whether a specified set of keys are being pressed or not.
     """
+
     def __init__(self, keys):
         import pynput
 
@@ -96,7 +98,7 @@ class CameraSignalSource(SignalSource):
 class MicSignalSource(SamplerBase):
     """Signal source to sample from the microphone."""
 
-    def __init__(self, chunk_size=1024):
+    def __init__(self, chunk_size=1024, input_device_index=None):
         import pyaudio
 
         self.pa = pyaudio.PyAudio()
@@ -110,6 +112,7 @@ class MicSignalSource(SamplerBase):
         self.buffer = Queue()
         self.is_active = False
         self.signal_names = ["audio"]
+        self.input_device_index = input_device_index
 
     def start(self):
         self.stream = self.pa.open(
@@ -119,6 +122,7 @@ class MicSignalSource(SamplerBase):
             input=True,
             frames_per_buffer=self.chunk_size,
             stream_callback=self.receive,
+            input_device_index=self.input_device_index,
         )
         self.stream.start_stream()
         self.is_active = True
