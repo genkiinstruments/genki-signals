@@ -18,7 +18,7 @@ from genki_signals.signal_functions.arithmetic import Sum, Difference, Scale
 )
 def test_scale(input_data, scale_factor, expected):
     func = Scale("input_data", name="output_data", scale_factor=scale_factor)
-    result = func(*(input_data,))
+    result = func(input_data)
     np.testing.assert_almost_equal(result, expected)
 
 
