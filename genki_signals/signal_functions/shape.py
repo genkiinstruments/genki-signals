@@ -7,7 +7,7 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 class ExtractDimension(SignalFunction):
     """
-    SignalFunction to extract k-dimensional signal from n-dimensional signal.
+    SignalFunction to extract a k-dimensional signal from n-dimensional signal.
 
     Example:
         A 3D signal with shape (10, 20, 30) can be converted to some 1D signal with shape (30,) by setting dim=(0, 0)
