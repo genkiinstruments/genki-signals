@@ -29,8 +29,10 @@ setuptools.setup(
         "onnx",
         "onnxruntime",
         "opencv-python",
+        "pynput",
         "bqplot",
         "ipywidgets",
+        "IPython"
         "ahrs",
         "imufusion",
         "bleak",
