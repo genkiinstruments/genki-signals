@@ -6,7 +6,7 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class ExtractDimension(SignalFunction):
-    """SignalFunction to extract a dimension from a signal"""
+    """SignalFunction to extract some dimensions from a signal"""
 
     def __init__(self, input_signal: SignalName, name: str, dim: int | tuple[int]):
         super().__init__(input_signal, name=name, params={"dim": dim})
