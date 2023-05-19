@@ -6,7 +6,13 @@ from genki_signals.signal_functions.base import SignalFunction, SignalName
 
 
 class ExtractDimension(SignalFunction):
-    """SignalFunction to extract some dimensions from a signal"""
+    """
+    SignalFunction to extract k-dimensional signal from n-dimensional signal.
+
+    Example:
+        A 3D signal with shape (10, 20, 30) can be converted to some 1D signal with shape (30,) by setting dim=(0, 0)
+        for example.
+    """
 
     def __init__(self, input_signal: SignalName, name: str, dim: int | tuple[int]):
         super().__init__(input_signal, name=name, params={"dim": dim})
@@ -17,7 +23,7 @@ class ExtractDimension(SignalFunction):
 
     def __call__(self, v):
         if v.ndim == len(self.dim):
-            raise ValueError(f"Cannot not convert signal to scalar")
+            raise ValueError("Cannot not convert signal to scalar")
 
         return v[self.dim]
 
@@ -42,7 +48,7 @@ class Concatenate(SignalFunction):
         # here we know that all np.arrays in to_concat are valid, i.e. have the same ndim atleast
         ndim = to_concat[0].ndim
         if self.axis in [-1, ndim - 1]:
-            raise ValueError(f"Cannot concatenate along time axis")
+            raise ValueError("Cannot concatenate along time axis")
 
         return concat
 
@@ -60,7 +66,7 @@ class Stack(SignalFunction):
         # np.stack creates a new axis at the specified position, so we need to check if that new axis is the time axis
         ndim = stacked.ndim
         if self.axis in [-1, ndim - 1]:
-            raise ValueError(f"Cannot stack along time axis")
+            raise ValueError("Cannot stack along time axis")
 
         return stacked
 
