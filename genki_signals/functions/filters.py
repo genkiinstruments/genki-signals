@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from genki_signals.filters import FirFilter, ButterFilter
-from genki_signals.signal_functions.base import SignalFunction, SignalName
+from genki_signals.functions.base import SignalFunction, SignalName
 
 
 class GaussianSmooth(SignalFunction):

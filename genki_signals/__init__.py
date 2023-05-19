@@ -1,13 +1,13 @@
-from .signal_frontends import *
-from .signal_functions import *
-from .signal_sources import *
+from .frontends import *
+from .functions import *
+from .sources import *
 
 from .dead_reckoning import *
 from .filters import *
 from .fusion import *
 from .recorders import *
 from .session import *
-from .signal_system import *
+from .system import *
 
 from .buffers import Buffer, DataBuffer
 

@@ -17,8 +17,8 @@ from pathlib import Path
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
-from genki_signals.signal_functions.base import compute_signal_functions
+from genki_signals.functions.serialization import encode_signal_fn, decode_signal_fn
+from genki_signals.functions.base import compute_signal_functions
 
 
 def read_json_file(p: Path | str):
@@ -81,7 +81,7 @@ class Session:
         metadata["platform"] = sys.platform
         metadata["data_source"] = system.source.__class__.__name__
         metadata["sample_rate"] = system.source.sample_rate
-        metadata["signal_functions"] = system.signal_functions
+        metadata["signal_functions"] = system.functions
 
         self = cls(path)
 
@@ -149,7 +149,7 @@ class Session:
         return self._metadata
 
     @property
-    def signal_functions(self):
+    def functions(self):
         return self.metadata.get("signal_functions", [])
 
     @property
@@ -166,11 +166,11 @@ class Session:
         """
         Compute signal functions on raw data, returns a new DataBuffer.
         """
-        return compute_signal_functions(self.raw_data, self.signal_functions)
+        return compute_signal_functions(self.raw_data, self.functions)
 
     def get_parameters(self):
         return dict(
             (f"{fn.name}.{param_name}", param_value)
-            for fn in self.signal_functions
+            for fn in self.functions
             for param_name, param_value in fn.params.items()
         )

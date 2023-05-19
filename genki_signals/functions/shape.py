@@ -1,20 +1,31 @@
+from __future__ import annotations
+
 import numpy as np
 
-from genki_signals.signal_functions.base import SignalFunction, SignalName
+from genki_signals.functions.base import SignalFunction, SignalName
 
 
 class ExtractDimension(SignalFunction):
     """
-    SignalFunction to extract a single dimension from a k-dimensional signal, i.e (k, n) -> (1, n)
+    SignalFunction to extract a k-dimensional signal from n-dimensional signal.
+
+    Example:
+        A 3D signal with shape (10, 20, 30) can be converted to some 1D signal with shape (30,) by setting dim=(0, 0)
+        for example.
     """
 
-    def __init__(self, input_signal: SignalName, name: str, dim: int):
+    def __init__(self, input_signal: SignalName, name: str, dim: int | tuple[int]):
         super().__init__(input_signal, name=name, params={"dim": dim})
+        if isinstance(dim, int):
+            dim = (dim,)
+
         self.dim = dim
 
     def __call__(self, v):
-        # Slice ensures that the output is 2D i.e. (1, n)
-        return v[self.dim : self.dim + 1]
+        if v.ndim == len(self.dim):
+            raise ValueError("Cannot not convert signal to scalar")
+
+        return v[self.dim]
 
 
 class Concatenate(SignalFunction):
@@ -31,7 +42,15 @@ class Concatenate(SignalFunction):
                 to_concat.append(col_data[None])
             else:
                 to_concat.append(col_data)
-        return np.concatenate(to_concat, axis=self.axis)
+
+        concat = np.concatenate(to_concat, axis=self.axis)
+
+        # here we know that all np.arrays in to_concat are valid, i.e. have the same ndim atleast
+        ndim = to_concat[0].ndim
+        if self.axis in [-1, ndim - 1]:
+            raise ValueError("Cannot concatenate along time axis")
+
+        return concat
 
 
 class Stack(SignalFunction):
@@ -42,22 +61,26 @@ class Stack(SignalFunction):
         self.axis = axis
 
     def __call__(self, *signals):
-        to_stack = []
-        for col_data in signals:
-            if col_data.ndim == 1:
-                to_stack.append(col_data[None])
-            else:
-                to_stack.append(col_data)
-        return np.stack(to_stack, axis=self.axis)
+        stacked = np.stack(signals, axis=self.axis)
+
+        # np.stack creates a new axis at the specified position, so we need to check if that new axis is the time axis
+        ndim = stacked.ndim
+        if self.axis in [-1, ndim - 1]:
+            raise ValueError("Cannot stack along time axis")
+
+        return stacked
 
 
 class Reshape(SignalFunction):
+    """SignalFunction to reshape a signal without changing the time axis"""
+
     def __init__(self, input_signal: SignalName, shape: tuple[int], name: str):
         super().__init__(input_signal, name=name, params={"shape": shape})
         self.shape = shape
 
     def __call__(self, v):
-        return v.reshape(self.shape + (-1,))
+        time = v.shape[-1]
+        return v.reshape(self.shape + (time,))
 
 
 class Combine(SignalFunction):

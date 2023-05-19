@@ -5,8 +5,8 @@ import logging
 import numpy as np
 from onnxruntime import InferenceSession
 
-from genki_signals.signal_functions.base import SignalFunction, SignalName
-from genki_signals.signal_functions.windowed import WindowedSignalFunction
+from genki_signals.functions.base import SignalFunction, SignalName
+from genki_signals.functions.windowed import WindowedSignalFunction
 
 logger = logging.getLogger(__name__)
 
