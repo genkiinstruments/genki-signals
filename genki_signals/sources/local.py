@@ -95,7 +95,7 @@ class CameraSource(SignalSource):
 
 
 class MicSource(SamplerBase):
-    """Signal source to sample from the microphone."""
+    """Samples audio data in chunks from the microphone."""
 
     def __init__(self, key: str = "audio", chunk_size: int = 1024, followers: dict[str, SignalSource] = {}):
         import pyaudio
