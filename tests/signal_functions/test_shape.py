@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from genki_signals.signal_functions.shape import *
+from genki_signals.functions.shape import *
 
 
 @pytest.mark.parametrize(

@@ -17,7 +17,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent.absolute()))
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_system import SignalSystem
+from genki_signals.system import System
 from genki_signals.buffers import Buffer
 
 
@@ -129,7 +129,7 @@ def compare_buffers(
     return pd.concat(tests)
 
 
-def profile_system(system: SignalSystem, t : float = 1.0, verbose : bool = False):
+def profile_system(system: System, t : float = 1.0, verbose : bool = False):
     yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
     yappi.start()
     system.start()
@@ -150,7 +150,7 @@ def profile_system(system: SignalSystem, t : float = 1.0, verbose : bool = False
     return df_filtered
 
 
-def compare_systems(systems: list[SignalSystem], t: float = 1.0, names: list[str] | None = None, verbose: bool = False,):
+def compare_systems(systems: list[System], t: float = 1.0, names: list[str] | None = None, verbose: bool = False,):
     if names is None:
         names = [f"system_{i}" for i in range(len(systems))]
     assert len(names) == len(systems)

@@ -9,7 +9,7 @@ from genki_wave.protocols import CommunicateCancel
 from genki_wave.utils import get_or_create_event_loop
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SamplerBase, SignalSource
+from genki_signals.sources.base import SamplerBase, SignalSource
 
 
 async def find_ble_address(device_name: str = None):
@@ -51,7 +51,7 @@ class BLEProtocol:
         return self._queue
 
 
-class BLESignalSource(SignalSource, SamplerBase):
+class BLESource(SignalSource, SamplerBase):
     """Signal source to receive samples over a BLE connection"""
 
     def __call__(self):

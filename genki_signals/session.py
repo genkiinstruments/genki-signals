@@ -17,8 +17,12 @@ from pathlib import Path
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
+<<<<<<< HEAD
 from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
 from genki_signals.signal_functions.base import compute_signal_functions
+=======
+from genki_signals.functions.serialization import encode_signal_fn, decode_signal_fn
+>>>>>>> 94ba899 (terse names)
 
 
 def read_json_file(p: Path | str):
@@ -81,7 +85,7 @@ class Session:
         metadata["platform"] = sys.platform
         metadata["data_source"] = system.source.__class__.__name__
         metadata["sample_rate"] = system.source.sample_rate
-        metadata["signal_functions"] = system.signal_functions
+        metadata["functions"] = system.functions
 
         self = cls(path)
 

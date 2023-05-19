@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation
 
 from genki_signals.dead_reckoning import calc_per_t_power, combine_power
 from genki_signals.filters import FirFilter
-from genki_signals.signal_functions.base import SignalFunction, SignalName
+from genki_signals.functions.base import SignalFunction, SignalName
 
 logger = logging.getLogger(__name__)
 

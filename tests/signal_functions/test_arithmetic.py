@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from genki_signals.signal_functions.arithmetic import Sum, Difference, Scale
+from genki_signals.functions.arithmetic import Sum, Difference, Scale
 
 
 @pytest.mark.parametrize(

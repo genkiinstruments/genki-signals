@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_system import SignalSystem
+from genki_signals.system import System
 
 
 class FrontendBase(ABC):
-    def __init__(self, system: SignalSystem):
+    def __init__(self, system: System):
         self.system = system
         self.system.register_data_feed(id(self), self.update)
 

@@ -3,10 +3,10 @@ from queue import Queue
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.signal_sources.base import SignalSource, SamplerBase
+from genki_signals.sources.base import SignalSource, SamplerBase
 
 
-class MouseSignalSource(SignalSource):
+class MouseSource(SignalSource):
     """
     Signal source that samples the mouse position.
     """
@@ -19,7 +19,7 @@ class MouseSignalSource(SignalSource):
         return np.array(self.mouse.position)
 
 
-class KeyboardSignalSource(SignalSource):
+class KeyboardSource(SignalSource):
     """
     Signal source that samples whether a specified set of keys are being pressed or not.
     """
@@ -52,12 +52,12 @@ class KeyboardSignalSource(SignalSource):
         return {f"pressing_{key}": value for key, value in self.is_pressing.items()}
 
     def __repr__(self):
-        return f"KeyboardSignalSource({self.keys})"
+        return f"KeyboardSource({self.keys})"
 
 
-class CameraSignalSource(SignalSource):
+class CameraSource(SignalSource):
     """
-    A signal source that samples the camera.
+    A SignalSource that samples frames from the camera.
     The recorded frames are in RGB format and have shape (1, height, width, 3)
     """
 
@@ -93,8 +93,8 @@ class CameraSignalSource(SignalSource):
             return self.last_frame
 
 
-class MicSignalSource(SamplerBase):
-    """Signal source to sample from the microphone."""
+class MicSource(SamplerBase):
+    """Samples audio data in chunks from the microphone."""
 
     def __init__(self, chunk_size=1024):
         import pyaudio

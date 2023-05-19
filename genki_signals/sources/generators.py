@@ -1,6 +1,6 @@
 import numpy as np
 
-from genki_signals.signal_sources.base import SignalSource
+from genki_signals.sources.base import SignalSource
 
 
 class RandomNoise(SignalSource):

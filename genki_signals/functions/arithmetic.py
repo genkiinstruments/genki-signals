@@ -4,7 +4,7 @@ import numpy as np
 from scipy import integrate
 
 from genki_signals.buffers import NumpyBuffer
-from genki_signals.signal_functions.base import SignalFunction, SignalName
+from genki_signals.functions.base import SignalFunction, SignalName
 
 
 class Scale(SignalFunction):
