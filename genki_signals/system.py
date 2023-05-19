@@ -97,7 +97,7 @@ class System:
         if self.is_recording:
             self.recorder.write(data)
         if len(data) > 0:
-            data = compute_signal_functions(data, self.signal_functions)
+            data = compute_signal_functions(data, self.functions)
         return data
 
     def add_derived_signal(self, signal):
