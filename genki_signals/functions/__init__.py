@@ -9,7 +9,6 @@ Signal functions are also assumed to be causal, i.e. they only depend
 on past values of the input and can thus be computed in real time.
 """
 
-
 from .arithmetic import *  # noqa: F401, F403
 from .filters import *  # noqa: F401, F403
 from .geometry import *  # noqa: F401, F403
@@ -17,4 +16,4 @@ from .inference import *  # noqa: F401, F403
 from .windowed import *  # noqa: F401, F403
 from .shape import *  # noqa: F401, F403
 from .waveforms import *  # noqa: F401, F403
-from .base import compute_signal_functions
+from .base import compute_signal_functions, SignalFunction, SignalName  # noqa: F401, F403

@@ -8,6 +8,7 @@ import cv2
 import bqplot as bq
 import ipywidgets
 from ipywidgets import Image
+from IPython.display import display
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.system import System
@@ -42,7 +43,7 @@ class WidgetFrontend(FrontendBase):
                 except IndexError:
                     pass
             rows.append(ipywidgets.HBox(cols))
-        return ipywidgets.VBox(rows)._ipython_display_()
+        return display(ipywidgets.VBox(rows))
 
 
 class PlottableWidget(ABC):
@@ -54,7 +55,7 @@ class PlottableWidget(ABC):
         pass
 
     def _ipython_display_(self):
-        return self.widget._ipython_display_()
+        return display(self.widget)
 
 
 class Video(PlottableWidget):
