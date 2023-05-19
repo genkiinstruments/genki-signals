@@ -1,5 +1,6 @@
 from queue import Queue
 
+import time
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
@@ -94,11 +95,12 @@ class CameraSource(SignalSource):
 
 
 class MicSource(SamplerBase):
-    """Samples audio data in chunks from the microphone."""
+    """Signal source to sample from the microphone."""
 
-    def __init__(self, chunk_size=1024):
+    def __init__(self, key: str = "audio", chunk_size: int = 1024, followers: dict[str, SignalSource] = {}):
         import pyaudio
 
+        self.key = key
         self.pa = pyaudio.PyAudio()
         self.mic_info = self.pa.get_default_input_device_info()
         self.sample_rate = int(self.mic_info["defaultSampleRate"])
@@ -109,7 +111,8 @@ class MicSource(SamplerBase):
         self.stream = None
         self.buffer = Queue()
         self.is_active = False
-        self.signal_names = ["audio"]
+        self.followers = followers
+        self.signal_names = [self.key]
 
     def start(self):
         self.stream = self.pa.open(
@@ -120,20 +123,35 @@ class MicSource(SamplerBase):
             frames_per_buffer=self.chunk_size,
             stream_callback=self.receive,
         )
+        for source in self.followers.values():
+            source.start()
         self.stream.start_stream()
         self.is_active = True
 
     def stop(self):
         self.stream.stop_stream()
         self.stream.close()
+        for source in self.followers.values():
+            source.stop()
         self.is_active = False
 
     def receive(self, in_data, frame_count, time_info, status):
         # TODO: Use the info from other params somehow (particularly time_info)
         from pyaudio import paContinue
 
-        data = np.frombuffer(in_data, dtype=np.int16)
-        self.buffer.put({"audio": data})
+        data = {
+            "timestamp": np.array([time.time()]),
+            self.key: np.frombuffer(in_data, dtype=np.int16)
+        }
+        for name, source in self.followers.items():
+            d = source()
+            d.pop("timestamp", None)
+            if isinstance(d, dict):
+                for key, value in d.items():
+                    data[f"{name}_{key}"] = np.array([value]).T
+            else:
+                data[name] = np.array([d]).T
+        self.buffer.put(data)
         return in_data, paContinue
 
     def read(self):
