@@ -32,7 +32,7 @@ setuptools.setup(
         "pynput",
         "bqplot",
         "ipywidgets",
-        "IPython"
+        "IPython",
         "ahrs",
         "imufusion",
         "bleak",
