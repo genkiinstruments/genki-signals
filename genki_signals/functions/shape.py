@@ -83,9 +83,32 @@ class Reshape(SignalFunction):
         return v.reshape(self.shape + (time,))
 
 
+class Combine(SignalFunction):
+    def __init__(self, signal_fns, name: str):
+        self.signal_fns = signal_fns
+        internal_outputs = [fn.name for fn in signal_fns]
+        all_inputs = set().union(*[fn.input_signals for fn in signal_fns])
+        inputs = all_inputs - set(internal_outputs)
+        super().__init__(*inputs, name=name, params={"signal_fns": signal_fns})
+
+    def __call__(self, *args):
+        internal_outputs = {}
+        for fn in self.signal_fns:
+            fn_inputs = []
+            for fn_input in fn.input_signals:
+                if fn_input in internal_outputs:
+                    fn_inputs.append(internal_outputs[fn_input])
+                else:
+                    fn_inputs.append(args[self.input_signals.index(fn_input)])
+            fn_output = fn(*fn_inputs)
+            internal_outputs[fn.name] = fn_output
+        return internal_outputs[self.signal_fns[-1].name]
+
+
 __all__ = [
     "ExtractDimension",
     "Concatenate",
     "Stack",
     "Reshape",
+    "Combine"
 ]

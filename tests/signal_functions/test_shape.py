@@ -1,7 +1,9 @@
 import pytest
 import numpy as np
 
+import genki_signals.functions as sf
 from genki_signals.functions.shape import *
+from genki_signals.buffers import DataBuffer
 
 
 @pytest.mark.parametrize(
@@ -117,3 +119,27 @@ def test_reshape_shape_mismatch(shape, input_data):
     reshape = Reshape("input_signal", name="Reshape", shape=shape)
     with pytest.raises(ValueError):
         reshape(input_data)
+
+
+def test_combine():
+    signal_fns = [
+
+        sf.Differentiate('a', input_b='timestamp', name='a_prime'),
+        sf.Sum('a_prime', 'b', name='sum_a_b'),
+        sf.Norm('sum_a_b', name='normed'),
+
+        Combine([
+            sf.Differentiate('a', input_b='timestamp', name='a_prime_internal'),
+            sf.Sum('a_prime', 'b', name='sum_a_b_internal'),
+            sf.Norm('sum_a_b', name='normed_internal')
+        ],
+        name='combined')
+    ]
+    data = DataBuffer(data={
+        'a': np.array([10, 20, 40]),
+        'b': np.array([40, 50, 60]),
+        'timestamp': np.array([1, 2, 3])
+    })
+    result = sf.compute_signal_functions(data, signal_fns)
+    assert np.allclose(result['normed'], result['combined'])
+    
