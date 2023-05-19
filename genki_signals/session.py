@@ -150,8 +150,6 @@ class Session:
 
     @property
     def signal_functions(self):
-        if self._metadata is None:
-            self._load_metadata()
         return self.metadata.get("signal_functions", [])
 
     @property
