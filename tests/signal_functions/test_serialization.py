@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from genki_signals.signal_functions import FourierTransform, Stack
-from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
+from genki_signals.functions import FourierTransform, Stack
+from genki_signals.functions.serialization import encode_signal_fn, decode_signal_fn
 
 @pytest.mark.parametrize(
     "input_class",

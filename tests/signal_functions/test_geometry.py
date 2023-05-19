@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from genki_signals.signal_functions.geometry import Norm
+from genki_signals.functions.geometry import Norm
 
 
 @pytest.mark.parametrize(
