@@ -38,9 +38,9 @@ class SignalFunction(abc.ABC):
         return 1
 
 
-def compute_signal_functions(data: DataBuffer, signal_functions: list[SignalFunction]):
+def compute_signal_functions(data: DataBuffer, functions: list[SignalFunction]):
     data = data.copy()
-    for signal in signal_functions:
+    for signal in functions:
         inputs = tuple(data[name] for name in signal.input_signals)
 
         # TODO: error reporting here? Remove ill-behaved signals?
