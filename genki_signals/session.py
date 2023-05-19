@@ -10,13 +10,15 @@ import glob
 import json
 import pickle
 import sys
+import wave
 from datetime import datetime
 from pathlib import Path
-import wave
+
 import numpy as np
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.signal_functions.serialization import encode_signal_fn, decode_signal_fn
+from genki_signals.signal_functions.base import compute_signal_functions
 
 
 def read_json_file(p: Path | str):
@@ -52,7 +54,7 @@ class Session:
         self._raw_data_path = None
         self._datafile_extension = None
         self._metadata = None
-        self._data = None
+        self._raw_data = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.session_name}>"
@@ -95,11 +97,11 @@ class Session:
     def _load_data(self):
         if self.datafile_extension in [".pickle", ".pkl"]:
             with open(self.raw_data_path, "rb") as FILE:
-                self._data = pickle.load(FILE)
+                self._raw_data = pickle.load(FILE)
         elif self.datafile_extension == ".wav":
             wavefile = wave.open(self.raw_data_path.as_posix(), "rb")
             data = wavefile.readframes(wavefile.getnframes())
-            self._data = DataBuffer(data={"audio": np.frombuffer(data, np.int16)})
+            self._raw_data = DataBuffer(data={"audio": np.frombuffer(data, np.int16)})
         else:
             raise NotImplementedError(f"Loading data from {self._datafile_extension} is not implemented")
 
@@ -147,11 +149,28 @@ class Session:
         return self._metadata
 
     @property
-    def data(self):
-        if self._data is None:
+    def signal_functions(self):
+        return self.metadata.get("signal_functions", [])
+
+    @property
+    def raw_data(self):
+        if self._raw_data is None:
             self._load_data()
-        return self._data
+        return self._raw_data
 
     def add_metadata_field(self, name: str, value):
         self.metadata[name] = value
         self._write_metadata()
+
+    def get_data(self):
+        """
+        Compute signal functions on raw data, returns a new DataBuffer.
+        """
+        return compute_signal_functions(self.raw_data, self.signal_functions)
+
+    def get_parameters(self):
+        return dict(
+            (f"{fn.name}.{param_name}", param_value)
+            for fn in self.signal_functions
+            for param_name, param_value in fn.params.items()
+        )
