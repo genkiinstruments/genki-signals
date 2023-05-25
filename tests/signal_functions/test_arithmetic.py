@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from genki_signals.functions.arithmetic import Sum, Difference, Scale
+from genki_signals.functions.arithmetic import Sum, Difference, Scale, Integrate
 
 
 @pytest.mark.parametrize(
@@ -81,3 +81,64 @@ def test_difference_shape_mismatch(input_a, input_b):
     func = Difference("input_a", "input_b", name="output_data")
     with pytest.raises(Exception):
         func(*(input_a, input_b))
+
+
+@pytest.mark.parametrize(
+    "inputs, use_trapz, expected",
+    [
+        (
+            (np.array([1, 2, 10]), np.array([0, 1, 2])),
+            True,
+            np.array([0, 1.5, 7.5]),
+        ),
+        (
+            (np.array([1, 2, 3]), np.array([0, 1, 101])),
+            False,
+            np.array([0, 2, 302]),
+        ),
+        (
+            (np.array([[1, 2, 3], [1, 2, 4], [1, 4, 9]]), np.array([0, 1, 2])),
+            False,
+            np.array([[0, 2, 5], [0, 2, 6], [0, 4, 13]]),
+        ),
+    ]
+)
+def test_integrate(inputs, use_trapz, expected):
+    func = Integrate("input_a", "input_b", name="output_data", use_trapz=use_trapz)
+    result = func(*(inputs))
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    "use_trapz",
+    [
+        (True),
+        (False),
+    ]
+)
+def test_integrate_state(use_trapz):
+    sample_count = 1000
+    lmbda = 3
+    attribute_count = 3
+
+    input_a = np.random.rand(attribute_count, sample_count) * 1000
+    input_b = np.sort(np.random.rand(attribute_count, sample_count)) * 1000
+
+    func = Integrate("input_a", "input_b", name="output_data", use_trapz=use_trapz)
+    result_batched = func(input_a, input_b)
+
+    func = Integrate("input_a", "input_b", name="output_data", use_trapz=use_trapz)
+    result_seq = []
+    i = 0
+    while i < sample_count:
+        next_i = i + np.random.poisson(lam=lmbda) + 1
+        if i < 2:
+            print(next_i)
+        result = func(input_a[..., i:next_i], input_b[..., i:next_i])
+        if i < 2:
+            print(result, func.last_b, func.state)
+        result_seq.append(result)
+        i = next_i
+
+    result_seq = np.concatenate(result_seq, axis=-1)
+    np.testing.assert_almost_equal(result_batched, result_seq)
