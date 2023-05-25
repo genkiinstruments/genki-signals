@@ -66,7 +66,8 @@ class Video(PlottableWidget):
         self.widget = Image(format="jpeg")
 
     def update(self, data: DataBuffer):
-        value = data[self.video_key][..., -1].transpose(2, 1, 0)
+        transpose = (2, 1, 0) if data[self.video_key].ndim == 4 else (1, 0)
+        value = data[self.video_key][..., -1].transpose(transpose)
         _, jpeg_image = cv2.imencode(".jpeg", value)
         self.widget.value = jpeg_image.tobytes()
 
