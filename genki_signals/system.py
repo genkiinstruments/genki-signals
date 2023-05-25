@@ -19,7 +19,6 @@ class System:
     specified in Hz. Note that the update_rate will not be exact, as it is limited by the
     use of time.sleep(), so an error of up to 15% is expected.
     """
-
     def __init__(self, source, functions=None, update_rate=25):
         self.source = source
         self.functions = [] if functions is None else functions
@@ -42,6 +41,8 @@ class System:
             time.sleep(1 / self.update_rate)
 
     def register_data_feed(self, feed_id, callback):
+        if feed_id in self.data_feeds:
+            raise ValueError(f"Feed with id {feed_id} already exists")
         self.data_feeds[feed_id] = callback
 
     def deregister_data_feed(self, feed_id):

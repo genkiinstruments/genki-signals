@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from genki_signals.buffers import DataBuffer
 from genki_signals.functions.serialization import encode_signal_fn, decode_signal_fn
@@ -102,6 +103,10 @@ class Session:
             wavefile = wave.open(self.raw_data_path.as_posix(), "rb")
             data = wavefile.readframes(wavefile.getnframes())
             self._raw_data = DataBuffer(data={"audio": np.frombuffer(data, np.int16)})
+        elif self.datafile_extension == ".parquet":
+            self._raw_data = DataBuffer.from_dataframe(pd.read_parquet(self.raw_data_path))
+        elif self.datafile_extension == ".csv":
+            self._raw_data = DataBuffer.from_dataframe(pd.read_csv(self.raw_data_path))
         else:
             raise NotImplementedError(f"Loading data from {self._datafile_extension} is not implemented")
 
