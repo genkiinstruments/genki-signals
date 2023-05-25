@@ -151,4 +151,5 @@ __all__ = [
     "SampleRate",
     "FourierTransform",
     "Delay",
+    "WindowedSignalFunction"
 ]
