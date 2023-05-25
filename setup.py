@@ -41,7 +41,7 @@ setuptools.setup(
     author="Genki Instruments",
     author_email="genki@genkiinstruments.com",
     keywords = ["Signal Processing", "Machine Learning", "Realtime"],
-    packages=setuptools.find_packages(exclude=("tests", "examples")),
+    packages=setuptools.find_packages(exclude=("tests", "test", "examples")),
     classifiers = [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
