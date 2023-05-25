@@ -115,6 +115,8 @@ class MicSource(SamplerBase):
         self.signal_names = [self.key]
 
     def start(self):
+        for source in self.followers.values():
+            source.start()
         self.stream = self.pa.open(
             format=self.format,
             channels=self.mic_info["maxInputChannels"],
@@ -123,8 +125,6 @@ class MicSource(SamplerBase):
             frames_per_buffer=self.chunk_size,
             stream_callback=self.receive,
         )
-        for source in self.followers.values():
-            source.start()
         self.stream.start_stream()
         self.is_active = True
 
@@ -145,8 +145,8 @@ class MicSource(SamplerBase):
         }
         for name, source in self.followers.items():
             d = source()
-            d.pop("timestamp", None)
             if isinstance(d, dict):
+                d.pop("timestamp", None)
                 for key, value in d.items():
                     data[f"{name}_{key}"] = np.array([value]).T
             else:
