@@ -200,7 +200,28 @@ class DataBuffer(MutableMapping, Buffer):
 
     @classmethod
     def from_dataframe(cls, df, maxlen=None):
-        return cls(maxlen=maxlen, data={k: df[k].values for k in df.columns})
+        split = re.compile(r"(?P<name>\D+)_(?P<number>(\d+)(_\d+)?(_\d+)?)")
+        data = {}
+        composite_data = {}
+        for col in df.columns:
+            m = split.match(col)
+            if m is not None:
+                name, number = m.groupdict()['name'], m.groupdict()['number']
+                number = tuple(map(int, number.split("_")))
+                if name not in composite_data:
+                    composite_data[name] = []
+                composite_data[name].append((number, df[col].values))
+            else:
+                data[col] = df[col].values
+        for name, values in composite_data.items():
+            values = sorted(values, key=lambda x: x[0])
+            pt_shape = tuple(d+1 for d in values[-1][0])
+            t_shape = values[0][1].shape
+            arr = np.zeros((*pt_shape, *t_shape), dtype=values[0][1].dtype)
+            for idx, pts in values:
+                arr[idx] = pts
+            data[name] = arr
+        return cls(maxlen=maxlen, data=data)
 
     def to_dataframe(self):
         flat_data = {}
