@@ -19,27 +19,28 @@ class WidgetFrontend(FrontendBase):
     def __init__(self, system: System, widgets: list[PlottableWidget] = None):
         super().__init__(system)
 
-        self.widgets = widgets or []
-        self.update_callbacks = {id(widget): widget.update for widget in widgets or []}
+        self.widgets = {id(widget): widget for widget in widgets}
+        for widget in widgets:
+            widget.register_on_system(system)
 
-    def register_update_callback(self, id, update_fn):
-        self.update_callbacks[id] = update_fn
+    def add_widget(self, widget: PlottableWidget):
+        self.widgets[id(widget)] = widget
 
-    def deregister_update_callback(self, id):
-        self.update_callbacks.pop(id)
+    def remove_widget(self, widget: PlottableWidget):
+        self.widgets.pop(id(widget), None)
 
     def update(self, data: DataBuffer):
-        for update_fn in self.update_callbacks.values():
-            update_fn(data)
+        pass
 
     def _ipython_display_(self):
         n = math.ceil(math.sqrt(len(self.widgets)))
         rows = []
+        widget_keys = list(self.widgets.keys())
         for i in range(n):
             cols = []
             for j in range(n):
                 try:
-                    cols.append(self.widgets[i * n + j].widget)
+                    cols.append(self.widgets[widget_keys[i * n + j]].widget)
                 except IndexError:
                     pass
             rows.append(ipywidgets.HBox(cols))
@@ -49,6 +50,19 @@ class WidgetFrontend(FrontendBase):
 class PlottableWidget(ABC):
     def __init__(self):
         self.widget = None
+        self.system_id = None
+
+    def register_on_system(self, system: System):
+        if self.system_id is None:
+            system.register_data_feed(id(self), self.update)
+        elif self.system_id != id(system):
+            raise Exception("Registering a PlottableWidget on multiple SignalSystems is not allowed")
+        self.system_id = id(system)
+
+    def deregister_from_system(self, system: System):
+        system.deregister_data_feed(id(self))
+        if self.system_id == id(system):
+            self.system_id = None
 
     @abstractmethod
     def update(self, data: DataBuffer):
