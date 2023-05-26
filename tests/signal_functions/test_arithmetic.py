@@ -87,6 +87,11 @@ def test_difference_shape_mismatch(input_a, input_b):
     "inputs, use_trapz, expected",
     [
         (
+            (np.ones(100), np.arange(100)),
+            True,
+            np.arange(100),
+        ),
+        (
             (np.array([1, 2, 10]), np.array([0, 1, 2])),
             True,
             np.array([0, 1.5, 7.5]),
