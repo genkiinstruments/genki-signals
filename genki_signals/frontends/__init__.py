@@ -1,1 +1,1 @@
-from .visualization import WidgetFrontend, Line, Scatter, Bar, Histogram, Video  # noqa: F401
+from .visualization import WidgetDashboard, Line, Scatter, Bar, Histogram, Video  # noqa: F401
