@@ -31,21 +31,23 @@ class Inference(SignalFunction):
         self.stateful = stateful
         self.state = init_state
         self.session = InferenceSession(model_filename)
+        self.input_names = [inp.name for inp in self.session.get_inputs()]
+        self.output_names = [out.name for out in self.session.get_outputs()]
 
     def __call__(self, x):
         # x shape (6, 16, t)
         x = x[np.newaxis, ..., -1]  # note doesn't work offline
         if self.stateful:
             output, self.state = self.session.run(
-                ["output", "output_state"],
+                self.output_names,
                 {
-                    "input": x.astype(np.float32),
-                    "input_state": self.state.astype(np.float32),
+                    self.input_names[0]: x.astype(np.float32),
+                    self.input_names[1]: self.state.astype(np.float32),
                 },
             )
         else:
-            output, output_extra = self.session.run(["output", "output_extra"], {"input": x.astype(np.float32)})
-        return output[0, ..., None]
+            output = self.session.run(self.output_names, {self.input_names[0]: x.astype(np.float32)})
+        return output[0][..., None]
 
 
 class WindowedInference(WindowedSignalFunction, SignalFunction):
