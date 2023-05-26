@@ -61,7 +61,7 @@ class WavFileRecorder(Recorder):
         self.wavefile.close()
 
 
-class CsvFileRecorder(Recorder):
+class DataFrameRecorder(Recorder):
     def __init__(self, path, rec_buffer_size=1_000_000):
         self.path = path
         self.rec_buffer_size = rec_buffer_size
@@ -71,11 +71,15 @@ class CsvFileRecorder(Recorder):
     def _flush_to_file(self):
         df = self._recording_buffer.to_dataframe()
         if self._has_written_file:
-            df.to_csv(self.path, mode="a", header=False, index=False)
+            self.serialize_frame(df, initial_frame=False)
         else:
-            df.to_csv(self.path, index=False)
+            self.serialize_frame(df, initial_frame=True)
             self._has_written_file = True
         self._recording_buffer.clear()
+
+    @abc.abstractmethod
+    def serialize_frame(self, frame, initial_frame=False):
+        pass
 
     def write(self, data: DataBuffer):
         self._recording_buffer.extend(data)
@@ -84,3 +88,20 @@ class CsvFileRecorder(Recorder):
 
     def stop(self):
         self._flush_to_file()
+
+
+class CsvFileRecorder(DataFrameRecorder):
+    def serialize_frame(self, df, initial_frame=False):
+        if initial_frame:
+            df.to_csv(self.path, index=False)
+        else:
+            df.to_csv(self.path, mode="a", header=False, index=False)
+
+
+class ParquetFileRecorder(DataFrameRecorder):
+    def serialize_frame(self, df, initial_frame=False):
+        if initial_frame:
+            df.to_parquet(self.path, index=False)
+        else:
+            df.to_parquet(self.path, mode="a", index=False)
+            
