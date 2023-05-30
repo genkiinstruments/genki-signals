@@ -199,6 +199,7 @@ class Histogram(PlottableWidget):
         self,
         system: System,
         y_access: str | tuple[str, int],
+        x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         bin_count: int = 10,
         lookback_size: int = 100,
@@ -216,13 +217,14 @@ class Histogram(PlottableWidget):
         if isinstance(y_access, str):
             y_access = (y_access, None)
 
+        x_range = {"min": x_range[0], "max": x_range[1]}
         y_range = {"min": y_range[0], "max": y_range[1]}
 
         self.buffer = DataBuffer(maxlen=lookback_size)
 
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale()
+        x_scale = bq.LinearScale(**x_range)
         y_scale = bq.LinearScale(**y_range)
         self.x_axis = bq.Axis(scale=x_scale, tick_format="0.2f")
         self.y_axis = bq.Axis(scale=y_scale, orientation="vertical", label=self.y_key)
