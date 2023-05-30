@@ -36,7 +36,11 @@ class System:
         while self.is_active:
             new_data = self._read()
             if len(new_data) > 0:
-                for feed in self.data_feeds.values():
+                # We extract the current data feeds into a list
+                # to prevent errors if a feed is deregistered or new feed added
+                # while we are iterating over them.
+                current_feeds = list(self.data_feeds.values())
+                for feed in current_feeds:
                     feed(new_data)
             time.sleep(1 / self.update_rate)
 
