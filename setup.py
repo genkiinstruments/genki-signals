@@ -37,6 +37,8 @@ setuptools.setup(
         "imufusion",
         "bleak",
         "genki_wave",
+        "pyqtgraph",
+        "PyQT5",
     ],
     author="Genki Instruments",
     author_email="genki@genkiinstruments.com",
