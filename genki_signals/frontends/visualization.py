@@ -15,22 +15,9 @@ from genki_signals.system import System
 from genki_signals.frontends.base import FrontendBase
 
 
-class WidgetFrontend(FrontendBase):
-    def __init__(self, system: System, widgets: list[PlottableWidget] = None):
-        super().__init__(system)
-
-        self.widgets = widgets or []
-        self.update_callbacks = {id(widget): widget.update for widget in widgets or []}
-
-    def register_update_callback(self, id, update_fn):
-        self.update_callbacks[id] = update_fn
-
-    def deregister_update_callback(self, id):
-        self.update_callbacks.pop(id)
-
-    def update(self, data: DataBuffer):
-        for update_fn in self.update_callbacks.values():
-            update_fn(data)
+class WidgetDashboard:
+    def __init__(self, widgets: list[PlottableWidget]):
+        self.widgets = widgets
 
     def _ipython_display_(self):
         n = math.ceil(math.sqrt(len(self.widgets)))
@@ -46,8 +33,10 @@ class WidgetFrontend(FrontendBase):
         return display(ipywidgets.VBox(rows))
 
 
-class PlottableWidget(ABC):
-    def __init__(self):
+class PlottableWidget(FrontendBase):
+    def __init__(self, system: System):
+        super().__init__(system)
+
         self.widget = None
 
     @abstractmethod
@@ -59,14 +48,14 @@ class PlottableWidget(ABC):
 
 
 class Video(PlottableWidget):
-    def __init__(self, video_key: str):
-        super().__init__()
+    def __init__(self, system: System, video_key: str):
+        super().__init__(system)
 
         self.video_key = video_key
         self.widget = Image(format="jpeg")
 
     def update(self, data: DataBuffer):
-        transpose = (2, 1, 0) if data[self.video_key].ndim == 4 else (1, 0)
+        transpose = (2, 1, 0) if data[self.video_key].ndim == 4 else (1, 0)  # rgb or grayscale
         value = data[self.video_key][..., -1].transpose(transpose)
         _, jpeg_image = cv2.imencode(".jpeg", value)
         self.widget.value = jpeg_image.tobytes()
@@ -77,6 +66,7 @@ class Line(PlottableWidget):
 
     def __init__(
         self,
+        system: System,
         x_access: str | tuple[str, int],
         y_access: str | tuple[str, int] | tuple[str, list[int]],
         x_scale: Literal["linear", "log"] = "linear",
@@ -97,7 +87,7 @@ class Line(PlottableWidget):
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
         """
-        super().__init__()
+        super().__init__(system)
 
         if isinstance(x_access, str):
             x_access = (x_access, None)
@@ -140,6 +130,7 @@ class Scatter(PlottableWidget):
 
     def __init__(
         self,
+        system: System,
         x_access: str | tuple[str, int],
         y_access: str | tuple[str, int],
         x_scale: Literal["linear", "log"] = "linear",
@@ -160,7 +151,7 @@ class Scatter(PlottableWidget):
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
         """
-        super().__init__()
+        super().__init__(system)
 
         if isinstance(x_access, str):
             x_access = (x_access, None)
@@ -204,6 +195,7 @@ class Histogram(PlottableWidget):
 
     def __init__(
         self,
+        system: System,
         y_access: str | tuple[str, int],
         y_range: tuple[float, float] = (None, None),
         bin_count: int = 10,
@@ -217,7 +209,7 @@ class Histogram(PlottableWidget):
             bin_count: The number of bins in the histogram
             lookback_size: The number of points to look back when computing the histogram
         """
-        super().__init__()
+        super().__init__(system)
 
         if isinstance(y_access, str):
             y_access = (y_access, None)
@@ -246,6 +238,7 @@ class Bar(PlottableWidget):
 
     def __init__(
         self,
+        system: System,
         y_access: str | tuple[str, list[int]],
         x_names: list[str] = None,
         y_range: tuple[float, float] = (None, None),
@@ -256,7 +249,7 @@ class Bar(PlottableWidget):
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             x_names:  The names of the bars on the x-axis
         """
-        super().__init__()
+        super().__init__(system)
 
         if isinstance(y_access, str):
             y_access = (y_access, None)
