@@ -138,6 +138,8 @@ class Scatter(PlottableWidget):
         x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         n_visible_points: int = 200,
+        flip_x: bool = False,
+        flip_y: bool = False,
     ):
         """
         Args:
@@ -166,8 +168,8 @@ class Scatter(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
-        y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
+        x_scale = bq.LinearScale(**x_range, reverse=flip_x) if x_scale == "linear" else bq.LogScale(**x_range, reverse=flip_x)
+        y_scale = bq.LinearScale(**y_range, reverse=flip_y) if y_scale == "linear" else bq.LogScale(**y_range, reverse=flip_y)
         self.x_axis = bq.Axis(scale=x_scale, label=self.x_key if self.x_idx is None else f"{self.x_key}_{self.x_idx}")
         self.y_axis = bq.Axis(
             scale=y_scale,
