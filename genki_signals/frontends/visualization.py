@@ -16,6 +16,9 @@ from genki_signals.frontends.base import FrontendBase
 
 
 class WidgetDashboard:
+    """
+    A simple dashboard for displaying multiple widgets in a grid.
+    """
     def __init__(self, widgets: list[PlottableWidget]):
         self.widgets = widgets
 
@@ -34,6 +37,9 @@ class WidgetDashboard:
 
 
 class PlottableWidget(FrontendBase):
+    """
+    A base class for jupyter frontends.
+    """
     def __init__(self, system: System):
         super().__init__(system)
 
@@ -74,6 +80,8 @@ class Line(PlottableWidget):
         x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         n_visible_points: int = 200,
+        flip_x: bool = False,
+        flip_y: bool = False,
     ):
         """
         Args:
@@ -86,6 +94,8 @@ class Line(PlottableWidget):
             x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
+            flip_x:   If x-axis is inverted or not
+            flip_y:   If y-axis is inverted or not
         """
         super().__init__(system)
 
@@ -102,8 +112,12 @@ class Line(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
-        y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
+        x_scale = bq.LinearScale(**x_range, reverse=flip_x) \
+            if x_scale == "linear" \
+            else bq.LogScale(**x_range, reverse=flip_x)
+        y_scale = bq.LinearScale(**y_range, reverse=flip_y) \
+            if y_scale == "linear" \
+            else bq.LogScale(**y_range, reverse=flip_y)
         self.x_axis = bq.Axis(
             scale=x_scale, label=f"{self.x_key}_{self.x_idx}" if self.x_idx is not None else self.x_key
         )
@@ -138,6 +152,8 @@ class Scatter(PlottableWidget):
         x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         n_visible_points: int = 200,
+        flip_x: bool = False,
+        flip_y: bool = False,
     ):
         """
         Args:
@@ -150,6 +166,8 @@ class Scatter(PlottableWidget):
             x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
+            flip_x:   If x-axis is inverted or not
+            flip_y:   If y-axis is inverted or not
         """
         super().__init__(system)
 
@@ -166,8 +184,8 @@ class Scatter(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
-        y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
+        x_scale = bq.LinearScale(**x_range, reverse=flip_x) if x_scale == "linear" else bq.LogScale(**x_range, reverse=flip_x)
+        y_scale = bq.LinearScale(**y_range, reverse=flip_y) if y_scale == "linear" else bq.LogScale(**y_range, reverse=flip_y)
         self.x_axis = bq.Axis(scale=x_scale, label=self.x_key if self.x_idx is None else f"{self.x_key}_{self.x_idx}")
         self.y_axis = bq.Axis(
             scale=y_scale,
@@ -197,6 +215,7 @@ class Histogram(PlottableWidget):
         self,
         system: System,
         y_access: str | tuple[str, int],
+        x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         bin_count: int = 10,
         lookback_size: int = 100,
@@ -205,6 +224,7 @@ class Histogram(PlottableWidget):
         Args:
             y_access: The key of a 1D signal or key index pair of a 2D signal, should map to a 1D signal,
                       defines how to access the y-axis data
+            x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             bin_count: The number of bins in the histogram
             lookback_size: The number of points to look back when computing the histogram
@@ -214,13 +234,14 @@ class Histogram(PlottableWidget):
         if isinstance(y_access, str):
             y_access = (y_access, None)
 
+        x_range = {"min": x_range[0], "max": x_range[1]}
         y_range = {"min": y_range[0], "max": y_range[1]}
 
         self.buffer = DataBuffer(maxlen=lookback_size)
 
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale()
+        x_scale = bq.LinearScale(**x_range)
         y_scale = bq.LinearScale(**y_range)
         self.x_axis = bq.Axis(scale=x_scale, tick_format="0.2f")
         self.y_axis = bq.Axis(scale=y_scale, orientation="vertical", label=self.y_key)
@@ -272,18 +293,3 @@ class Bar(PlottableWidget):
             if self.x_names is None:  # we cannot know how many bars there are beforehand
                 self.bars.x = list(range(data.shape[0]))
             self.bars.y = data[..., -1]
-
-
-# TODO: Implement WebFrontend
-# class WebFrontend(FrontendBase):
-#     def __init__(self, system: System, port):
-#         super().__init__(system)
-#         self.port = port
-
-#         self.app = Flask(__name__)
-
-#     def update(self, data: DataBuffer):
-#         self.socket.emit("data", data)
-
-#     def run(self):
-#         self.app.run(port=self.port)
