@@ -1,5 +1,6 @@
 import logging
 import re
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
 
@@ -70,24 +71,6 @@ class Buffer(ABC):
 
         self._data = self._slice(self._data, self.maxlen, end=True)
 
-    def popleft(self, n):
-        """Pops n elements from the left of the buffer.
-
-        If the user asks for more elements than there are on the buffer it will return all the buffer except if
-        the buffer is empty it raises an error
-        """
-        if n == 0:
-            return self._empty()
-        if len(self) == 0:
-            raise IndexError("Pop from empty buffer")
-        data_out = self._slice(self._data, n)
-        n_to_keep = self._data.shape[-1] - n
-        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
-        return data_out
-
-    def popleft_all(self):
-        return self.popleft(len(self))
-
     def __repr__(self):
         return f"{self.__class__.__name__}({self.maxlen, self.cols})"
 
@@ -106,6 +89,7 @@ class DataBuffer(MutableMapping, Buffer):
     def __init__(self, maxlen=None, data=None):
         super().__init__(maxlen, None)
 
+        self.lock = threading.Lock()
         self._data = data if data is not None else {}
         if self.maxlen is not None and len(self) > maxlen:
             self._data = _slice(self._data, self.maxlen, end=True)
@@ -164,9 +148,16 @@ class DataBuffer(MutableMapping, Buffer):
     #  Buffer operations
     # ========================
 
+    def pop_all(self):
+        with self.lock:
+            buffer = self.copy()
+            self.clear()
+        return buffer
+
     def extend(self, data):
         """Appends data to the buffer and pops off and slices s.t. the length matches maxlen"""
-        super().extend(data)
+        with self.lock:
+            super().extend(data)
 
     def _empty(self):
         return {}
@@ -268,6 +259,24 @@ class PandasBuffer(Buffer):
     def _concat(self, data_list):
         return pd.concat(data_list, axis=0)
 
+    def popleft(self, n):
+        """Pops n elements from the left of the buffer.
+
+        If the user asks for more elements than there are on the buffer it will return all the buffer except if
+        the buffer is empty it raises an error
+        """
+        if n == 0:
+            return self._empty()
+        if len(self) == 0:
+            raise IndexError("Pop from empty buffer")
+        data_out = self._slice(self._data, n)
+        n_to_keep = self._data.shape[-1] - n
+        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
+        return data_out
+
+    def popleft_all(self):
+        return self.popleft(len(self))
+
 
 class NumpyBuffer(Buffer):
     def __init__(self, maxlen, n_cols=None):
@@ -306,6 +315,24 @@ class NumpyBuffer(Buffer):
         if all(d.size == 0 for d in data_list):
             return self._empty()
         return np.concatenate([d for d in data_list if d.size != 0], axis=-1)
+
+    def popleft(self, n):
+        """Pops n elements from the left of the buffer.
+
+        If the user asks for more elements than there are on the buffer it will return all the buffer except if
+        the buffer is empty it raises an error
+        """
+        if n == 0:
+            return self._empty()
+        if len(self) == 0:
+            raise IndexError("Pop from empty buffer")
+        data_out = self._slice(self._data, n)
+        n_to_keep = self._data.shape[-1] - n
+        self._data = self._slice(self._data, n_to_keep, end=True) if n_to_keep > 0 else self._empty()
+        return data_out
+
+    def popleft_all(self):
+        return self.popleft(len(self))
 
     def append(self, pt):
         """Append a single point to the buffer"""
