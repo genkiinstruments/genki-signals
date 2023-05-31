@@ -1,3 +1,5 @@
+import numpy as np
+
 from genki_signals.functions.base import SignalFunction
 import genki_signals.functions as f
 
@@ -14,6 +16,8 @@ def encode_signal_fn(obj):
             "name": obj.name,
             "params": obj.params,
         }
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
     else:
         type_name = obj.__class__.__name__
         raise TypeError(f"Object of type '{type_name}' is not JSON serializable")
