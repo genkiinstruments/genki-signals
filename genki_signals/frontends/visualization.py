@@ -94,6 +94,8 @@ class Line(PlottableWidget):
             x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
+            flip_x:   If x-axis is inverted or not
+            flip_y:   If y-axis is inverted or not
         """
         super().__init__(system)
 
@@ -164,6 +166,8 @@ class Scatter(PlottableWidget):
             x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             n_visible_points: The number of points to show on the plot
+            flip_x:   If x-axis is inverted or not
+            flip_y:   If y-axis is inverted or not
         """
         super().__init__(system)
 
@@ -220,6 +224,7 @@ class Histogram(PlottableWidget):
         Args:
             y_access: The key of a 1D signal or key index pair of a 2D signal, should map to a 1D signal,
                       defines how to access the y-axis data
+            x_range:  The range of the x-axis, defaults to the range of the data at any given time i.e. (min(x), max(x))
             y_range:  The range of the y-axis, defaults to the range of the data at any given time i.e. (min(y), max(y))
             bin_count: The number of bins in the histogram
             lookback_size: The number of points to look back when computing the histogram
