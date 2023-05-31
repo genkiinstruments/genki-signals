@@ -16,6 +16,9 @@ from genki_signals.frontends.base import FrontendBase
 
 
 class WidgetDashboard:
+    """
+    A simple dashboard for displaying multiple widgets in a grid.
+    """
     def __init__(self, widgets: list[PlottableWidget]):
         self.widgets = widgets
 
@@ -34,6 +37,9 @@ class WidgetDashboard:
 
 
 class PlottableWidget(FrontendBase):
+    """
+    A base class for jupyter frontends.
+    """
     def __init__(self, system: System):
         super().__init__(system)
 
@@ -74,6 +80,8 @@ class Line(PlottableWidget):
         x_range: tuple[float, float] = (None, None),
         y_range: tuple[float, float] = (None, None),
         n_visible_points: int = 200,
+        flip_x: bool = False,
+        flip_y: bool = False,
     ):
         """
         Args:
@@ -102,8 +110,12 @@ class Line(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range) if x_scale == "linear" else bq.LogScale(**x_range)
-        y_scale = bq.LinearScale(**y_range) if y_scale == "linear" else bq.LogScale(**y_range)
+        x_scale = bq.LinearScale(**x_range, reverse=flip_x) \
+            if x_scale == "linear" \
+            else bq.LogScale(**x_range, reverse=flip_x)
+        y_scale = bq.LinearScale(**y_range, reverse=flip_y) \
+            if y_scale == "linear" \
+            else bq.LogScale(**y_range, reverse=flip_y)
         self.x_axis = bq.Axis(
             scale=x_scale, label=f"{self.x_key}_{self.x_idx}" if self.x_idx is not None else self.x_key
         )
@@ -276,18 +288,3 @@ class Bar(PlottableWidget):
             if self.x_names is None:  # we cannot know how many bars there are beforehand
                 self.bars.x = list(range(data.shape[0]))
             self.bars.y = data[..., -1]
-
-
-# TODO: Implement WebFrontend
-# class WebFrontend(FrontendBase):
-#     def __init__(self, system: System, port):
-#         super().__init__(system)
-#         self.port = port
-
-#         self.app = Flask(__name__)
-
-#     def update(self, data: DataBuffer):
-#         self.socket.emit("data", data)
-
-#     def run(self):
-#         self.app.run(port=self.port)
