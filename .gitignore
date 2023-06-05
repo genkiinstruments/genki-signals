@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 *.tsbuildinfo
 *.tsbuildinfo.*
 *.js.map
+
+# pycharm
+.idea
