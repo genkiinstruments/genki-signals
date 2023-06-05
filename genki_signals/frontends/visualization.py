@@ -1,24 +1,25 @@
 from __future__ import annotations
 
 import math
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Literal
 
-import cv2
 import bqplot as bq
+import cv2
 import ipywidgets
-from ipywidgets import Image
 from IPython.display import display
+from ipywidgets import Image
 
 from genki_signals.buffers import DataBuffer
-from genki_signals.system import System
 from genki_signals.frontends.base import FrontendBase
+from genki_signals.system import System
 
 
 class WidgetDashboard:
     """
     A simple dashboard for displaying multiple widgets in a grid.
     """
+
     def __init__(self, widgets: list[PlottableWidget]):
         self.widgets = widgets
 
@@ -40,6 +41,7 @@ class PlottableWidget(FrontendBase):
     """
     A base class for jupyter frontends.
     """
+
     def __init__(self, system: System):
         super().__init__(system)
 
@@ -112,12 +114,12 @@ class Line(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range, reverse=flip_x) \
-            if x_scale == "linear" \
-            else bq.LogScale(**x_range, reverse=flip_x)
-        y_scale = bq.LinearScale(**y_range, reverse=flip_y) \
-            if y_scale == "linear" \
-            else bq.LogScale(**y_range, reverse=flip_y)
+        x_scale = (
+            bq.LinearScale(**x_range, reverse=flip_x) if x_scale == "linear" else bq.LogScale(**x_range, reverse=flip_x)
+        )
+        y_scale = (
+            bq.LinearScale(**y_range, reverse=flip_y) if y_scale == "linear" else bq.LogScale(**y_range, reverse=flip_y)
+        )
         self.x_axis = bq.Axis(
             scale=x_scale, label=f"{self.x_key}_{self.x_idx}" if self.x_idx is not None else self.x_key
         )
@@ -184,8 +186,12 @@ class Scatter(PlottableWidget):
         self.x_key, self.x_idx = x_access
         self.y_key, self.y_idx = y_access
 
-        x_scale = bq.LinearScale(**x_range, reverse=flip_x) if x_scale == "linear" else bq.LogScale(**x_range, reverse=flip_x)
-        y_scale = bq.LinearScale(**y_range, reverse=flip_y) if y_scale == "linear" else bq.LogScale(**y_range, reverse=flip_y)
+        x_scale = (
+            bq.LinearScale(**x_range, reverse=flip_x) if x_scale == "linear" else bq.LogScale(**x_range, reverse=flip_x)
+        )
+        y_scale = (
+            bq.LinearScale(**y_range, reverse=flip_y) if y_scale == "linear" else bq.LogScale(**y_range, reverse=flip_y)
+        )
         self.x_axis = bq.Axis(scale=x_scale, label=self.x_key if self.x_idx is None else f"{self.x_key}_{self.x_idx}")
         self.y_axis = bq.Axis(
             scale=y_scale,

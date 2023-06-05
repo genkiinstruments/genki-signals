@@ -22,6 +22,7 @@ class Scale(SignalFunction):
 
 class Sum(SignalFunction):
     """Sum multiple signals"""
+
     def __init__(self, *inputs: SignalName, name: str):
         super().__init__(*inputs, name=name)
 
@@ -108,11 +109,11 @@ class Integrate(SignalFunction):
             prepend_b = b[..., 0:1] if self.last_b is None else self.last_b
             a = np.concatenate([prepend_a, a], axis=-1)
             b = np.concatenate([prepend_b, b], axis=-1)
-            val = (self.state + integrate.cumulative_trapezoid(y=a, x=b, axis=-1))
+            val = self.state + integrate.cumulative_trapezoid(y=a, x=b, axis=-1)
         else:
             prepend_b = b[..., 0:1] if self.last_b is None else self.last_b
             db = np.diff(b, prepend=prepend_b)
-            val = (self.state + (a * db).cumsum(axis=-1))
+            val = self.state + (a * db).cumsum(axis=-1)
 
         if len(val) > 0:
             self.state = val[..., -1:]

@@ -104,4 +104,3 @@ class ParquetFileRecorder(DataFrameRecorder):
             df.to_parquet(self.path, index=False)
         else:
             df.to_parquet(self.path, mode="a", index=False)
-            

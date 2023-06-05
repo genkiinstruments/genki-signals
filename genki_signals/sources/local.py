@@ -11,6 +11,7 @@ class MouseSource(SignalSource):
     """
     Signal source that samples the mouse position.
     """
+
     def __init__(self):
         import pynput
 
@@ -24,6 +25,7 @@ class KeyboardSource(SignalSource):
     """
     Signal source that samples whether a specified set of keys are being pressed or not.
     """
+
     def __init__(self, keys):
         import pynput
 
@@ -139,10 +141,7 @@ class MicSource(SamplerBase):
         # TODO: Use the info from other params somehow (particularly time_info)
         from pyaudio import paContinue
 
-        data = {
-            "timestamp": np.array([time.time()]),
-            self.key: np.frombuffer(in_data, dtype=np.int16)
-        }
+        data = {"timestamp": np.array([time.time()]), self.key: np.frombuffer(in_data, dtype=np.int16)}
         for name, source in self.followers.items():
             d = source()
             if isinstance(d, dict):

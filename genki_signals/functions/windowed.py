@@ -17,6 +17,7 @@ class SampleRate(SignalFunction):
     """
     Calculate the sample rate of an input signal (presumably timestamps)
     """
+
     def __init__(
         self,
         input_signal: SignalName = "timestamp",
@@ -37,6 +38,7 @@ class WindowedSignalFunction(ABC):
     """
     Base class for signal functions that operate on a sliding window of their input signal
     """
+
     def init_windowing(
         self,
         window_size: int,
@@ -147,9 +149,4 @@ class Delay(SignalFunction):
         return out
 
 
-__all__ = [
-    "SampleRate",
-    "FourierTransform",
-    "Delay",
-    "WindowedSignalFunction"
-]
+__all__ = ["SampleRate", "FourierTransform", "Delay", "WindowedSignalFunction"]

@@ -14,16 +14,16 @@ from genki_signals.sources.base import SamplerBase, SignalSource
 
 async def find_ble_address(device_name: str = None):
     """
-        A function to find ble addresses of devices
+    A function to find ble addresses of devices
 
-        Args:
-            device_name: The name of the device
+    Args:
+        device_name: The name of the device
 
-        Returns:
-            If device_name is given:
-                returns ble address of device with device name: device_name
-            Else:
-                returns all devices
+    Returns:
+        If device_name is given:
+            returns ble address of device with device name: device_name
+        Else:
+            returns all devices
     """
     devices = await BleakScanner.discover()
     if device_name is None:
