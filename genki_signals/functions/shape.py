@@ -105,10 +105,4 @@ class Combine(SignalFunction):
         return internal_outputs[self.signal_fns[-1].name]
 
 
-__all__ = [
-    "ExtractDimension",
-    "Concatenate",
-    "Stack",
-    "Reshape",
-    "Combine"
-]
+__all__ = ["ExtractDimension", "Concatenate", "Stack", "Reshape", "Combine"]

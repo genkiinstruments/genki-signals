@@ -206,7 +206,7 @@ class DataBuffer(MutableMapping, Buffer):
         for col in df.columns:
             m = split.match(col)
             if m is not None:
-                name, number = m.groupdict()['name'], m.groupdict()['number']
+                name, number = m.groupdict()["name"], m.groupdict()["number"]
                 number = tuple(map(int, number.split("_")))
                 if name not in composite_data:
                     composite_data[name] = []
@@ -215,7 +215,7 @@ class DataBuffer(MutableMapping, Buffer):
                 data[col] = df[col].values
         for name, values in composite_data.items():
             values = sorted(values, key=lambda x: x[0])
-            pt_shape = tuple(d+1 for d in values[-1][0])
+            pt_shape = tuple(d + 1 for d in values[-1][0])
             t_shape = values[0][1].shape
             arr = np.zeros((*pt_shape, *t_shape), dtype=values[0][1].dtype)
             for idx, pts in values:

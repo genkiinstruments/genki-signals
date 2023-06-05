@@ -36,6 +36,7 @@ class HighPassFilter(SignalFunction):
     """
     High pass filter a signal. This is implemented as a butterworth filter.
     """
+
     def __init__(
         self,
         input_signal: SignalName,
@@ -59,6 +60,7 @@ class BandPassFilter(SignalFunction):
     """
     Band pass filter a signal. This is implemented as a butterworth filter.
     """
+
     def __init__(
         self,
         input_signal: SignalName,
@@ -82,6 +84,7 @@ class LowPassFilter(SignalFunction):
     """
     Low pass filter a signal. This is implemented as a butterworth filter.
     """
+
     def __init__(
         self,
         input_signal: SignalName,

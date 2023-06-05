@@ -21,7 +21,7 @@ from genki_signals.system import System
 from genki_signals.buffers import Buffer
 
 
-def profile_buffer(buffer: DataBuffer, data: dict[str, np.ndarray], it : int = 10000, read_buffer_rate : int = np.inf):
+def profile_buffer(buffer: DataBuffer, data: dict[str, np.ndarray], it: int = 10000, read_buffer_rate: int = np.inf):
     _buffer = buffer.copy()
     profiler = Profile()
     profiler.enable()
@@ -43,44 +43,24 @@ def profile_buffer(buffer: DataBuffer, data: dict[str, np.ndarray], it : int = 1
 
 
 buffer_tests = [
-    {
-        "data": {"input": np.array([3.14])},
-        "it": 100000,
-        "read_buffer_rate": 10000
-    },
-    {
-        "data": {"input": np.random.rand(100, 100)},
-        "it": 20,
-        "read_buffer_rate": 2
-    },
-    {
-        "data": {"input": np.random.rand(1024)},
-        "it": 100,
-        "read_buffer_rate": 3
-    },
+    {"data": {"input": np.array([3.14])}, "it": 100000, "read_buffer_rate": 10000},
+    {"data": {"input": np.random.rand(100, 100)}, "it": 20, "read_buffer_rate": 2},
+    {"data": {"input": np.random.rand(1024)}, "it": 100, "read_buffer_rate": 3},
     {
         "data": {f"input_{i}": np.random.rand(100) for i in range(100)},
         "it": 100,
         "read_buffer_rate": 1,
     },
-    {
-        "data": {f"input_{i}": np.random.rand(3, 10) for i in range(3)},
-        "it": 30000,
-        "read_buffer_rate": 5
-    },
-    {
-        "data": {"input": np.random.rand(3, 1000000)},
-        "it": 3,
-        "read_buffer_rate": 1
-    }
+    {"data": {f"input_{i}": np.random.rand(3, 10) for i in range(3)}, "it": 30000, "read_buffer_rate": 5},
+    {"data": {"input": np.random.rand(3, 1000000)}, "it": 3, "read_buffer_rate": 1},
 ]
 
 
 def compare_buffers(
-        buffers : list[Buffer],
-        buffer_names : list[str] | None = None,
-        logger_config : dict[str, Any] = None,
-        verbose : bool = False,
+    buffers: list[Buffer],
+    buffer_names: list[str] | None = None,
+    logger_config: dict[str, Any] = None,
+    verbose: bool = False,
 ):
     if buffer_names is None:
         buffer_names = [f"buffer_{i}" for i in range(len(buffers))]
@@ -88,7 +68,7 @@ def compare_buffers(
     eps = np.finfo(np.float32).eps
     tests = []
     if logger_config is not None:
-        mpl.rcParams['figure.dpi'] = 300
+        mpl.rcParams["figure.dpi"] = 300
         wandb.init(**logger_config)
         images = []
     for i, test in enumerate(buffer_tests):
@@ -109,13 +89,7 @@ def compare_buffers(
             log_df = pd.DataFrame(stats)
             log_df.index = buffer_names
             ax = log_df.plot(
-                y=log_df.columns,
-                kind="bar",
-                rot=0,
-                use_index=True,
-                logy=True,
-                ylabel="ms",
-                title=description
+                y=log_df.columns, kind="bar", rot=0, use_index=True, logy=True, ylabel="ms", title=description
             )
             images.append(wandb.Image(ax.get_figure(), caption=description))
         if verbose:
@@ -129,7 +103,7 @@ def compare_buffers(
     return pd.concat(tests)
 
 
-def profile_system(system: System, t : float = 1.0, verbose : bool = False):
+def profile_system(system: System, t: float = 1.0, verbose: bool = False):
     yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
     yappi.start()
     system.start()
@@ -150,7 +124,12 @@ def profile_system(system: System, t : float = 1.0, verbose : bool = False):
     return df_filtered
 
 
-def compare_systems(systems: list[System], t: float = 1.0, names: list[str] | None = None, verbose: bool = False,):
+def compare_systems(
+    systems: list[System],
+    t: float = 1.0,
+    names: list[str] | None = None,
+    verbose: bool = False,
+):
     if names is None:
         names = [f"system_{i}" for i in range(len(systems))]
     assert len(names) == len(systems)

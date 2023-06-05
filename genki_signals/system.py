@@ -19,6 +19,7 @@ class System:
     specified in Hz. Note that the update_rate will not be exact, as it is limited by the
     use of time.sleep(), so an error of up to 15% is expected.
     """
+
     def __init__(self, source, functions=None, update_rate=25):
         self.source = source
         self.functions = [] if functions is None else functions
@@ -81,8 +82,10 @@ class System:
         if recorder is None:
             if isinstance(self.source, MicSource):
                 recorder = WavFileRecorder(
-                    (path / "raw_data.wav").as_posix(), self.source.sample_rate, self.source.n_channels,
-                    self.source.sample_width
+                    (path / "raw_data.wav").as_posix(),
+                    self.source.sample_rate,
+                    self.source.n_channels,
+                    self.source.sample_width,
                 )
             else:
                 recorder = PickleRecorder(path / "raw_data.pickle")

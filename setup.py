@@ -3,8 +3,8 @@ import setuptools
 
 
 # Hacky way to get the version string from the __init__ file, can't import it since it hasn't been "built" yet
-VERSIONFILE="genki_signals/__init__.py"
-getversion = re.search( r"^__version__ = ['\"]([^'\"]*)['\"]", open(VERSIONFILE, "rt").read(), re.M)
+VERSIONFILE = "genki_signals/__init__.py"
+getversion = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", open(VERSIONFILE, "rt").read(), re.M)
 if getversion:
     version = getversion.group(1)
 else:
@@ -21,7 +21,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license_files=["LICENSE"],
     url="https://github.com/genkiinstruments/genki-signals",
-    python_requires='>=3.9',
+    python_requires=">=3.9",
     install_requires=[
         "numpy",
         "pandas",
@@ -40,9 +40,9 @@ setuptools.setup(
     ],
     author="Genki Instruments",
     author_email="genki@genkiinstruments.com",
-    keywords = ["Signal Processing", "Machine Learning", "Realtime"],
+    keywords=["Signal Processing", "Machine Learning", "Realtime"],
     packages=setuptools.find_packages(exclude=("tests", "test", "examples")),
-    classifiers = [
+    classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",

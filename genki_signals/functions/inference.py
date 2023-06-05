@@ -55,6 +55,7 @@ class WindowedInference(WindowedSignalFunction, SignalFunction):
     Run real-time inference using an ONNX model. Operates on a single input signal, and on a
     window of samples at a time, window_kwargs specify the windowing parameters (window_length and window_overlap).
     """
+
     def __init__(self, input_signal: SignalName, name: str, model_filename, **window_kwargs):
         super().__init__(input_signal, name=name, params={"model_filename": model_filename, **window_kwargs})
         self.init_windowing(**window_kwargs)
